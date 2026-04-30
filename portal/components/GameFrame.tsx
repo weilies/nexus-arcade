@@ -24,7 +24,7 @@ export function GameFrame({ slug, gameName, matchId }: GameFrameProps) {
         if (session?.access_token) {
           sendToGame(iframeRef.current, 'auth_token', {
             token: session.access_token,
-          })
+          }, window.location.origin)
         }
       }
 
@@ -40,7 +40,7 @@ export function GameFrame({ slug, gameName, matchId }: GameFrameProps) {
           }),
         })
       }
-    })
+    }, window.location.origin)
 
     return cleanup
   }, [slug])

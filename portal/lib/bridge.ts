@@ -13,13 +13,18 @@ export type GameMessage = GameReadyMessage | MatchEndMessage | AuthRequestMessag
 export function sendToGame(
   iframe: HTMLIFrameElement,
   type: PortalMessageType,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  targetOrigin = window.location.origin
 ): void {
-  iframe.contentWindow?.postMessage({ type, ...payload }, '*')
+  iframe.contentWindow?.postMessage({ type, ...payload }, targetOrigin)
 }
 
-export function onGameMessage(handler: (msg: GameMessage) => void): () => void {
+export function onGameMessage(
+  handler: (msg: GameMessage) => void,
+  expectedOrigin = window.location.origin
+): () => void {
   const listener = (event: MessageEvent) => {
+    if (event.origin !== expectedOrigin) return
     if (event.data && typeof event.data.type === 'string') {
       handler(event.data as GameMessage)
     }
