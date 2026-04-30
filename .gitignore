@@ -1,0 +1,20 @@
+# Node
+node_modules/
+.next/
+.env.local
+.env*.local
+
+# Godot
+games/*/web-export/
+games/*/.godot/
+*.import
+
+# Build artifacts
+portal/public/games/
+
+# Superpowers brainstorm
+.superpowers/
+
+# OS
+.DS_Store
+Thumbs.db
