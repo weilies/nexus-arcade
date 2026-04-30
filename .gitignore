@@ -18,3 +18,15 @@ portal/public/games/
 # OS
 .DS_Store
 Thumbs.db
+
+# Test & Coverage
+coverage/
+.vitest/
+
+# Build metadata
+*.tsbuildinfo
+
+# Logs
+npm-debug.log*
+yarn-error.log*
+*.log
