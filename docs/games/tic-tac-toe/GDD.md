@@ -127,7 +127,7 @@ Auth flow: Godot sends `auth_request` → portal checks Supabase session → if 
 - Piece placement: drop-in tween (scale 0 → 1.1 → 1.0)
 - Win line: glow stroke draw animation
 - GameOver: screen shake + particle burst on win
-- Turn timer: last 5 seconds = pulsing red countdown
+- Turn timer: each player runs a local 30s `Timer` node. At 5 seconds remaining, the countdown label color shifts to red and a looping `Tween` pulses its scale (1.0 → 1.15 → 1.0, ~0.5s cycle) to create urgency. Both clients reset their local timer whenever they receive a valid move broadcast from the channel — this keeps them in sync without a shared clock. If your own timer hits 0 and you haven't moved, your Godot client broadcasts a `{ type: "forfeit", player: "X"|"O" }` message, ending the match.
 
 ---
 
@@ -149,6 +149,36 @@ create table game_rooms (
 -- Index for lobby listing per game
 create index game_rooms_slug_status on game_rooms(game_slug, status);
 ```
+
+### Online Move Sync Flow
+
+Supabase Realtime uses persistent WebSocket connections routed through Supabase's globally distributed edge nodes (Fly.io). Both players connect to the same named channel and messages fan out to all subscribers regardless of region. Typical round-trip: 50–200ms globally.
+
+**Step-by-step — X places a mark:**
+
+```
+X's client                  Supabase Realtime            O's client
+(e.g. Malaysia)             (nearest edge node)          (e.g. USA)
+
+1. X taps cell 4
+2. Update local board immediately (optimistic)
+3. Broadcast ──────────────────────────────────►
+   { type:"move", cell:4, player:"X" }
+                            4. Fan out to all
+                               channel subscribers ──────►
+                                                         5. Receive broadcast
+                                                         6. Validate: correct
+                                                            player + empty cell
+                                                         7. Update board
+                                                         8. Switch turn to O
+9. Also: PATCH game_rooms.state via REST
+   { board:[..], turn:"O", winner:null }
+   (persisted for reconnect recovery)
+```
+
+**Reconnect recovery:** If O disconnects mid-game and rejoins, Godot fetches `game_rooms` row via REST to rebuild board state — no need to replay broadcast history.
+
+**Conflict prevention:** Only the current turn's player can broadcast a move. The receiving client ignores any move broadcast from the wrong player (e.g. O sending a move on X's turn). No server-side move validation in v1 — acceptable for POC, add RLS/edge function validation post-POC.
 
 Realtime channel per room: `room:{id}`. Moves broadcast as messages; `state` column updated on each move for reconnect recovery.
 
