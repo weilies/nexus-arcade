@@ -9,6 +9,11 @@ var _mode: Mode
 var _ai_difficulty: TicTacToeAI.Difficulty
 var _score_x: int = 0
 var _score_o: int = 0
+var _room_id: String = ""
+var _player_mark: GameState.Player = GameState.Player.X
+var _supabase_ref: SupabaseClient
+var _turn_timer: TurnTimer
+var _bridge: PortalBridge
 
 func setup_vs_ai(difficulty: TicTacToeAI.Difficulty) -> void:
 	_mode = Mode.VS_AI
@@ -18,13 +23,31 @@ func setup_vs_ai(difficulty: TicTacToeAI.Difficulty) -> void:
 func setup_local() -> void:
 	_mode = Mode.LOCAL
 
-func setup_online(_room_id: String, _player_mark: GameState.Player, _supabase) -> void:
+func setup_online(room_id: String, player_mark: GameState.Player, sb: SupabaseClient) -> void:
 	_mode = Mode.ONLINE
+	_room_id = room_id
+	_player_mark = player_mark
+	_supabase_ref = sb
 
 func _ready() -> void:
 	_state = GameState.new()
+	_bridge = $Bridge if has_node("Bridge") else null
+	if _bridge:
+		_bridge.send_game_ready()
+
+	_turn_timer = TurnTimer.new()
+	if has_node("VBoxContainer/LblTimer"):
+		_turn_timer.setup($VBoxContainer/LblTimer)
+	add_child(_turn_timer)
+	_turn_timer.timed_out.connect(_on_turn_timeout)
+
 	_connect_cells()
 	_refresh_ui()
+
+	if _mode == Mode.ONLINE:
+		_supabase_ref.realtime_message.connect(_on_online_message)
+		if _player_mark == GameState.Player.X:
+			_turn_timer.start()
 
 func _connect_cells() -> void:
 	for i in 9:
@@ -48,6 +71,9 @@ func _on_cell_input(event: InputEvent, cell_index: int) -> void:
 	if not event.pressed or event.button_index != MOUSE_BUTTON_LEFT:
 		return
 	if _mode == Mode.ONLINE:
+		if _state.current_turn != _player_mark:
+			return
+		_do_place_online(cell_index)
 		return
 	_do_place(cell_index)
 
@@ -66,6 +92,48 @@ func _ai_take_turn() -> void:
 	var cell = _ai.get_move(_state, _ai_difficulty)
 	if cell >= 0:
 		_do_place(cell)
+
+func _do_place_online(cell_index: int) -> void:
+	if not _state.place(cell_index):
+		return
+	_turn_timer.stop()
+	_animate_piece(cell_index)
+	_supabase_ref.broadcast("room:" + _room_id, "move",
+		{"cell": cell_index, "player": GameState.player_to_str(_player_mark)})
+	_supabase_ref.patch_row("game_rooms", "id=eq." + _room_id,
+		{"state": _state.to_dict()})
+	_refresh_ui()
+	if _state.result != GameState.GameResult.ONGOING:
+		_on_game_over()
+
+func _on_online_message(channel: String, event: String, payload: Dictionary) -> void:
+	if channel != "room:" + _room_id:
+		return
+	match event:
+		"move":
+			var cell: int = payload.get("cell", -1)
+			if cell < 0:
+				return
+			_turn_timer.stop()
+			_state.place(cell)
+			_animate_piece(cell)
+			_refresh_ui()
+			if _state.result != GameState.GameResult.ONGOING:
+				_on_game_over()
+			else:
+				_turn_timer.start()
+		"forfeit":
+			_turn_timer.stop()
+			_declare_winner_by_forfeit()
+
+func _on_turn_timeout() -> void:
+	_supabase_ref.broadcast("room:" + _room_id, "forfeit",
+		{"player": GameState.player_to_str(_player_mark)})
+	_declare_winner_by_forfeit()
+
+func _declare_winner_by_forfeit() -> void:
+	_state.result = GameState.GameResult.X_WINS if _player_mark == GameState.Player.O else GameState.GameResult.O_WINS
+	_on_game_over()
 
 func _animate_piece(cell_index: int) -> void:
 	var cell = $VBoxContainer/Grid.get_child(cell_index)
@@ -127,6 +195,24 @@ func _on_game_over() -> void:
 		GameState.GameResult.X_WINS: winner = "X"
 		GameState.GameResult.O_WINS: winner = "O"
 		_: winner = "draw"
+
+	var score: int
+	if _state.result == GameState.GameResult.DRAW:
+		score = 50
+	elif (winner == "X" and _player_mark == GameState.Player.X) or (winner == "O" and _player_mark == GameState.Player.O):
+		score = 100
+	else:
+		score = 0
+
+	var mode_str: String
+	match _mode:
+		Mode.VS_AI: mode_str = "solo"
+		Mode.LOCAL: mode_str = "local"
+		Mode.ONLINE: mode_str = "online"
+		_: mode_str = "solo"
+
+	if _bridge:
+		_bridge.send_match_end(winner, mode_str, score)
 
 	_highlight_win_line()
 	var game_over = load("res://scenes/GameOver.tscn").instantiate()

@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://game_board"]
+[gd_scene load_steps=3 format=3 uid="uid://game_board"]
 
 [ext_resource type="Script" path="res://scenes/GameBoard.gd" id="1_gameboard"]
+[ext_resource type="Script" path="res://scripts/PortalBridge.gd" id="2_portalbridge"]
 
 [node name="GameBoard" type="Control"]
 layout_mode = 3
@@ -34,6 +35,13 @@ alignment = 1
 layout_mode = 2
 text = "YOUR TURN — X"
 theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.58, 0.635, 0.722, 1)
+horizontal_alignment = 1
+
+[node name="LblTimer" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "30s"
+theme_override_font_sizes/font_size = 12
 theme_override_colors/font_color = Color(0.58, 0.635, 0.722, 1)
 horizontal_alignment = 1
 
@@ -170,3 +178,6 @@ theme_override_colors/font_color = Color(0.204, 0.251, 0.353, 1)
 layout_mode = 2
 text = "O: 0"
 theme_override_colors/font_color = Color(0.659, 0.333, 0.969, 1)
+
+[node name="Bridge" type="Node" parent="."]
+script = ExtResource("2_portalbridge")
