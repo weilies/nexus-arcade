@@ -35,8 +35,8 @@ enabled=PackedStringArray()
 
 [supabase]
 
-url="https://YOUR_PROJECT_ID.supabase.co"
-anon_key="YOUR_ANON_KEY_HERE"
+url="https://mdvmxjxhfjovbpshbbzr.supabase.co"
+anon_key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kdm14anhoZmpvdmJwc2hiYnpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMTQ3MDgsImV4cCI6MjA5Mjc5MDcwOH0.i6iHsmg76Sjh3PjM9XF2USJWKfywn2OwUZ-mDa_i95g"
 
 [rendering]
 
