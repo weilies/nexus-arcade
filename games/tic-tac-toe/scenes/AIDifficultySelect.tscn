@@ -23,32 +23,32 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -120.0
-offset_top = -100.0
-offset_right = 120.0
-offset_bottom = 100.0
-theme_override_constants/separation = 12
+offset_left = -200.0
+offset_top = -160.0
+offset_right = 200.0
+offset_bottom = 160.0
+theme_override_constants/separation = 20
 alignment = 1
 
 [node name="LblTitle" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 text = "Choose Difficulty"
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 36
 theme_override_colors/font_color = Color(0.886, 0.91, 0.941, 1)
 horizontal_alignment = 1
 
 [node name="BtnEasy" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(240, 0)
+custom_minimum_size = Vector2(360, 60)
 text = "Easy"
 
 [node name="BtnHard" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(240, 0)
+custom_minimum_size = Vector2(360, 60)
 text = "Hard — Unbeatable"
 
 [node name="BtnBack" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(240, 0)
+custom_minimum_size = Vector2(360, 56)
 text = "Back"
 theme_override_colors/font_color = Color(0.392, 0.455, 0.573, 1)

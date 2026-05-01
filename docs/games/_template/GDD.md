@@ -1,7 +1,7 @@
 # [Game Title] — Game Design Document
 
 > **Status:** `draft` | `in-development` | `live` | `retired`
-> **Engine:** Godot 4
+> **Engine:** Godot 4.6 or above
 > **Target quarter:** Q? 20??
 > **Slug:** `game-slug` (used in URLs + DB)
 
@@ -61,7 +61,44 @@ List the screens inside the Godot game (not the portal):
 
 ---
 
-## 5. Portal Bridge (postMessage API)
+## 5. Canvas & Viewport
+
+> **Rule: game content must fill ≥ 75% of the canvas at all times.**
+
+- **Viewport:** Set in `project.godot` under `display/window/size`. Default portrait: `720×960`. Landscape: `1280×720`.
+- **Stretch mode:** `canvas_items` — scales UI with viewport.
+- **Stretch aspect:** `keep` — maintains ratio, letterboxes if needed. Do NOT use `expand` (shrinks perceived content).
+- **Anchor all UI nodes** to full-rect (`anchors_preset = 15`) or center with percentage offsets — no fixed pixel positions.
+- **Minimum sizes** on buttons/panels as % of viewport, not hard pixel values.
+- **Test at:** 720p, 1080p, and the portal iframe (~1200×750px).
+
+---
+
+## 6. Sound Design
+
+> **Default: sound OFF.** Player opts in via Settings screen.
+
+### Required SFX (chiptune style — .wav or .ogg, ≤50KB each)
+
+| Event | File | Notes |
+|-------|------|-------|
+| Button click | `sfx_click.wav` | Short blip, ~50ms |
+| Player move / action | `sfx_move.wav` | Satisfying confirm tone |
+| Win | `sfx_win.wav` | Ascending arpeggio, <2s |
+| Lose | `sfx_lose.wav` | Descending tone, <2s |
+| Draw | `sfx_draw.wav` | Neutral resolution |
+| UI navigate | `sfx_nav.wav` | Subtle tick |
+
+### Implementation checklist
+- [ ] `AudioManager` autoload: `play(sfx_name)` method, respects `Settings.sound_enabled`
+- [ ] Settings screen has **SOUND: ON / OFF** toggle, persists via `ConfigFile`
+- [ ] Default `sound_enabled = false` in `Globals.gd`
+- [ ] All buttons connect `pressed` → `AudioManager.play("click")`
+- [ ] Free tools for chiptune SFX: [jsfxr](https://sfxr.me), [BeepBox](https://beepbox.co)
+
+---
+
+## 7. Portal Bridge (postMessage API)
 
 Events the Godot web export sends to the NextJS portal:
 
@@ -88,7 +125,7 @@ Events the portal sends to Godot:
 
 ---
 
-## 6. Art Direction
+## 8. Art Direction
 
 **Visual style:** _e.g. Retro pixel, 8-bit, flat vector, hand-drawn_
 
@@ -98,14 +135,14 @@ Events the portal sends to Godot:
 - [ ] Game board / background
 - [ ] Player pieces / sprites
 - [ ] UI elements (buttons, panels)
-- [ ] Sound effects (list key SFX)
-- [ ] Background music (mood/tempo)
+- [ ] Sound effects (see Section 6)
+- [ ] Background music (mood/tempo — optional, must be mutable)
 
 **Animation notes:** _What "juice" effects matter most? e.g. screen shake on win, particle burst on capture_
 
 ---
 
-## 7. Seasonal Events
+## 9. Seasonal Events
 
 **Season tie-in:** _How does this game participate in the quarterly season?_
 
@@ -115,7 +152,7 @@ Events the portal sends to Godot:
 
 ---
 
-## 8. Monetization
+## 10. Monetization
 
 **Ads:** _Where do ads appear? e.g. interstitial between matches, banner on game over screen_
 
@@ -123,7 +160,7 @@ Events the portal sends to Godot:
 
 ---
 
-## 9. Leaderboard & Scoring
+## 11. Leaderboard & Scoring
 
 **Score calculation:** _How is score computed? e.g. base win points + speed bonus + difficulty multiplier_
 
@@ -133,7 +170,7 @@ Events the portal sends to Godot:
 
 ---
 
-## 10. Out of Scope (this version)
+## 12. Out of Scope (this version)
 
 _List features explicitly NOT in v1 to prevent scope creep._
 

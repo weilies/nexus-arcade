@@ -40,11 +40,14 @@ func _shake() -> void:
 	tween.tween_property(self, "position", origin, 0.04)
 
 func _on_play_again() -> void:
+	SFX.click()
+	_board_ref._game_over_fired = false
 	_board_ref._state = GameState.new()
 	_board_ref._refresh_ui()
 	queue_free()
 
 func _on_menu() -> void:
+	SFX.click()
 	_board_ref.queue_free()
 	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
 	queue_free()

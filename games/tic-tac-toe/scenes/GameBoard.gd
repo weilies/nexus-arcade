@@ -42,6 +42,7 @@ func _ready() -> void:
 	add_child(_turn_timer)
 	_turn_timer.timed_out.connect(_on_turn_timeout)
 
+	$VBoxContainer/BtnHome.pressed.connect(_on_home)
 	_connect_cells()
 	_refresh_ui()
 
@@ -81,6 +82,7 @@ func _on_cell_input(event: InputEvent, cell_index: int) -> void:
 func _do_place(cell_index: int) -> void:
 	if not _state.place(cell_index):
 		return
+	SFX.click()
 	_animate_piece(cell_index)
 	_refresh_ui()
 	if _state.result != GameState.GameResult.ONGOING:
@@ -97,6 +99,7 @@ func _ai_take_turn() -> void:
 func _do_place_online(cell_index: int) -> void:
 	if not _state.place(cell_index):
 		return
+	SFX.click()
 	_turn_timer.stop()
 	_animate_piece(cell_index)
 	_supabase_ref.broadcast("room:" + _room_id, "move",
@@ -134,6 +137,14 @@ func _on_turn_timeout() -> void:
 	_supabase_ref.broadcast("room:" + _room_id, "forfeit", {"player": my_mark})
 	_state.result = GameState.GameResult.O_WINS if _player_mark == GameState.Player.X else GameState.GameResult.X_WINS
 	_on_game_over()
+
+func _on_home() -> void:
+	SFX.click()
+	if _mode == Mode.ONLINE and _supabase_ref:
+		_supabase_ref.broadcast("room:" + _room_id, "forfeit",
+			{"player": GameState.player_to_str(_player_mark)})
+	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+	queue_free()
 
 func _exit_tree() -> void:
 	if _supabase_ref and _supabase_ref.realtime_message.is_connected(_on_online_message):
@@ -204,6 +215,27 @@ func _on_game_over() -> void:
 		GameState.GameResult.X_WINS: winner = "X"
 		GameState.GameResult.O_WINS: winner = "O"
 		_: winner = "draw"
+
+	# SFX: win/lose based on mode and player perspective
+	match _state.result:
+		GameState.GameResult.X_WINS:
+			if _mode == Mode.LOCAL:
+				SFX.win()
+			elif _mode == Mode.VS_AI:
+				SFX.win()
+			elif _player_mark == GameState.Player.X:
+				SFX.win()
+			else:
+				SFX.lose()
+		GameState.GameResult.O_WINS:
+			if _mode == Mode.LOCAL:
+				SFX.win()
+			elif _mode == Mode.VS_AI:
+				SFX.lose()
+			elif _player_mark == GameState.Player.O:
+				SFX.win()
+			else:
+				SFX.lose()
 
 	var score: int
 	if _state.result == GameState.GameResult.DRAW:

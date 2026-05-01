@@ -22,12 +22,14 @@ config/icon="res://icon.svg"
 [autoload]
 
 Globals="*res://scripts/Globals.gd"
+SFX="*res://scripts/SFX.gd"
 
 [display]
 
-window/size/viewport_width=480
-window/size/viewport_height=640
+window/size/viewport_width=720
+window/size/viewport_height=960
 window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
 
 [editor_plugins]
 
