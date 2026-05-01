@@ -102,6 +102,12 @@ func _launch_game() -> void:
 	get_tree().root.add_child(board)
 	queue_free()
 
+func _exit_tree() -> void:
+	if Globals.supabase.rest_completed.is_connected(_on_rest):
+		Globals.supabase.rest_completed.disconnect(_on_rest)
+	if Globals.supabase.realtime_message.is_connected(_on_realtime):
+		Globals.supabase.realtime_message.disconnect(_on_realtime)
+
 func _set_status(text: String) -> void:
 	$VBoxContainer/LblStatus.text = text
 

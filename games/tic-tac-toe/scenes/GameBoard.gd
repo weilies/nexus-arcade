@@ -14,6 +14,7 @@ var _player_mark: GameState.Player = GameState.Player.X
 var _supabase_ref: SupabaseClient
 var _turn_timer: TurnTimer
 var _bridge: PortalBridge
+var _game_over_fired: bool = false
 
 func setup_vs_ai(difficulty: TicTacToeAI.Difficulty) -> void:
 	_mode = Mode.VS_AI
@@ -124,16 +125,19 @@ func _on_online_message(channel: String, event: String, payload: Dictionary) -> 
 				_turn_timer.start()
 		"forfeit":
 			_turn_timer.stop()
-			_declare_winner_by_forfeit()
+			var forfeiter = payload.get("player", "")
+			_state.result = GameState.GameResult.O_WINS if forfeiter == "X" else GameState.GameResult.X_WINS
+			_on_game_over()
 
 func _on_turn_timeout() -> void:
-	_supabase_ref.broadcast("room:" + _room_id, "forfeit",
-		{"player": GameState.player_to_str(_player_mark)})
-	_declare_winner_by_forfeit()
-
-func _declare_winner_by_forfeit() -> void:
-	_state.result = GameState.GameResult.X_WINS if _player_mark == GameState.Player.O else GameState.GameResult.O_WINS
+	var my_mark = GameState.player_to_str(_player_mark)
+	_supabase_ref.broadcast("room:" + _room_id, "forfeit", {"player": my_mark})
+	_state.result = GameState.GameResult.O_WINS if _player_mark == GameState.Player.X else GameState.GameResult.X_WINS
 	_on_game_over()
+
+func _exit_tree() -> void:
+	if _supabase_ref and _supabase_ref.realtime_message.is_connected(_on_online_message):
+		_supabase_ref.realtime_message.disconnect(_on_online_message)
 
 func _animate_piece(cell_index: int) -> void:
 	var cell = $VBoxContainer/Grid.get_child(cell_index)
@@ -169,6 +173,8 @@ func _refresh_ui() -> void:
 				turn_text = "PLAYER 2 — O"
 			else:
 				turn_text = "OPPONENT — O"
+		_:
+			turn_text = ""
 	$VBoxContainer/LblStatus.text = turn_text
 
 	$VBoxContainer/ScoreRow/LblScoreX.text = "X: %d" % _score_x
@@ -185,6 +191,9 @@ func _highlight_win_line() -> void:
 		tween.tween_property(cell, "modulate", Color.WHITE, 0.4)
 
 func _on_game_over() -> void:
+	if _game_over_fired:
+		return
+	_game_over_fired = true
 	match _state.result:
 		GameState.GameResult.X_WINS: _score_x += 1
 		GameState.GameResult.O_WINS: _score_o += 1
