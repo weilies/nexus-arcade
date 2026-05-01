@@ -72,7 +72,14 @@ func test_to_dict_roundtrip():
 	state.place(0); state.place(4)
 	var d = state.to_dict()
 	var state2 = GameState.new()
-	state2.from_dict(d)
+	assert_true(state2.from_dict(d))
 	assert_eq(state2.board[0], GameState.Player.X)
 	assert_eq(state2.board[4], GameState.Player.O)
 	assert_eq(state2.current_turn, state.current_turn)
+
+func test_place_blocked_after_game_over():
+	state.place(0); state.place(3)
+	state.place(1); state.place(4)
+	state.place(2)  # X wins
+	assert_eq(state.result, GameState.GameResult.X_WINS)
+	assert_false(state.place(5))

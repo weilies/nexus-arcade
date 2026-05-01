@@ -47,22 +47,30 @@ func get_winning_line() -> Array:
 
 func to_dict() -> Dictionary:
 	return {
-		"board": board.map(func(p): return _player_to_str(p)),
-		"turn": _player_to_str(current_turn),
+		"board": board.map(func(p): return GameState.player_to_str(p)),
+		"turn": GameState.player_to_str(current_turn),
 		"winner": _result_to_str(result)
 	}
 
-func from_dict(d: Dictionary) -> void:
+func from_dict(d: Dictionary) -> bool:
+	if not d.has("board") or not d["board"] is Array or d["board"].size() != 9:
+		return false
+	if not d.has("turn"):
+		return false
 	for i in 9:
 		board[i] = _str_to_player(d["board"][i])
 	current_turn = _str_to_player(d["turn"])
 	result = _check_result()
+	return true
 
 static func player_to_str(p: Player) -> String:
 	match p:
 		Player.X: return "X"
 		Player.O: return "O"
 		_: return ""
+
+func is_over() -> bool:
+	return result != GameResult.ONGOING
 
 func _check_result() -> GameResult:
 	for line in WIN_LINES:
@@ -72,12 +80,6 @@ func _check_result() -> GameResult:
 	if get_empty_cells().is_empty():
 		return GameResult.DRAW
 	return GameResult.ONGOING
-
-func _player_to_str(p: Player) -> String:
-	match p:
-		Player.X: return "X"
-		Player.O: return "O"
-		_: return ""
 
 func _str_to_player(s: String) -> Player:
 	match s:
