@@ -15,6 +15,9 @@ portal/public/games/
 # Superpowers brainstorm
 .superpowers/
 
+# Git worktrees
+.worktrees/
+
 # OS
 .DS_Store
 Thumbs.db
