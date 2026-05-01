@@ -1,0 +1,172 @@
+[gd_scene load_steps=2 format=3 uid="uid://game_board"]
+
+[ext_resource type="Script" path="res://scenes/GameBoard.gd" id="1_gameboard"]
+
+[node name="GameBoard" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_gameboard")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.059, 0.059, 0.102, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -120.0
+offset_top = -160.0
+offset_right = 120.0
+offset_bottom = 160.0
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="LblStatus" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "YOUR TURN — X"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.58, 0.635, 0.722, 1)
+horizontal_alignment = 1
+
+[node name="Grid" type="GridContainer" parent="VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(228, 228)
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+columns = 3
+
+[node name="Cell0" type="Panel" parent="VBoxContainer/Grid"]
+custom_minimum_size = Vector2(72, 72)
+
+[node name="Mark" type="Label" parent="VBoxContainer/Grid/Cell0"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Cell1" type="Panel" parent="VBoxContainer/Grid"]
+custom_minimum_size = Vector2(72, 72)
+
+[node name="Mark" type="Label" parent="VBoxContainer/Grid/Cell1"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Cell2" type="Panel" parent="VBoxContainer/Grid"]
+custom_minimum_size = Vector2(72, 72)
+
+[node name="Mark" type="Label" parent="VBoxContainer/Grid/Cell2"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Cell3" type="Panel" parent="VBoxContainer/Grid"]
+custom_minimum_size = Vector2(72, 72)
+
+[node name="Mark" type="Label" parent="VBoxContainer/Grid/Cell3"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Cell4" type="Panel" parent="VBoxContainer/Grid"]
+custom_minimum_size = Vector2(72, 72)
+
+[node name="Mark" type="Label" parent="VBoxContainer/Grid/Cell4"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Cell5" type="Panel" parent="VBoxContainer/Grid"]
+custom_minimum_size = Vector2(72, 72)
+
+[node name="Mark" type="Label" parent="VBoxContainer/Grid/Cell5"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Cell6" type="Panel" parent="VBoxContainer/Grid"]
+custom_minimum_size = Vector2(72, 72)
+
+[node name="Mark" type="Label" parent="VBoxContainer/Grid/Cell6"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Cell7" type="Panel" parent="VBoxContainer/Grid"]
+custom_minimum_size = Vector2(72, 72)
+
+[node name="Mark" type="Label" parent="VBoxContainer/Grid/Cell7"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Cell8" type="Panel" parent="VBoxContainer/Grid"]
+custom_minimum_size = Vector2(72, 72)
+
+[node name="Mark" type="Label" parent="VBoxContainer/Grid/Cell8"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ScoreRow" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="LblScoreX" type="Label" parent="VBoxContainer/ScoreRow"]
+layout_mode = 2
+text = "X: 0"
+theme_override_colors/font_color = Color(0, 0.831, 1, 1)
+
+[node name="LblSep" type="Label" parent="VBoxContainer/ScoreRow"]
+layout_mode = 2
+text = "  —  "
+theme_override_colors/font_color = Color(0.204, 0.251, 0.353, 1)
+
+[node name="LblScoreO" type="Label" parent="VBoxContainer/ScoreRow"]
+layout_mode = 2
+text = "O: 0"
+theme_override_colors/font_color = Color(0.659, 0.333, 0.969, 1)
