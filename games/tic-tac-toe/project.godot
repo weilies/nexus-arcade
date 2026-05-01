@@ -1,12 +1,23 @@
 ; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
 config_version=5
+
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 [application]
 
 config/name="Tic Tac Toe"
-config/features=PackedStringArray("4.4", "GL Compatibility")
-config/icon="res://icon.svg"
 run/main_scene="res://scenes/MainMenu.tscn"
+config/features=PackedStringArray("4.6", "GL Compatibility")
+config/icon="res://icon.svg"
 
 [autoload]
 
@@ -17,11 +28,15 @@ Globals="*res://scripts/Globals.gd"
 window/size/viewport_width=480
 window/size/viewport_height=640
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/gut/plugin.cfg")
+enabled=PackedStringArray()
+
+[supabase]
+
+url="https://YOUR_PROJECT_ID.supabase.co"
+anon_key="YOUR_ANON_KEY_HERE"
 
 [rendering]
 
