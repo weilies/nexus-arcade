@@ -1,15 +1,21 @@
-import type { Metadata } from 'next'
+import type { Metadata } from 'react'
 import './globals.css'
+import { BottomTabBar } from '@/components/BottomTabBar'
 
 export const metadata: Metadata = {
-  title: 'NEXUS ARCADE',
+  title: 'Nexus Arcade',
   description: 'Casual games. Compete. Conquer.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-arcade-bg antialiased">{children}</body>
+      <body className="min-h-screen flex flex-col" style={{ background: '#5a3a1f' }}>
+        <BottomTabBar hideOn={['/games/tictactoe']} />
+        <main className="flex-1 pb-16 md:pb-0">
+          {children}
+        </main>
+      </body>
     </html>
   )
 }
