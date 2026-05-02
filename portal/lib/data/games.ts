@@ -29,3 +29,13 @@ export async function getFeaturedGame(): Promise<Game | null> {
     .single()
   return data
 }
+
+export async function getAllLiveGames(): Promise<Game[]> {
+  const supabase = createClient()
+  const { data } = await supabase
+    .from('games')
+    .select('*')
+    .eq('status', 'live')
+    .order('launched_at', { ascending: true })
+  return data ?? []
+}
