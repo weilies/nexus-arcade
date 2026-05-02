@@ -1,6 +1,8 @@
 import { AuthCard } from '@/components/AuthCard'
 import { Suspense } from 'react'
 
+export const dynamic = 'force-dynamic'
+
 function LoginContent() {
   return (
     <div

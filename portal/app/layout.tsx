@@ -1,4 +1,4 @@
-import type { Metadata } from 'react'
+import type { Metadata } from 'next'
 import './globals.css'
 import { BottomTabBar } from '@/components/BottomTabBar'
 
