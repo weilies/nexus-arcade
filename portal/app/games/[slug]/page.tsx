@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 import { getGameBySlug } from '@/lib/data/games'
-import { Nav } from '@/components/Nav'
 import { GameFrame } from '@/components/GameFrame'
 
 interface Props {
@@ -13,8 +12,7 @@ export default async function GamePage({ params, searchParams }: Props) {
   if (!game || game.status !== 'live') notFound()
 
   return (
-    <div className="h-screen bg-arcade-bg flex flex-col overflow-hidden">
-      <Nav />
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#5a3a1f' }}>
       <div className="flex-1 flex flex-col">
         <GameFrame
           slug={params.slug}
