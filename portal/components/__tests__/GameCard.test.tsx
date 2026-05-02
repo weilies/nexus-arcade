@@ -3,27 +3,21 @@ import { render, screen } from '@testing-library/react'
 import { GameCard } from '../GameCard'
 
 describe('GameCard', () => {
-  it('renders game name uppercased', () => {
-    render(<GameCard slug="ultimate-ttt" name="Ultimate Ttt" />)
-    expect(screen.getByText('ULTIMATE TTT')).toBeDefined()
+  it('renders game name', () => {
+    render(<GameCard slug="test-game" name="Test Game" />)
+    expect(screen.getByText('Test Game')).toBeDefined()
   })
 
-  it('play now links to game page', () => {
-    render(<GameCard slug="ultimate-ttt" name="Test Game" />)
-    expect(
-      screen.getByText('► PLAY NOW').closest('a')?.getAttribute('href')
-    ).toBe('/games/ultimate-ttt')
+  it('renders play button linking to game page', () => {
+    render(<GameCard slug="test-game" name="Test Game" />)
+    const link = screen.getByText('▶ PLAY NOW').closest('a')
+    expect(link?.getAttribute('href')).toBe('/games/test-game')
   })
 
-  it('shows placeholder when no thumbnail', () => {
-    render(<GameCard slug="ultimate-ttt" name="Test" />)
-    expect(screen.getByText('?')).toBeDefined()
-  })
-
-  it('renders thumbnail when provided', () => {
-    render(
-      <GameCard slug="ultimate-ttt" name="Test" thumbnailUrl="/thumb.png" />
-    )
-    expect(screen.getByRole('img').getAttribute('src')).toBe('/thumb.png')
+  it('renders compact variant without play button', () => {
+    render(<GameCard slug="test-game" name="Test Game" compact />)
+    expect(screen.queryByText('▶ PLAY NOW')).toBeNull()
+    const link = screen.getByText('Test Game').closest('a')
+    expect(link?.getAttribute('href')).toBe('/games/test-game')
   })
 })

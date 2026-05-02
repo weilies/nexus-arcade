@@ -4,45 +4,43 @@ interface GameCardProps {
   slug: string
   name: string
   thumbnailUrl?: string
+  compact?: boolean
 }
 
-export function GameCard({ slug, name, thumbnailUrl }: GameCardProps) {
+export function GameCard({ slug, name, thumbnailUrl, compact = false }: GameCardProps) {
+  if (compact) {
+    return (
+      <Link href={`/games/${slug}`}
+            className="flex items-center gap-4 bg-white rounded-card p-4 border-2 border-meadow-wheat shadow-card hover:shadow-md transition-shadow">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
+             style={{ background: '#f7d4d4' }}>
+          {thumbnailUrl ? <img src={thumbnailUrl} alt={name} className="w-full h-full object-cover rounded-2xl" /> : '🎮'}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-pixel text-xl font-semibold text-meadow-dark truncate">{name}</div>
+          <div className="text-sm text-meadow-earth mt-0.5">🎮 Classic battle</div>
+        </div>
+        <span className="text-2xl flex-shrink-0">▶️</span>
+      </Link>
+    )
+  }
+
   return (
-    <div className="crt-border bg-arcade-panel p-4 flex flex-col gap-4 dither-bg relative overflow-hidden">
-      {/* Corner decorations */}
-      <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-arcade-amber" />
-      <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-arcade-amber" />
-      <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-arcade-amber" />
-      <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-arcade-amber" />
-
-      {/* Thumbnail */}
-      <div className="bg-arcade-bg border border-arcade-dim flex items-center justify-center h-36 relative overflow-hidden"
-           style={{ boxShadow: 'inset 0 0 20px #00000088' }}>
-        {thumbnailUrl ? (
-          <img src={thumbnailUrl} alt={name} className="h-full w-full object-cover" />
-        ) : (
-          <div className="text-center">
-            <div className="font-pixel text-arcade-amber-dim text-2xl mb-2">?</div>
-            <div className="font-mono text-arcade-dim text-xs">NO PREVIEW</div>
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-arcade-panel to-transparent opacity-40" />
+    <div className="bg-white rounded-card p-4 border-2 border-amber-light shadow-card">
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
+             style={{ background: '#f7d4d4' }}>
+          {thumbnailUrl ? <img src={thumbnailUrl} alt={name} className="w-full h-full object-cover rounded-2xl" /> : '🎮'}
+        </div>
+        <div>
+          <div className="font-pixel text-xl font-semibold text-meadow-dark">{name}</div>
+          <div className="text-sm text-meadow-earth mt-0.5">🎮 Classic battle</div>
+        </div>
       </div>
-
-      {/* Name */}
-      <div className="font-pixel text-arcade-amber text-[10px] tracking-widest text-glow-amber leading-relaxed">
-        {name.toUpperCase()}
-      </div>
-
-      {/* Play button */}
-      <Link href={`/games/${slug}`} className="btn-pixel btn-pixel-hot text-center block">
+      <Link href={`/games/${slug}`}
+            className="btn-primary mt-4 block text-center">
         ▶ PLAY NOW
       </Link>
-
-      {/* Status ticker */}
-      <div className="font-mono text-arcade-green text-[9px] text-glow-green tracking-widest">
-        ● LIVE
-      </div>
     </div>
   )
 }
