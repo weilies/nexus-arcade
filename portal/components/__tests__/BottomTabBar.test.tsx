@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { BottomTabBar } from '../BottomTabBar'
+
+let mockUser: { id: string; email: string; user_metadata: Record<string, string> } | null = null
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/',
@@ -10,7 +12,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/supabase/browser', () => ({
   createClient: () => ({
     auth: {
-      getUser: () => Promise.resolve({ data: { user: null } }),
+      getUser: () => Promise.resolve({ data: { user: mockUser } }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
     },
     from: () => ({
@@ -26,7 +28,8 @@ vi.mock('@/lib/supabase/browser', () => ({
 }))
 
 describe('BottomTabBar', () => {
-  it('renders nav tabs and sign in', () => {
+  it('renders nav tabs and sign in when logged out', () => {
+    mockUser = null
     render(<BottomTabBar />)
     expect(screen.getAllByText('HOME')).toHaveLength(2)
     expect(screen.getAllByText('GAMES')).toHaveLength(2)
@@ -39,7 +42,17 @@ describe('BottomTabBar', () => {
   })
 
   it('does not show admin link for non-admin users', () => {
+    mockUser = null
     render(<BottomTabBar />)
     expect(screen.queryByText('ADMIN')).toBeNull()
+  })
+
+  it('shows SIGN OUT when user is signed in', async () => {
+    mockUser = { id: '123', email: 'test@example.com', user_metadata: { full_name: 'Test User' } }
+    render(<BottomTabBar />)
+    await waitFor(() => {
+      expect(screen.getAllByText('SIGN OUT')).toHaveLength(2)
+    })
+    mockUser = null
   })
 })

@@ -121,7 +121,7 @@ export function BottomTabBar({ hideOn = [] }: BottomTabBarProps) {
             className="font-pixel text-xs font-semibold bg-transparent border-none cursor-pointer min-h-[48px] px-2"
             style={{ color: '#8888aa' }}
           >
-            {authLabel.toUpperCase().slice(0, 8)}
+            SIGN OUT
           </button>
         ) : (
           <Link
@@ -228,7 +228,7 @@ export function BottomTabBar({ hideOn = [] }: BottomTabBarProps) {
             className="flex items-center gap-2 px-4 py-2 min-h-[48px] bg-transparent border-none cursor-pointer"
           >
             <span className="font-pixel text-sm font-semibold" style={{ color: '#8888aa' }}>
-              {authLabel.toUpperCase()}
+              SIGN OUT
             </span>
           </button>
         ) : (
