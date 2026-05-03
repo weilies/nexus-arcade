@@ -3,10 +3,11 @@ import type { Game } from './games'
 
 export async function getAllGames(): Promise<Game[]> {
   const supabase = createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('games')
     .select('*')
     .order('launched_at', { ascending: true })
+  if (error) throw error
   return data ?? []
 }
 

@@ -1,43 +1,91 @@
 import { getAllLiveGames } from '@/lib/data/games'
 import { GameCard } from '@/components/GameCard'
 
+const ACCENT_COLORS = ['#00e5ff', '#ff2d95', '#b366ff', '#ffd700', '#00ff88']
+
 export default async function GamesPage() {
   const games = await getAllLiveGames()
 
   return (
-    <div className="min-h-screen flex flex-col items-center px-4 py-8 bg-retro-glow">
-      <div className="w-full max-w-2xl">
-        <div className="text-center mb-6">
-          <div className="text-4xl">🕹️</div>
-          <h1 className="font-pixel text-2xl font-bold text-[#e8e8f0] mt-2">GAMES</h1>
-          <p className="font-pixel text-sm text-[#8888aa] mt-1">Pick your adventure!</p>
+    <div className="min-h-screen bg-retro-glow bg-retro-grid px-4 py-10 pb-24 md:pb-10">
+      <div className="max-w-5xl mx-auto">
+
+        {/* Header */}
+        <div className="text-center mb-10">
+          <div className="flex items-center justify-center gap-4 mb-3">
+            <div style={{ flex: 1, maxWidth: '100px', height: '1px', background: 'linear-gradient(to right, transparent, #00e5ff66)' }} />
+            <h1
+              style={{
+                fontFamily: 'Orbitron, sans-serif',
+                fontSize: 'clamp(20px, 5vw, 32px)',
+                fontWeight: '900',
+                color: '#e8e8f0',
+                letterSpacing: '0.18em',
+                textShadow: '0 0 24px rgba(0,229,255,0.5), 0 0 48px rgba(0,229,255,0.2)',
+                textTransform: 'uppercase',
+              }}
+            >
+              GAME SELECT
+            </h1>
+            <div style={{ flex: 1, maxWidth: '100px', height: '1px', background: 'linear-gradient(to left, transparent, #00e5ff66)' }} />
+          </div>
+          <p
+            style={{
+              fontFamily: 'Orbitron, sans-serif',
+              fontSize: '10px',
+              color: '#444466',
+              letterSpacing: '0.25em',
+              textTransform: 'uppercase',
+            }}
+          >
+            PLAYER 1 &mdash; CHOOSE YOUR STAGE
+          </p>
         </div>
 
+        {/* Grid */}
         {games.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {games.map((game) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {games.map((game, i) => (
               <GameCard
                 key={game.id}
                 slug={game.slug}
                 name={game.name}
                 description={game.description}
                 thumbnailUrl={game.thumbnail_url}
-                compact
+                accentColor={ACCENT_COLORS[i % ACCENT_COLORS.length]}
+                stageNum={i + 1}
               />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-4 bg-[#1a1a2e] rounded-xl p-4 border border-[#2a2a4a] opacity-60">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
-                   style={{ background: 'rgba(0,229,255,0.06)' }}>
-                ❓
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[1, 2, 3].map((n) => (
+              <div
+                key={n}
+                style={{
+                  borderTop: '3px solid #1a1a3a',
+                  border: '1px solid #1a1a3a',
+                  borderRadius: '2px',
+                  overflow: 'hidden',
+                  background: '#07071a',
+                  opacity: 0.45,
+                }}
+              >
+                <div style={{ padding: '5px 12px', background: '#0f0f22', borderBottom: '1px solid #1a1a3a' }}>
+                  <span style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '10px', color: '#333355', letterSpacing: '0.18em' }}>
+                    STAGE {String(n).padStart(2, '0')}
+                  </span>
+                </div>
+                <div style={{ aspectRatio: '16/9', background: '#040410', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '28px', color: '#222244' }}>?</span>
+                </div>
+                <div style={{ padding: '10px 14px 13px' }}>
+                  <div style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '13px', color: '#222244', letterSpacing: '0.05em' }}>
+                    COMING SOON
+                  </div>
+                </div>
               </div>
-              <div className="flex-1">
-                <div className="font-pixel text-xl font-semibold text-[#666688]">Coming Soon</div>
-                <div className="text-sm text-[#555577]">More games on the way</div>
-              </div>
-            </div>
+            ))}
           </div>
         )}
       </div>

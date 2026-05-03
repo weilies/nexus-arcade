@@ -14,23 +14,23 @@ export default function HomePage() {
             </h1>
           </div>
 
-          <div className="space-y-2 mb-5">
+          <div className="space-y-2 mb-5 text-left">
             <p className="font-pixel text-sm text-[#aaaacc]">
-              <span style={{ color: 'var(--neon-cyan)' }}>▸</span> Neon nights ignite pixel fights.
+              <span className="blink-star" style={{ color: 'var(--neon-cyan)', animationDuration: '1.3s', animationDelay: '0s' }}>▸</span> Neon nights ignite pixel fights.
             </p>
             <p className="font-pixel text-sm text-[#aaaacc]">
-              <span style={{ color: 'var(--neon-magenta)' }}>▸</span> Coins drop loud in arcade halls.
+              <span className="blink-star" style={{ color: 'var(--neon-magenta)', animationDuration: '2.1s', animationDelay: '0.7s' }}>▸</span> Coins drop loud in arcade halls.
             </p>
             <p className="font-pixel text-sm text-[#aaaacc]">
-              <span style={{ color: 'var(--neon-purple)' }}>▸</span> Conquer rounds under neon lights.
+              <span className="blink-star" style={{ color: 'var(--neon-purple)', animationDuration: '1.7s', animationDelay: '1.5s' }}>▸</span> Conquer rounds under neon lights.
             </p>
             <p className="font-pixel text-sm text-[#aaaacc]">
-              <span style={{ color: 'var(--neon-gold)' }}>▸</span> Legends echo through these walls.
+              <span className="blink-star" style={{ color: 'var(--neon-gold)', animationDuration: '2.4s', animationDelay: '0.4s' }}>▸</span> Legends echo through these walls.
             </p>
           </div>
 
           <div
-            className="font-pixel text-sm blink-arcade"
+            className="font-pixel text-sm blink-insert text-right"
             style={{ color: 'var(--neon-gold)', textShadow: '0 0 10px rgba(255,215,0,0.7)' }}
           >
             -INSERT COIN-

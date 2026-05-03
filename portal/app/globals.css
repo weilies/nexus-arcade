@@ -150,6 +150,24 @@ html, body {
   animation: blink-arcade 0.8s step-start infinite;
 }
 
+/* Star blink — override animationDuration/animationDelay per element for random feel */
+@keyframes blink-star {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.blink-star {
+  animation: blink-star 1.5s step-start infinite;
+}
+
+/* Insert-coin blink — slower, word shows 75% of cycle */
+@keyframes blink-insert {
+  0%, 74% { opacity: 1; }
+  75%, 100% { opacity: 0; }
+}
+.blink-insert {
+  animation: blink-insert 2.5s step-start infinite;
+}
+
 /* Horizon glow — neon gradient for page backgrounds */
 .bg-retro-glow {
   background:
@@ -157,3 +175,49 @@ html, body {
     radial-gradient(ellipse at 50% 100%, rgba(255, 45, 149, 0.08) 0%, transparent 50%),
     var(--bg-deep);
 }
+
+/* Game card — arcade marquee style */
+.game-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.game-card:hover {
+  transform: scale(1.025) translateY(-2px);
+  box-shadow: 0 0 32px var(--card-glow, rgba(0, 229, 255, 0.3)), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Auth OAuth buttons */
+.oauth-btn {
+  flex: 1;
+  background: #0a0a1e;
+  border: 1px solid #1e1e3a;
+  border-radius: 2px;
+  padding: 11px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #555577;
+  cursor: pointer;
+  min-height: 44px;
+  letter-spacing: 0.12em;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.oauth-btn:hover {
+  background: #0f0f25;
+  color: #aaaacc;
+}
+.oauth-btn.google:hover { border-color: rgba(0, 229, 255, 0.35); }
+.oauth-btn.discord:hover { border-color: rgba(179, 102, 255, 0.35); }
+
+/* Admin game row */
+.admin-game-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #0a0a1e;
+  border: 1px solid #1a1a32;
+  border-radius: 2px;
+  padding: 12px;
+  border-left-width: 3px;
+  transition: border-color 0.15s;
+}
+.admin-game-row:hover { background: #0d0d25; }

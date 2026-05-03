@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/browser'
 import type { User } from '@supabase/supabase-js'
@@ -13,13 +13,13 @@ const NAV_TABS = [
 
 interface BottomTabBarProps {
   hideOn?: string[]
+  serverIsAdmin?: boolean
 }
 
-export function BottomTabBar({ hideOn = [] }: BottomTabBarProps) {
+export function BottomTabBar({ hideOn = [], serverIsAdmin = false }: BottomTabBarProps) {
   const pathname = usePathname()
-  const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(serverIsAdmin)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -70,23 +70,12 @@ export function BottomTabBar({ hideOn = [] }: BottomTabBarProps) {
     }
   }, [menuOpen])
 
-  async function handleSignOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/')
-    router.refresh()
-  }
-
   if (hideOn.includes(pathname)) return null
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/'
     return pathname.startsWith(href)
   }
-
-  const authLabel = user
-    ? (user.user_metadata?.full_name?.split(' ')[0] ?? user.email?.split('@')[0] ?? 'ME')
-    : 'SIGN IN'
 
   const barBg = 'rgba(10,10,26,0.96)'
   const barBorder = 'rgba(42,42,74,0.6)'
@@ -116,13 +105,15 @@ export function BottomTabBar({ hideOn = [] }: BottomTabBarProps) {
 
         {/* Auth */}
         {user ? (
-          <button
-            onClick={handleSignOut}
-            className="font-pixel text-xs font-semibold bg-transparent border-none cursor-pointer min-h-[48px] px-2"
-            style={{ color: '#8888aa' }}
-          >
-            SIGN OUT
-          </button>
+          <form action="/auth/signout" method="post">
+            <button
+              type="submit"
+              className="font-pixel text-xs font-semibold bg-transparent border-none cursor-pointer min-h-[48px] px-2"
+              style={{ color: '#8888aa' }}
+            >
+              SIGN OUT
+            </button>
+          </form>
         ) : (
           <Link
             href="/login"
@@ -223,14 +214,16 @@ export function BottomTabBar({ hideOn = [] }: BottomTabBarProps) {
           </Link>
         )}
         {user ? (
-          <button
-            onClick={handleSignOut}
-            className="flex items-center gap-2 px-4 py-2 min-h-[48px] bg-transparent border-none cursor-pointer"
-          >
-            <span className="font-pixel text-sm font-semibold" style={{ color: '#8888aa' }}>
-              SIGN OUT
-            </span>
-          </button>
+          <form action="/auth/signout" method="post">
+            <button
+              type="submit"
+              className="flex items-center gap-2 px-4 py-2 min-h-[48px] bg-transparent border-none cursor-pointer"
+            >
+              <span className="font-pixel text-sm font-semibold" style={{ color: '#8888aa' }}>
+                SIGN OUT
+              </span>
+            </button>
+          </form>
         ) : (
           <Link href="/login" className="flex items-center gap-2 px-4 py-2 min-h-[48px]">
             <span className="font-pixel text-sm font-semibold" style={{ color: 'rgba(136,136,170,0.5)' }}>

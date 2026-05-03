@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { BottomTabBar } from '@/components/BottomTabBar'
+import { isPlatformAdmin } from '@/lib/data/admin'
 
 export const metadata: Metadata = {
   title: 'Nexus Arcade',
@@ -12,11 +13,13 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const serverIsAdmin = await isPlatformAdmin()
+
   return (
     <html lang="en">
       <body className="min-h-screen flex flex-col bg-retro-glow">
-        <BottomTabBar hideOn={['/games/tictactoe']} />
+        <BottomTabBar hideOn={['/games/tictactoe']} serverIsAdmin={serverIsAdmin} />
         <main className="flex-1 flex flex-col pb-20 md:pb-0">
           {children}
         </main>

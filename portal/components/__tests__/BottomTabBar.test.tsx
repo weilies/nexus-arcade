@@ -6,7 +6,6 @@ let mockUser: { id: string; email: string; user_metadata: Record<string, string>
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/',
-  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }))
 
 vi.mock('@/lib/supabase/browser', () => ({

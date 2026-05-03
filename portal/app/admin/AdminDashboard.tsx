@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { getAllGames, createGame, updateGame, deleteGame } from '@/lib/data/games-admin'
 import type { Game } from '@/lib/data/games'
 
@@ -10,23 +10,88 @@ const STATUS_OPTIONS = [
   { value: 'retired', label: 'RETIRED' },
 ] as const
 
-const EMPTY_FORM: { slug: string; name: string; description: string; thumbnail_url: string; status: Game['status'] } = { slug: '', name: '', description: '', thumbnail_url: '', status: 'coming_soon' }
+const STATUS_COLOR: Record<Game['status'], string> = {
+  live: '#00ff88',
+  coming_soon: '#ffd700',
+  retired: '#ff2d95',
+}
 
-export function AdminDashboard() {
-  const [games, setGames] = useState<Game[]>([])
-  const [loading, setLoading] = useState(true)
+const EMPTY_FORM: { slug: string; name: string; description: string; thumbnail_url: string; status: Game['status'] } = {
+  slug: '',
+  name: '',
+  description: '',
+  thumbnail_url: '',
+  status: 'coming_soon',
+}
+
+interface AdminDashboardProps {
+  initialGames: Game[]
+  initialError: string | null
+}
+
+const panelStyle = (accentColor = '#ff2d95'): React.CSSProperties => ({
+  borderTop: `3px solid ${accentColor}`,
+  borderRight: `1px solid ${accentColor}28`,
+  borderBottom: `1px solid ${accentColor}28`,
+  borderLeft: `1px solid ${accentColor}28`,
+  borderRadius: '2px',
+  overflow: 'hidden',
+  background: '#07071a',
+  marginBottom: '20px',
+})
+
+const panelHeaderStyle = (accentColor = '#ff2d95'): React.CSSProperties => ({
+  padding: '6px 14px',
+  background: accentColor + '12',
+  borderBottom: `1px solid ${accentColor}22`,
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+})
+
+const panelTitleStyle = (accentColor = '#ff2d95'): React.CSSProperties => ({
+  fontFamily: 'Orbitron, sans-serif',
+  fontSize: '10px',
+  fontWeight: '700',
+  color: accentColor,
+  letterSpacing: '0.2em',
+  flex: 1,
+})
+
+const inputStyle: React.CSSProperties = {
+  borderRadius: '2px',
+  background: '#04040f',
+  borderColor: '#1e1e3a',
+}
+
+const fieldLabelStyle: React.CSSProperties = {
+  fontFamily: 'Orbitron, sans-serif',
+  fontSize: '9px',
+  fontWeight: '700',
+  color: '#333366',
+  letterSpacing: '0.18em',
+  marginBottom: '5px',
+}
+
+export function AdminDashboard({ initialGames, initialError }: AdminDashboardProps) {
+  const [games, setGames] = useState<Game[]>(initialGames)
+  const [loading, setLoading] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(initialError ?? '')
 
   const loadGames = useCallback(async () => {
-    const data = await getAllGames()
-    setGames(data)
-    setLoading(false)
+    setLoading(true)
+    try {
+      const data = await getAllGames()
+      setGames(data)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load games')
+    } finally {
+      setLoading(false)
+    }
   }, [])
-
-  useEffect(() => { loadGames() }, [loadGames])
 
   function handleEdit(game: Game) {
     setEditingId(game.id)
@@ -88,127 +153,295 @@ export function AdminDashboard() {
     setForm((prev) => ({ ...prev, [field]: value }))
   }
 
+  const formAccent = editingId ? '#ffd700' : '#ff2d95'
+
   return (
-    <div className="min-h-screen px-4 py-6 bg-retro-glow">
-      <div className="w-full max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="font-pixel text-2xl font-bold text-[#e8e8f0]">
-            ADMIN <span style={{ color: 'var(--neon-magenta)' }}>CMS</span>
-          </h1>
-          <a href="/" className="font-pixel text-xs" style={{ color: 'var(--neon-cyan)' }}>
-            ← BACK
+    <div className="min-h-screen bg-retro-glow bg-retro-grid px-4 py-8 pb-24 md:pb-8">
+      <div className="w-full max-w-4xl mx-auto">
+
+        {/* Page header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{
+                display: 'inline-block',
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#00ff88',
+                boxShadow: '0 0 8px #00ff88',
+              }} className="blink-star" />
+              <h1 style={{
+                fontFamily: 'Orbitron, sans-serif',
+                fontSize: '22px',
+                fontWeight: '900',
+                color: '#e8e8f0',
+                letterSpacing: '0.1em',
+              }}>
+                ADMIN <span style={{ color: '#ff2d95', textShadow: '0 0 12px rgba(255,45,149,0.5)' }}>CMS</span>
+              </h1>
+            </div>
+            <div style={{
+              fontFamily: 'Orbitron, sans-serif',
+              fontSize: '9px',
+              color: '#333355',
+              letterSpacing: '0.22em',
+              marginTop: '4px',
+            }}>
+              GAME MANAGEMENT TERMINAL
+            </div>
+          </div>
+          <a
+            href="/"
+            style={{
+              fontFamily: 'Orbitron, sans-serif',
+              fontSize: '10px',
+              color: '#00e5ff',
+              textDecoration: 'none',
+              letterSpacing: '0.15em',
+              padding: '8px 14px',
+              border: '1px solid rgba(0,229,255,0.25)',
+              borderRadius: '2px',
+              background: 'rgba(0,229,255,0.06)',
+            }}
+          >
+            ← EXIT
           </a>
         </div>
 
         {/* Add / Edit Form */}
-        <div className="card-panel mb-6">
-          <h2 className="font-pixel text-lg font-semibold text-[#e8e8f0] mb-4">
-            {editingId ? 'EDIT GAME' : 'ADD GAME'}
-          </h2>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input
-                className="input-field"
-                placeholder="Slug (e.g. tictactoe)"
-                value={form.slug}
-                onChange={(e) => setField('slug', e.target.value)}
-                required
-              />
-              <input
-                className="input-field"
-                placeholder="Name"
-                value={form.name}
-                onChange={(e) => setField('name', e.target.value)}
-                required
-              />
-            </div>
-            <input
-              className="input-field"
-              placeholder="Description"
-              value={form.description}
-              onChange={(e) => setField('description', e.target.value)}
-            />
-            <input
-              className="input-field"
-              placeholder="Thumbnail URL (optional)"
-              value={form.thumbnail_url}
-              onChange={(e) => setField('thumbnail_url', e.target.value)}
-            />
-            <div className="flex items-center gap-3">
-              <select
-                className="input-field w-auto"
-                value={form.status}
-                onChange={(e) => setField('status', e.target.value)}
-              >
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-              <button type="submit" disabled={saving} className="btn-primary flex-1">
-                {saving ? 'SAVING...' : editingId ? 'UPDATE' : 'CREATE'}
-              </button>
-              {editingId && (
-                <button type="button" onClick={handleCancel} className="btn-secondary">
-                  CANCEL
-                </button>
-              )}
-            </div>
-            {error && (
-              <div className="text-sm font-pixel p-2 rounded-lg" style={{ background: 'rgba(255,45,149,0.15)', color: 'var(--neon-magenta)' }}>
-                {error}
+        <div style={panelStyle(formAccent)}>
+          <div style={panelHeaderStyle(formAccent)}>
+            <span style={{ fontSize: '8px', color: formAccent + '55', letterSpacing: '3px' }}>■ ■</span>
+            <span style={panelTitleStyle(formAccent)}>
+              {editingId ? 'EDIT GAME ENTRY' : 'ADD GAME ENTRY'}
+            </span>
+            <span style={{ fontSize: '8px', color: formAccent + '55', letterSpacing: '3px' }}>■ ■</span>
+          </div>
+          <div style={{ padding: '20px' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <div style={fieldLabelStyle}>SLUG</div>
+                  <input
+                    className="input-field"
+                    style={inputStyle}
+                    placeholder="e.g. tictactoe"
+                    value={form.slug}
+                    onChange={(e) => setField('slug', e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <div style={fieldLabelStyle}>NAME</div>
+                  <input
+                    className="input-field"
+                    style={inputStyle}
+                    placeholder="Game Name"
+                    value={form.name}
+                    onChange={(e) => setField('name', e.target.value)}
+                    required
+                  />
+                </div>
               </div>
-            )}
-          </form>
+              <div>
+                <div style={fieldLabelStyle}>DESCRIPTION</div>
+                <input
+                  className="input-field"
+                  style={inputStyle}
+                  placeholder="Short description"
+                  value={form.description}
+                  onChange={(e) => setField('description', e.target.value)}
+                />
+              </div>
+              <div>
+                <div style={fieldLabelStyle}>THUMBNAIL URL</div>
+                <input
+                  className="input-field"
+                  style={inputStyle}
+                  placeholder="https://... (optional)"
+                  value={form.thumbnail_url}
+                  onChange={(e) => setField('thumbnail_url', e.target.value)}
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
+                <div style={{ flexShrink: 0 }}>
+                  <div style={fieldLabelStyle}>STATUS</div>
+                  <select
+                    className="input-field"
+                    style={{ ...inputStyle, width: 'auto', paddingRight: '32px' }}
+                    value={form.status}
+                    onChange={(e) => setField('status', e.target.value)}
+                  >
+                    {STATUS_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <button type="submit" disabled={saving} className="btn-primary flex-1" style={{ borderRadius: '2px', flex: 1 }}>
+                  {saving ? 'SAVING...' : editingId ? 'UPDATE' : 'CREATE'}
+                </button>
+                {editingId && (
+                  <button type="button" onClick={handleCancel} className="btn-secondary" style={{ borderRadius: '2px', whiteSpace: 'nowrap' }}>
+                    CANCEL
+                  </button>
+                )}
+              </div>
+              {error && (
+                <div style={{
+                  background: 'rgba(255,45,149,0.08)',
+                  border: '1px solid rgba(255,45,149,0.3)',
+                  borderRadius: '2px',
+                  padding: '10px 12px',
+                  fontFamily: 'Orbitron, sans-serif',
+                  fontSize: '10px',
+                  color: '#ff6b9d',
+                  letterSpacing: '0.05em',
+                }}>
+                  ERR: {error}
+                </div>
+              )}
+            </form>
+          </div>
         </div>
 
         {/* Game List */}
-        <div className="card-panel">
-          <h2 className="font-pixel text-lg font-semibold text-[#e8e8f0] mb-4">
-            ALL GAMES ({games.length})
-          </h2>
-          {loading ? (
-            <div className="font-pixel text-sm text-[#8888aa]">Loading...</div>
-          ) : games.length === 0 ? (
-            <div className="font-pixel text-sm text-[#666688]">No games yet.</div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {games.map((game) => (
-                <div key={game.id}
-                     className="flex items-center gap-4 bg-[#12122a] rounded-xl p-4 border border-[#2a2a4a]">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-                       style={{ background: 'rgba(0,229,255,0.1)' }}>
-                    {game.thumbnail_url ? <img src={game.thumbnail_url} alt="" className="w-full h-full object-cover rounded-2xl" /> : '🎮'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-pixel text-lg font-semibold text-[#e8e8f0] truncate">{game.name}</div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <code className="text-xs text-[#666688]">{game.slug}</code>
-                      <span className="text-xs font-pixel px-2 py-0.5 rounded-full"
-                            style={{
-                              background: game.status === 'live' ? 'rgba(0,255,136,0.15)' : game.status === 'retired' ? 'rgba(255,45,149,0.15)' : 'rgba(255,215,0,0.15)',
-                              color: game.status === 'live' ? 'var(--neon-green)' : game.status === 'retired' ? 'var(--neon-magenta)' : 'var(--neon-gold)',
-                            }}>
-                        {game.status.toUpperCase()}
-                      </span>
+        <div style={panelStyle('#00e5ff')}>
+          <div style={panelHeaderStyle('#00e5ff')}>
+            <span style={{ fontSize: '8px', color: '#00e5ff55', letterSpacing: '3px' }}>■ ■</span>
+            <span style={panelTitleStyle('#00e5ff')}>
+              ALL GAMES
+            </span>
+            <span style={{
+              fontFamily: 'Orbitron, sans-serif',
+              fontSize: '10px',
+              fontWeight: '700',
+              color: '#00e5ff66',
+              letterSpacing: '0.12em',
+            }}>
+              {games.length} ENTRIES
+            </span>
+          </div>
+          <div style={{ padding: '16px' }}>
+            {loading ? (
+              <div style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '11px', color: '#333355', letterSpacing: '0.15em', padding: '12px 0' }}>
+                LOADING...
+              </div>
+            ) : games.length === 0 ? (
+              <div style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '11px', color: '#222244', letterSpacing: '0.15em', padding: '12px 0' }}>
+                NO ENTRIES FOUND
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {games.map((game) => {
+                  const statusColor = STATUS_COLOR[game.status]
+                  return (
+                    <div
+                      key={game.id}
+                      className="admin-game-row"
+                      style={{ borderLeftColor: statusColor }}
+                    >
+                      {/* Thumbnail */}
+                      <div
+                        style={{
+                          width: '44px',
+                          height: '44px',
+                          borderRadius: '2px',
+                          flexShrink: 0,
+                          overflow: 'hidden',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: statusColor + '12',
+                          fontSize: '20px',
+                        }}
+                      >
+                        {game.thumbnail_url ? (
+                          <img src={game.thumbnail_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          '🎮'
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontFamily: 'Orbitron, sans-serif',
+                          fontSize: '13px',
+                          fontWeight: '700',
+                          color: '#e8e8f0',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          textShadow: `0 0 8px ${statusColor}44`,
+                        }}>
+                          {game.name}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
+                          <code style={{ fontSize: '11px', color: '#333355', fontFamily: 'monospace' }}>{game.slug}</code>
+                          <span style={{
+                            fontFamily: 'Orbitron, sans-serif',
+                            fontSize: '9px',
+                            fontWeight: '700',
+                            color: statusColor,
+                            letterSpacing: '0.12em',
+                            padding: '2px 6px',
+                            border: `1px solid ${statusColor}40`,
+                            borderRadius: '1px',
+                            background: statusColor + '14',
+                          }}>
+                            {game.status.toUpperCase().replace('_', ' ')}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                        <button
+                          onClick={() => handleEdit(game)}
+                          style={{
+                            fontFamily: 'Orbitron, sans-serif',
+                            fontSize: '10px',
+                            fontWeight: '700',
+                            padding: '8px 12px',
+                            background: 'rgba(0,229,255,0.08)',
+                            border: '1px solid rgba(0,229,255,0.25)',
+                            borderRadius: '2px',
+                            color: '#00e5ff',
+                            cursor: 'pointer',
+                            letterSpacing: '0.1em',
+                            minHeight: '36px',
+                          }}
+                        >
+                          EDIT
+                        </button>
+                        <button
+                          onClick={() => handleDelete(game.id)}
+                          style={{
+                            fontFamily: 'Orbitron, sans-serif',
+                            fontSize: '10px',
+                            fontWeight: '700',
+                            padding: '8px 12px',
+                            background: 'rgba(255,45,149,0.08)',
+                            border: '1px solid rgba(255,45,149,0.25)',
+                            borderRadius: '2px',
+                            color: '#ff2d95',
+                            cursor: 'pointer',
+                            letterSpacing: '0.1em',
+                            minHeight: '36px',
+                          }}
+                        >
+                          DEL
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => handleEdit(game)}
-                            className="font-pixel text-xs px-3 py-2 rounded-lg border-none cursor-pointer min-h-[40px]"
-                            style={{ background: 'rgba(0,229,255,0.15)', color: 'var(--neon-cyan)' }}>
-                      EDIT
-                    </button>
-                    <button onClick={() => handleDelete(game.id)}
-                            className="font-pixel text-xs px-3 py-2 rounded-lg border-none cursor-pointer min-h-[40px]"
-                            style={{ background: 'rgba(255,45,149,0.15)', color: 'var(--neon-magenta)' }}>
-                      DEL
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
+
       </div>
     </div>
   )
