@@ -9,9 +9,6 @@ games/*/web-export/
 games/*/.godot/
 *.import
 
-# Build artifacts
-portal/public/games/
-
 # Superpowers brainstorm
 .superpowers/
 
