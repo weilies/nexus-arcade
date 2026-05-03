@@ -31,7 +31,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        pixel: ['"Pixelify Sans"', 'sans-serif'],
+        pixel: ['"Orbitron"', 'sans-serif'],
       },
       borderRadius: {
         card: '16px',
