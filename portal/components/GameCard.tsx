@@ -3,38 +3,42 @@ import Link from 'next/link'
 interface GameCardProps {
   slug: string
   name: string
-  thumbnailUrl?: string
+  description?: string | null
+  thumbnailUrl?: string | null
   compact?: boolean
 }
 
-export function GameCard({ slug, name, thumbnailUrl, compact = false }: GameCardProps) {
+export function GameCard({ slug, name, description, thumbnailUrl, compact = false }: GameCardProps) {
   if (compact) {
     return (
       <Link href={`/games/${slug}`}
-            className="flex items-center gap-4 bg-white rounded-card p-4 border-2 border-meadow-wheat shadow-card hover:shadow-md transition-shadow">
+            className="flex items-center gap-4 bg-[#1a1a2e] rounded-xl p-4 border border-[#2a2a4a] shadow-lg hover:border-[#3a3a66] hover:shadow-[0_0_16px_rgba(0,229,255,0.1)] transition-all">
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
-             style={{ background: '#f7d4d4' }}>
+             style={{ background: 'rgba(0,229,255,0.1)' }}>
           {thumbnailUrl ? <img src={thumbnailUrl} alt={name} className="w-full h-full object-cover rounded-2xl" /> : '🎮'}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-pixel text-xl font-semibold text-meadow-dark truncate">{name}</div>
-          <div className="text-sm text-meadow-earth mt-0.5">🎮 Classic battle</div>
+          <div className="font-pixel text-xl font-semibold text-[#e8e8f0] truncate">{name}</div>
+          {description && (
+            <div className="text-sm text-[#8888aa] mt-0.5 truncate">{description}</div>
+          )}
         </div>
-        <span className="text-2xl flex-shrink-0">▶️</span>
       </Link>
     )
   }
 
   return (
-    <div className="bg-white rounded-card p-4 border-2 border-amber-light shadow-card">
+    <div className="bg-[#1a1a2e] rounded-xl p-4 border border-[#2a2a4a] shadow-lg">
       <div className="flex items-center gap-4">
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
-             style={{ background: '#f7d4d4' }}>
+             style={{ background: 'rgba(0,229,255,0.1)' }}>
           {thumbnailUrl ? <img src={thumbnailUrl} alt={name} className="w-full h-full object-cover rounded-2xl" /> : '🎮'}
         </div>
         <div>
-          <div className="font-pixel text-xl font-semibold text-meadow-dark">{name}</div>
-          <div className="text-sm text-meadow-earth mt-0.5">🎮 Classic battle</div>
+          <div className="font-pixel text-xl font-semibold text-[#e8e8f0]">{name}</div>
+          {description && (
+            <div className="text-sm text-[#8888aa] mt-0.5">{description}</div>
+          )}
         </div>
       </div>
       <Link href={`/games/${slug}`}

@@ -4,6 +4,8 @@ export interface Game {
   id: string
   slug: string
   name: string
+  description: string | null
+  thumbnail_url: string | null
   status: 'coming_soon' | 'live' | 'retired'
   launched_at: string | null
 }

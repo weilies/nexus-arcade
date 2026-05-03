@@ -1,41 +1,37 @@
-import { GameCard } from '@/components/GameCard'
-import { getFeaturedGame } from '@/lib/data/games'
-import Link from 'next/link'
-
-export default async function HomePage() {
-  const game = await getFeaturedGame()
-
+export default function HomePage() {
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center px-4 py-8"
-      style={{
-        background: 'linear-gradient(180deg, #87CEEB 0%, #82c45d 40%, #f4d03f 70%, #8B5E3C 100%)',
-      }}
-    >
-      <div className="card-panel w-full max-w-sm">
-        {/* Hero */}
-        <div className="text-center mb-5">
-          <div className="text-5xl">🏰</div>
-          <h1 className="font-pixel text-2xl font-bold text-meadow-dark mt-2">NEXUS ARCADE</h1>
-          <p className="font-pixel text-base text-meadow-earth mt-1">🎮 Casual games. Compete. Conquer.</p>
+    <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 bg-retro-glow">
+      <div className="card-panel w-full max-w-sm text-center">
+        {/* Minion + title — same row */}
+        <div className="flex items-center justify-center gap-3 mb-3">
+          <span className="text-5xl" style={{ textShadow: '0 0 20px rgba(255,45,149,0.6)' }}>👾</span>
+          <h1 className="font-pixel text-2xl font-bold text-[#e8e8f0]">
+            NEXUS <span style={{ color: 'var(--neon-cyan)' }}>ARCADE</span>
+          </h1>
         </div>
 
-        {/* Featured game */}
-        {game ? (
-          <GameCard slug={game.slug} name={game.name} />
-        ) : (
-          <div className="bg-white rounded-card p-6 border-2 border-meadow-wheat shadow-card text-center">
-            <div className="text-4xl mb-3">🎮</div>
-            <div className="font-pixel text-lg text-ui-muted">No games live yet</div>
-            <div className="text-sm text-meadow-earth mt-1">Check back soon!</div>
-          </div>
-        )}
+        {/* Malay pantun — ABAB rhyme: fights/lights, halls/walls */}
+        <div className="space-y-2 mb-5">
+          <p className="font-pixel text-sm text-[#aaaacc]">
+            <span style={{ color: 'var(--neon-cyan)' }}>▸</span> Neon nights ignite pixel fights.
+          </p>
+          <p className="font-pixel text-sm text-[#aaaacc]">
+            <span style={{ color: 'var(--neon-magenta)' }}>▸</span> Coins drop loud in arcade halls.
+          </p>
+          <p className="font-pixel text-sm text-[#aaaacc]">
+            <span style={{ color: 'var(--neon-purple)' }}>▸</span> Conquer rounds under neon lights.
+          </p>
+          <p className="font-pixel text-sm text-[#aaaacc]">
+            <span style={{ color: 'var(--neon-gold)' }}>▸</span> Legends echo through these walls.
+          </p>
+        </div>
 
-        {/* More Games link */}
-        <div className="text-center mt-4">
-          <Link href="/games" className="btn-secondary inline-block">
-            🕹️ MORE GAMES
-          </Link>
+        {/* Arcade blink */}
+        <div
+          className="font-pixel text-sm blink-arcade"
+          style={{ color: 'var(--neon-gold)', textShadow: '0 0 10px rgba(255,215,0,0.7)' }}
+        >
+          -INSERT COIN-
         </div>
       </div>
     </div>

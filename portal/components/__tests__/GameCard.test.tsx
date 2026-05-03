@@ -8,6 +8,11 @@ describe('GameCard', () => {
     expect(screen.getByText('Test Game')).toBeDefined()
   })
 
+  it('renders description when provided', () => {
+    render(<GameCard slug="test-game" name="Test Game" description="A fun test game" />)
+    expect(screen.getByText('A fun test game')).toBeDefined()
+  })
+
   it('renders play button linking to game page', () => {
     render(<GameCard slug="test-game" name="Test Game" />)
     const link = screen.getByText('▶ PLAY NOW').closest('a')

@@ -42,10 +42,15 @@ export function GameFrame({ slug, gameName, matchId }: GameFrameProps) {
     <div className="w-full h-full flex flex-col">
       {/* Game title bar */}
       <div className="font-pixel text-sm tracking-wide py-2 px-4 text-center border-b flex items-center justify-between"
-           style={{ background: '#5a3a1f', color: '#FFF8EB', borderColor: '#8B5E3C', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-        <span className="text-xs opacity-60">◄ NEXUS ARCADE</span>
-        <span className="font-semibold">▶ {gameName.toUpperCase()}</span>
-        <span className="text-xs font-semibold" style={{ color: '#82c45d' }}>● LIVE</span>
+           style={{
+             background: 'rgba(10,10,26,0.96)',
+             color: 'var(--text-secondary)',
+             borderColor: 'var(--border-dim)',
+             boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+           }}>
+        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>NEXUS ARCADE</span>
+        <span className="font-semibold" style={{ color: 'var(--neon-cyan)' }}>▶ {gameName.toUpperCase()}</span>
+        <span className="text-xs font-semibold" style={{ color: 'var(--neon-green)' }}>● LIVE</span>
       </div>
       <iframe
         ref={iframeRef}

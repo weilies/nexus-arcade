@@ -12,7 +12,7 @@ export default async function GamePage({ params, searchParams }: Props) {
   if (!game || game.status !== 'live') notFound()
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#5a3a1f' }}>
+    <div className="h-screen flex flex-col overflow-hidden bg-[#0a0a1a]">
       <div className="flex-1 flex flex-col">
         <GameFrame
           slug={params.slug}

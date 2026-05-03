@@ -51,16 +51,16 @@ export function AuthCard({ mode }: AuthCardProps) {
   }
 
   return (
-    <div className="bg-white rounded-card p-6 border-2 border-amber-light shadow-card w-full max-w-sm">
+    <div className="card-panel w-full max-w-sm border border-[#2a2a4a]">
       <div className="text-center mb-5">
         <span className="text-4xl block mb-2">{isSignIn ? '🔑' : '📝'}</span>
-        <h2 className="font-pixel text-2xl font-semibold text-meadow-dark">
+        <h2 className="font-pixel text-2xl font-semibold text-[#e8e8f0]">
           {isSignIn ? 'SIGN IN' : 'REGISTER'}
         </h2>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-input p-3 mb-4 text-sm text-red-700 text-center">
+        <div className="bg-[#330015] border border-[#ff2d95] rounded-xl p-3 mb-4 text-sm text-[#ff6b9d] text-center">
           {error}
         </div>
       )}
@@ -69,7 +69,7 @@ export function AuthCard({ mode }: AuthCardProps) {
         {!isSignIn && (
           <input
             className="input-field"
-            placeholder="👤 Username"
+            placeholder="Username"
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -78,7 +78,7 @@ export function AuthCard({ mode }: AuthCardProps) {
         )}
         <input
           className="input-field"
-          placeholder="📧 Email"
+          placeholder="Email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -86,7 +86,7 @@ export function AuthCard({ mode }: AuthCardProps) {
         />
         <input
           className="input-field"
-          placeholder="🔒 Password"
+          placeholder="Password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -96,29 +96,28 @@ export function AuthCard({ mode }: AuthCardProps) {
         <button
           type="submit"
           disabled={loading}
-          className={isSignIn ? 'btn-primary' : 'btn-primary'}
-          style={isSignIn ? {} : { background: 'linear-gradient(180deg, #82c45d, #5a8a3d)', boxShadow: '0 4px 0 #4a7a2d' }}
+          className={isSignIn ? 'btn-primary' : 'btn-secondary'}
         >
-          {loading ? '⏳ Please wait...' : isSignIn ? '🔑 SIGN IN' : '📝 CREATE ACCOUNT'}
+          {loading ? 'PLEASE WAIT...' : isSignIn ? 'SIGN IN' : 'CREATE ACCOUNT'}
         </button>
       </form>
 
-      <div className="text-center my-4 font-pixel text-sm text-ui-muted">— OR —</div>
+      <div className="text-center my-4 font-pixel text-sm text-[#666688]">OR</div>
 
       <div className="flex gap-3">
-        <button onClick={signInWithGoogle} className="flex-1 bg-gray-100 rounded-btn py-3 px-3 font-pixel text-sm hover:bg-gray-200 min-h-[48px]">
-          🔵 Google
+        <button onClick={signInWithGoogle} className="flex-1 bg-[#1a1a2e] border border-[#2a2a4a] rounded-xl py-3 px-3 font-pixel text-sm text-[#aaaacc] hover:border-[#3a3a66] hover:text-[#e8e8f0] min-h-[48px] transition-all">
+          Google
         </button>
-        <button onClick={signInWithDiscord} className="flex-1 bg-gray-100 rounded-btn py-3 px-3 font-pixel text-sm hover:bg-gray-200 min-h-[48px]">
-          🟣 Discord
+        <button onClick={signInWithDiscord} className="flex-1 bg-[#1a1a2e] border border-[#2a2a4a] rounded-xl py-3 px-3 font-pixel text-sm text-[#aaaacc] hover:border-[#3a3a66] hover:text-[#e8e8f0] min-h-[48px] transition-all">
+          Discord
         </button>
       </div>
 
-      <div className="text-center mt-5 text-sm" style={{ color: '#888' }}>
+      <div className="text-center mt-5 text-sm text-[#666688]">
         {isSignIn ? (
-          <>No account? <a href="/register" className="font-semibold" style={{ color: '#e8a040' }}>📝 Register here</a></>
+          <>No account? <a href="/register" className="font-semibold text-[#00e5ff]">Register here</a></>
         ) : (
-          <>Already have account? <a href="/login" className="font-semibold" style={{ color: '#e8a040' }}>🔑 Sign in</a></>
+          <>Already have account? <a href="/login" className="font-semibold text-[#00e5ff]">Sign in</a></>
         )}
       </div>
     </div>

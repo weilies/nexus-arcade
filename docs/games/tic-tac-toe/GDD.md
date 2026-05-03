@@ -41,6 +41,7 @@
 - **Easy:** AI picks a random valid cell each turn. Beatable by anyone.
 - **Hard:** AI runs full minimax (no depth limit — 3×3 is trivially fast). Unbeatable; best outcome is draw.
 - AI plays as O; player always plays as X.
+- **Thinking delay:** AI waits 1–3 seconds (random) before placing its mark, with animated "AI THINKING...." dots to simulate human deliberation. Player input is blocked during this window.
 
 ### Local 2P (same screen)
 - Alternating turns on same device.
@@ -235,4 +236,5 @@ Not in scope for v1. See Out of Scope.
 
 | Date | Author | Summary |
 |------|--------|---------|
+| 2026-05-02 | @weilies | Added AI thinking delay (1–3s random) with animated dots |
 | 2026-05-01 | @weilies | Initial draft — POC spec |

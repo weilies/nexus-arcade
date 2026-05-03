@@ -15,6 +15,11 @@ var _supabase_ref: SupabaseClient
 var _turn_timer: TurnTimer
 var _bridge: PortalBridge
 var _game_over_fired: bool = false
+var _ai_thinking: bool = false
+var _ai_move_cell: int = -1
+var _ai_think_timer: Timer
+var _ai_dots_timer: Timer
+var _ai_dots_count: int = 0
 
 func setup_vs_ai(difficulty: TicTacToeAI.Difficulty) -> void:
 	_mode = Mode.VS_AI
@@ -41,6 +46,16 @@ func _ready() -> void:
 		_turn_timer.setup($VBoxContainer/LblTimer)
 	add_child(_turn_timer)
 	_turn_timer.timed_out.connect(_on_turn_timeout)
+
+	_ai_think_timer = Timer.new()
+	_ai_think_timer.one_shot = true
+	_ai_think_timer.timeout.connect(_ai_do_move)
+	add_child(_ai_think_timer)
+
+	_ai_dots_timer = Timer.new()
+	_ai_dots_timer.wait_time = 0.5
+	_ai_dots_timer.timeout.connect(_ai_update_dots)
+	add_child(_ai_dots_timer)
 
 	$VBoxContainer/BtnHome.pressed.connect(_on_home)
 	_connect_cells()
@@ -72,6 +87,8 @@ func _on_cell_input(event: InputEvent, cell_index: int) -> void:
 		return
 	if not event.pressed or event.button_index != MOUSE_BUTTON_LEFT:
 		return
+	if _ai_thinking:
+		return
 	if _mode == Mode.ONLINE:
 		if _state.current_turn != _player_mark:
 			return
@@ -92,9 +109,23 @@ func _do_place(cell_index: int) -> void:
 		_ai_take_turn.call_deferred()
 
 func _ai_take_turn() -> void:
-	var cell = _ai.get_move(_state, _ai_difficulty)
-	if cell >= 0:
-		_do_place(cell)
+	_ai_move_cell = _ai.get_move(_state, _ai_difficulty)
+	if _ai_move_cell < 0:
+		return
+	_ai_thinking = true
+	_ai_dots_count = 0
+	_ai_dots_timer.start()
+	_ai_think_timer.start(randf_range(1.0, 3.0))
+
+func _ai_do_move() -> void:
+	_ai_dots_timer.stop()
+	_ai_thinking = false
+	_do_place(_ai_move_cell)
+
+func _ai_update_dots() -> void:
+	_ai_dots_count = (_ai_dots_count + 1) % 5
+	var dots = ".".repeat(_ai_dots_count)
+	$VBoxContainer/LblStatus.text = "AI THINKING" + dots
 
 func _do_place_online(cell_index: int) -> void:
 	if not _state.place(cell_index):
@@ -166,7 +197,7 @@ func _refresh_ui() -> void:
 		match _state.board[i]:
 			GameState.Player.X:
 				mark_label.text = "X"
-				mark_label.add_theme_color_override("font_color", Color("#00d4ff"))
+				mark_label.add_theme_color_override("font_color", Color("#00f2ff"))
 			GameState.Player.O:
 				mark_label.text = "O"
 				mark_label.add_theme_color_override("font_color", Color("#a855f7"))

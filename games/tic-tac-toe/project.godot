@@ -17,30 +17,31 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 config/name="Tic Tac Toe"
 run/main_scene="res://scenes/MainMenu.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
-config/icon="res://icon.svg"
 
 [autoload]
 
 Globals="*res://scripts/Globals.gd"
 SFX="*res://scripts/SFX.gd"
+FA6="*res://scripts/FA6.gd"
 
 [display]
 
 window/size/viewport_width=720
 window/size/viewport_height=960
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
 
 [editor_plugins]
 
 enabled=PackedStringArray()
 
-[supabase]
-
-url="https://mdvmxjxhfjovbpshbbzr.supabase.co"
-anon_key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kdm14anhoZmpvdmJwc2hiYnpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMTQ3MDgsImV4cCI6MjA5Mjc5MDcwOH0.i6iHsmg76Sjh3PjM9XF2USJWKfywn2OwUZ-mDa_i95g"
-
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+2d/snap/snap_2d_transforms_to_pixel=true
+2d/snap/snap_2d_vertices_to_pixel=true
+
+[supabase]
+
+url="https://mdvmxjxhfjovbpshbbzr.supabase.co"
+anon_key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kdm14anhoZmpvdmJwc2hiYnpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMTQ3MDgsImV4cCI6MjA5Mjc5MDcwOH0.i6iHsmg76Sjh3PjM9XF2USJWKfywn2OwUZ-mDa_i95g"

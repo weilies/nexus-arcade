@@ -15,34 +15,34 @@ vi.mock('@/lib/supabase/browser', () => ({
 describe('AuthCard', () => {
   it('renders sign in form when mode is signin', () => {
     render(<AuthCard mode="signin" />)
-    expect(screen.getByText('SIGN IN')).toBeDefined()
-    expect(screen.getByPlaceholderText('📧 Email')).toBeDefined()
-    expect(screen.getByPlaceholderText('🔒 Password')).toBeDefined()
+    expect(screen.getAllByText('SIGN IN')).toHaveLength(2)
+    expect(screen.getByPlaceholderText('Email')).toBeDefined()
+    expect(screen.getByPlaceholderText('Password')).toBeDefined()
   })
 
   it('renders register form when mode is register', () => {
     render(<AuthCard mode="register" />)
     expect(screen.getByText('REGISTER')).toBeDefined()
-    expect(screen.getByPlaceholderText('👤 Username')).toBeDefined()
-    expect(screen.getByPlaceholderText('📧 Email')).toBeDefined()
-    expect(screen.getByPlaceholderText('🔒 Password')).toBeDefined()
+    expect(screen.getByPlaceholderText('Username')).toBeDefined()
+    expect(screen.getByPlaceholderText('Email')).toBeDefined()
+    expect(screen.getByPlaceholderText('Password')).toBeDefined()
   })
 
   it('renders Google and Discord SSO buttons', () => {
     render(<AuthCard mode="signin" />)
-    expect(screen.getByText('🔵 Google')).toBeDefined()
-    expect(screen.getByText('🟣 Discord')).toBeDefined()
+    expect(screen.getByText('Google')).toBeDefined()
+    expect(screen.getByText('Discord')).toBeDefined()
   })
 
   it('shows register link in signin mode', () => {
     render(<AuthCard mode="signin" />)
-    const link = screen.getByText('📝 Register here')
+    const link = screen.getByText('Register here')
     expect(link.closest('a')?.getAttribute('href')).toBe('/register')
   })
 
   it('shows sign in link in register mode', () => {
     render(<AuthCard mode="register" />)
-    const link = screen.getByText('🔑 Sign in')
+    const link = screen.getByText('Sign in')
     expect(link.closest('a')?.getAttribute('href')).toBe('/login')
   })
 })
