@@ -41,6 +41,7 @@ horizontal_alignment = 1
 layout_mode = 2
 custom_minimum_size = Vector2(240, 0)
 text = "+ Create Room"
+theme_override_font_sizes/font_size = 32
 
 [node name="LblOr" type="Label" parent="VBoxContainer"]
 layout_mode = 2
@@ -62,6 +63,7 @@ max_length = 6
 [node name="BtnJoin" type="Button" parent="VBoxContainer/JoinRow"]
 layout_mode = 2
 text = "Join"
+theme_override_font_sizes/font_size = 32
 
 [node name="LblStatus" type="Label" parent="VBoxContainer"]
 layout_mode = 2
@@ -81,4 +83,5 @@ autowrap_mode = 3
 layout_mode = 2
 custom_minimum_size = Vector2(240, 0)
 text = "Back"
+theme_override_font_sizes/font_size = 32
 theme_override_colors/font_color = Color(0.392, 0.455, 0.573, 1)

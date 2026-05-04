@@ -39,16 +39,19 @@ horizontal_alignment = 1
 
 [node name="BtnEasy" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(360, 60)
+custom_minimum_size = Vector2(360, 80)
 text = "Easy"
+theme_override_font_sizes/font_size = 32
 
 [node name="BtnHard" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(360, 60)
+custom_minimum_size = Vector2(360, 80)
 text = "Hard — Unbeatable"
+theme_override_font_sizes/font_size = 32
 
 [node name="BtnBack" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(360, 56)
+custom_minimum_size = Vector2(360, 80)
 text = "Back"
+theme_override_font_sizes/font_size = 32
 theme_override_colors/font_color = Color(0.392, 0.455, 0.573, 1)

@@ -177,8 +177,9 @@ theme_override_colors/font_color = Color(0.659, 0.333, 0.969, 1)
 
 [node name="BtnHome" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(200, 52)
+custom_minimum_size = Vector2(200, 64)
 text = "Home"
+theme_override_font_sizes/font_size = 32
 theme_override_colors/font_color = Color(0.392, 0.455, 0.573, 1)
 
 [node name="Bridge" type="Node" parent="."]

@@ -42,24 +42,27 @@ horizontal_alignment = 1
 
 [node name="BtnVsAI" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(360, 60)
+custom_minimum_size = Vector2(360, 80)
 text = "  vs AI"
 icon = ExtResource("2_robot")
 expand_icon = true
-theme_override_constants/icon_max_width = 32
+theme_override_font_sizes/font_size = 32
+theme_override_constants/icon_max_width = 64
 
 [node name="BtnLocal" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(360, 60)
+custom_minimum_size = Vector2(360, 80)
 text = "  2P Local"
 icon = ExtResource("3_users")
 expand_icon = true
-theme_override_constants/icon_max_width = 32
+theme_override_font_sizes/font_size = 32
+theme_override_constants/icon_max_width = 64
 
 [node name="BtnOnline" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(360, 60)
+custom_minimum_size = Vector2(360, 80)
 text = "  2P Online"
 icon = ExtResource("4_globe")
 expand_icon = true
-theme_override_constants/icon_max_width = 32
+theme_override_font_sizes/font_size = 32
+theme_override_constants/icon_max_width = 64
