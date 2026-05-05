@@ -197,7 +197,7 @@ func _refresh_ui() -> void:
 		match _state.board[i]:
 			GameState.Player.X:
 				mark_label.text = "X"
-				mark_label.add_theme_color_override("font_color", Color("#00f2ff"))
+				mark_label.add_theme_color_override("font_color", Color("#00d4ff"))
 			GameState.Player.O:
 				mark_label.text = "O"
 				mark_label.add_theme_color_override("font_color", Color("#a855f7"))

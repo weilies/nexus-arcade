@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://game_over"]
+[gd_scene load_steps=3 format=3 uid="uid://game_over"]
 
 [ext_resource type="Script" path="res://scenes/GameOver.gd" id="1_gameover"]
+[ext_resource type="FontFile" path="res://fonts/Orbitron.ttf" id="2_font"]
 
 [node name="GameOver" type="Control"]
 layout_mode = 3
@@ -33,14 +34,17 @@ alignment = 1
 [node name="LblResult" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 text = "YOU WIN!"
-theme_override_font_sizes/font_size = 52
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 56
+theme_override_colors/font_color = Color(0, 0.831, 1, 1)
 horizontal_alignment = 1
 
 [node name="LblSub" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 text = "X wins the match"
+theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 22
-theme_override_colors/font_color = Color(0.58, 0.635, 0.722, 1)
+theme_override_colors/font_color = Color(0.659, 0.333, 0.969, 1)
 horizontal_alignment = 1
 
 [node name="BtnRow" type="HBoxContainer" parent="VBoxContainer"]
@@ -52,11 +56,13 @@ alignment = 1
 layout_mode = 2
 custom_minimum_size = Vector2(180, 64)
 text = "Play Again"
-theme_override_font_sizes/font_size = 32
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
 
 [node name="BtnMenu" type="Button" parent="VBoxContainer/BtnRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(180, 64)
 text = "Menu"
-theme_override_font_sizes/font_size = 32
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
 theme_override_colors/font_color = Color(0.392, 0.455, 0.573, 1)

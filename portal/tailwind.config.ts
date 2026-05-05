@@ -9,16 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        meadow: {
-          sky: '#87CEEB',
-          grass: '#82c45d',
-          wheat: '#f4d03f',
-          earth: '#8B5E3C',
-          dark: '#5a3a1f',
-          cream: '#FFF8EB',
-          pink: '#f7d4d4',
-        },
-        amber: {
+amber: {
           light: '#e8a040',
           DEFAULT: '#c07a20',
           dark: '#8B5E3C',

@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://game_board"]
+[gd_scene load_steps=4 format=3 uid="uid://game_board"]
 
 [ext_resource type="Script" path="res://scenes/GameBoard.gd" id="1_gameboard"]
 [ext_resource type="Script" path="res://scripts/PortalBridge.gd" id="2_portalbridge"]
+[ext_resource type="FontFile" path="res://fonts/Orbitron.ttf" id="3_font"]
 
 [node name="GameBoard" type="Control"]
 layout_mode = 3
@@ -15,7 +16,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.043, 0.043, 0.082, 1)
+color = Color(0.039, 0.039, 0.102, 1)
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -34,7 +35,8 @@ alignment = 1
 [node name="LblStatus" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 text = "YOUR TURN — X"
-theme_override_font_sizes/font_size = 26
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 24
 theme_override_colors/font_color = Color(0.58, 0.635, 0.722, 1)
 horizontal_alignment = 1
 
@@ -53,6 +55,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 88
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -65,6 +68,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 88
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -77,6 +81,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 88
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -89,6 +94,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 88
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -101,6 +107,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 88
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -113,6 +120,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 88
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -125,6 +133,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 88
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -137,6 +146,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 88
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -149,6 +159,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 88
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -160,18 +171,21 @@ alignment = 1
 [node name="LblScoreX" type="Label" parent="VBoxContainer/ScoreRow"]
 layout_mode = 2
 text = "X: 0"
+theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0, 0.949, 1, 1)
 
 [node name="LblSep" type="Label" parent="VBoxContainer/ScoreRow"]
 layout_mode = 2
 text = "  —  "
+theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.204, 0.251, 0.353, 1)
 
 [node name="LblScoreO" type="Label" parent="VBoxContainer/ScoreRow"]
 layout_mode = 2
 text = "O: 0"
+theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.659, 0.333, 0.969, 1)
 
@@ -179,7 +193,8 @@ theme_override_colors/font_color = Color(0.659, 0.333, 0.969, 1)
 layout_mode = 2
 custom_minimum_size = Vector2(200, 64)
 text = "Home"
-theme_override_font_sizes/font_size = 32
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 28
 theme_override_colors/font_color = Color(0.392, 0.455, 0.573, 1)
 
 [node name="Bridge" type="Node" parent="."]

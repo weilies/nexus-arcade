@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://main_menu"]
+[gd_scene load_steps=6 format=3 uid="uid://main_menu"]
 
 [ext_resource type="Script" path="res://scenes/MainMenu.gd" id="1_mainmenu"]
 [ext_resource type="Texture2D" path="res://images/icon-robot.svg" id="2_robot"]
 [ext_resource type="Texture2D" path="res://images/icon-users.svg" id="3_users"]
 [ext_resource type="Texture2D" path="res://images/icon-globe.svg" id="4_globe"]
+[ext_resource type="FontFile" path="res://fonts/Orbitron.ttf" id="5_font"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -17,7 +18,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.043, 0.043, 0.082, 1)
+color = Color(0.039, 0.039, 0.102, 1)
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -36,8 +37,9 @@ alignment = 1
 [node name="LblTitle" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 text = "TIC TAC TOE"
-theme_override_font_sizes/font_size = 52
-theme_override_colors/font_color = Color(0.886, 0.91, 0.941, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 56
+theme_override_colors/font_color = Color(0, 0.831, 1, 1)
 horizontal_alignment = 1
 
 [node name="BtnVsAI" type="Button" parent="VBoxContainer"]
@@ -46,7 +48,8 @@ custom_minimum_size = Vector2(360, 80)
 text = "  vs AI"
 icon = ExtResource("2_robot")
 expand_icon = true
-theme_override_font_sizes/font_size = 32
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 30
 theme_override_constants/icon_max_width = 64
 
 [node name="BtnLocal" type="Button" parent="VBoxContainer"]
@@ -55,7 +58,8 @@ custom_minimum_size = Vector2(360, 80)
 text = "  2P Local"
 icon = ExtResource("3_users")
 expand_icon = true
-theme_override_font_sizes/font_size = 32
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 30
 theme_override_constants/icon_max_width = 64
 
 [node name="BtnOnline" type="Button" parent="VBoxContainer"]
@@ -64,5 +68,6 @@ custom_minimum_size = Vector2(360, 80)
 text = "  2P Online"
 icon = ExtResource("4_globe")
 expand_icon = true
-theme_override_font_sizes/font_size = 32
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 30
 theme_override_constants/icon_max_width = 64

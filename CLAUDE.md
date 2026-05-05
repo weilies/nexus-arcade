@@ -47,6 +47,35 @@ Railway project: https://railway.com/project/74047641-eaad-4212-97c1-4bb84b416ac
 
 Godot web exports live in `portal/public/games/<slug>/` — served by Next.js, embedded via iframe in portal game pages.
 
+## Agent Roles
+
+This project uses specialized AI agents, each with its own CLAUDE.md:
+
+| Agent | File | Role |
+|-------|------|------|
+| Game Designer | `docs/agents/game-designer.CLAUDE.md` | Mechanics, events, progression, reward systems, hooks |
+| Game Dev | `docs/agents/game-dev.CLAUDE.md` | Godot mechanics, scenes, systems |
+| UI/Artist | `docs/agents/ui-artist.CLAUDE.md` | Visual style, shaders, CSS, components |
+| Marketer | `docs/agents/marketer.CLAUDE.md` | Social, store presence, community |
+| Tester (QA) | `docs/agents/tester.CLAUDE.md` | Bug finding, style guide compliance, regression |
+
+### Per-Project CLAUDE.md
+
+| Project | File | Scope |
+|---------|------|-------|
+| Tic Tac Toe | `games/tic-tac-toe/CLAUDE.md` | Game-specific conventions, known issues |
+| Portal | `portal/CLAUDE.md` | Next.js app conventions, build commands |
+
+### Style Guide
+
+The single source of truth for all visual values: `docs/style/nexus-arcade-style-guide.md`
+
+**Workflow:**
+1. GM identifies need or discrepancy
+2. Style guide updated first (plain-language direction from GM)
+3. Agents propagate to their domains
+4. Tester verifies compliance
+
 ## Project Structure
 
 ```

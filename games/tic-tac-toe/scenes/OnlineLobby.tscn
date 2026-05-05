@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://online_lobby"]
+[gd_scene load_steps=3 format=3 uid="uid://online_lobby"]
 
 [ext_resource type="Script" path="res://scenes/OnlineLobby.gd" id="1_onlinelobby"]
+[ext_resource type="FontFile" path="res://fonts/Orbitron.ttf" id="2_font"]
 
 [node name="OnlineLobby" type="Control"]
 layout_mode = 3
@@ -14,7 +15,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.043, 0.043, 0.082, 1)
+color = Color(0.039, 0.039, 0.102, 1)
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -33,19 +34,23 @@ alignment = 1
 [node name="LblTitle" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 text = "Online Play"
-theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(0.886, 0.91, 0.941, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0, 0.831, 1, 1)
 horizontal_alignment = 1
 
 [node name="BtnCreate" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(240, 0)
 text = "+ Create Room"
-theme_override_font_sizes/font_size = 32
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
 
 [node name="LblOr" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 text = "— or —"
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.278, 0.329, 0.412, 1)
 horizontal_alignment = 1
 
@@ -63,11 +68,14 @@ max_length = 6
 [node name="BtnJoin" type="Button" parent="VBoxContainer/JoinRow"]
 layout_mode = 2
 text = "Join"
-theme_override_font_sizes/font_size = 32
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
 
 [node name="LblStatus" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 text = ""
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.58, 0.635, 0.722, 1)
 horizontal_alignment = 1
 autowrap_mode = 3
@@ -75,6 +83,8 @@ autowrap_mode = 3
 [node name="LblShareUrl" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 text = ""
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.655, 0.545, 0.98, 1)
 horizontal_alignment = 1
 autowrap_mode = 3
@@ -83,5 +93,6 @@ autowrap_mode = 3
 layout_mode = 2
 custom_minimum_size = Vector2(240, 0)
 text = "Back"
-theme_override_font_sizes/font_size = 32
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
 theme_override_colors/font_color = Color(0.392, 0.455, 0.573, 1)
