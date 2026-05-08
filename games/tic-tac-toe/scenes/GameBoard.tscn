@@ -32,6 +32,23 @@ offset_bottom = 400.0
 theme_override_constants/separation = 22
 alignment = 1
 
+[node name="StreakBadge" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+alignment = 2
+
+[node name="LblStreakIcon" type="Label" parent="VBoxContainer/StreakBadge"]
+layout_mode = 2
+text = "🔥"
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 22
+
+[node name="LblStreakCount" type="Label" parent="VBoxContainer/StreakBadge"]
+layout_mode = 2
+text = "0"
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 22
+
 [node name="LblStatus" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 text = "YOUR TURN — X"
