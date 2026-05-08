@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://main_menu"]
+[gd_scene load_steps=7 format=3 uid="uid://main_menu"]
 
 [ext_resource type="Script" path="res://scenes/MainMenu.gd" id="1_mainmenu"]
 [ext_resource type="Texture2D" path="res://images/icon-robot.svg" id="2_robot"]
 [ext_resource type="Texture2D" path="res://images/icon-users.svg" id="3_users"]
 [ext_resource type="Texture2D" path="res://images/icon-globe.svg" id="4_globe"]
 [ext_resource type="FontFile" path="res://fonts/Orbitron.ttf" id="5_font"]
+[ext_resource type="Script" path="res://scripts/PortalBridge.gd" id="6_bridge"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -19,6 +20,9 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color(0.039, 0.039, 0.102, 1)
+
+[node name="Bridge" type="Node" parent="."]
+script = ExtResource("6_bridge")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -36,11 +40,45 @@ alignment = 1
 
 [node name="LblTitle" type="Label" parent="VBoxContainer"]
 layout_mode = 2
-text = "TIC TAC TOE"
+text = "#HashAttack!"
 theme_override_fonts/font = ExtResource("5_font")
 theme_override_font_sizes/font_size = 56
 theme_override_colors/font_color = Color(0, 0.831, 1, 1)
 horizontal_alignment = 1
+
+[node name="ProfileRow" type="HBoxContainer" parent="VBoxContainer"]
+visible = false
+layout_mode = 2
+alignment = 1
+
+[node name="LblProfileIcon" type="Label" parent="VBoxContainer/ProfileRow"]
+layout_mode = 2
+text = ""
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+
+[node name="LblUsername" type="Label" parent="VBoxContainer/ProfileRow"]
+layout_mode = 2
+text = ""
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+
+[node name="LblPoints" type="Label" parent="VBoxContainer/ProfileRow"]
+layout_mode = 2
+text = ""
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+
+[node name="BtnSignIn" type="Button" parent="VBoxContainer"]
+visible = false
+layout_mode = 2
+custom_minimum_size = Vector2(360, 80)
+text = "SIGN IN"
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 30
 
 [node name="BtnVsAI" type="Button" parent="VBoxContainer"]
 layout_mode = 2
@@ -71,3 +109,11 @@ expand_icon = true
 theme_override_fonts/font = ExtResource("5_font")
 theme_override_font_sizes/font_size = 30
 theme_override_constants/icon_max_width = 64
+
+[node name="BtnLeaderboard" type="Button" parent="VBoxContainer"]
+visible = false
+layout_mode = 2
+custom_minimum_size = Vector2(360, 80)
+text = ""
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 30
