@@ -72,7 +72,7 @@ func _place_mark(ox: float, oy: float, cell: float, col: int, row: int, mark: St
 		draw_line(Vector2(cx - r, cy - r), Vector2(cx + r, cy + r), clr, 4)
 		draw_line(Vector2(cx + r, cy - r), Vector2(cx - r, cy + r), clr, 4)
 	else:
-		draw_arc(cx, cy, r, 0, TAU, 32, clr, 4)
+		draw_arc(Vector2(cx, cy), r, 0, TAU, 32, clr, 4)
 
 func _draw_ultimate(sz: Vector2) -> void:
 	var margin := 20.0
@@ -116,4 +116,4 @@ func _draw_faded_mark(ox: float, oy: float, cell: float, col: int, row: int, mar
 		draw_line(Vector2(cx - r, cy - r), Vector2(cx + r, cy + r), clr, 3)
 		draw_line(Vector2(cx + r, cy - r), Vector2(cx - r, cy + r), clr, 3)
 	else:
-		draw_arc(cx, cy, r, 0, TAU, 32, clr, 3)
+		draw_arc(Vector2(cx, cy), r, 0, TAU, 32, clr, 3)
