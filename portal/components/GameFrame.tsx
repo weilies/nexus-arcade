@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { sendToGame, onGameMessage } from '@/lib/bridge'
 import { createClient } from '@/lib/supabase/browser'
 
@@ -12,6 +13,7 @@ interface GameFrameProps {
 
 export function GameFrame({ slug, gameName, matchId }: GameFrameProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const router = useRouter()
 
   useEffect(() => {
     const supabase = createClient()
@@ -23,6 +25,9 @@ export function GameFrame({ slug, gameName, matchId }: GameFrameProps) {
           sendToGame(iframeRef.current, 'auth_token', { token: session.access_token }, window.location.origin)
         }
       }
+      if (msg.type === 'sign_in_request') {
+        router.push('/login?return_to=' + encodeURIComponent(window.location.pathname))
+      }
       if (msg.type === 'match_end') {
         await fetch('/api/scores', {
           method: 'POST',
@@ -32,7 +37,7 @@ export function GameFrame({ slug, gameName, matchId }: GameFrameProps) {
       }
     }, window.location.origin)
     return cleanup
-  }, [slug])
+  }, [slug, router])
 
   const src = matchId
     ? `/games/${slug}/index.html?match=${matchId}`
@@ -40,7 +45,6 @@ export function GameFrame({ slug, gameName, matchId }: GameFrameProps) {
 
   return (
     <div className="w-full h-full flex flex-col">
-      {/* Game title bar */}
       <div className="font-pixel text-sm tracking-wide py-2 px-4 text-center border-b flex items-center justify-between"
            style={{
              background: 'rgba(10,10,26,0.96)',
