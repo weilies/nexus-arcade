@@ -13,6 +13,8 @@ var current_user: Dictionary = {}
 var current_game_id: String = ""
 var current_game_mode: String = "classic"
 var current_streak: Dictionary = {}
+var use_timer: bool = false
+var timer_seconds: int = 10
 # Keys = game_mode strings, values = int current streak count.
 
 var jwt: String = "":
