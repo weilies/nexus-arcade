@@ -122,3 +122,90 @@ func _drain_ws() -> void:
 			var topic = parsed.get("topic", "").replace("realtime:", "")
 			var inner: Dictionary = parsed.get("payload", {})
 			realtime_message.emit(topic, inner.get("event", ""), inner.get("payload", {}))
+
+# ── Async helpers ─────────────────────────────────────────────────────────────
+# Each spawns a disposable HTTPRequest, awaits request_completed, frees itself.
+# Returns [status_code: int, body: Variant].
+
+func _async_get(path: String, bearer_override: String = "") -> Array:
+	var http := HTTPRequest.new()
+	add_child(http)
+	var hdrs: PackedStringArray
+	if bearer_override != "":
+		hdrs = PackedStringArray(["apikey: " + _anon_key, "Authorization: Bearer " + bearer_override])
+	else:
+		hdrs = _headers()
+	http.request(_url + path, hdrs, HTTPClient.METHOD_GET)
+	var raw: Array = await http.request_completed
+	http.queue_free()
+	var body: Variant = null
+	var bytes := raw[3] as PackedByteArray
+	if bytes.size() > 0:
+		body = JSON.parse_string(bytes.get_string_from_utf8())
+	return [raw[1], body]
+
+func _async_post(path: String, payload: Dictionary) -> Array:
+	var http := HTTPRequest.new()
+	add_child(http)
+	http.request(_url + path,
+		_headers(["Content-Type: application/json"]),
+		HTTPClient.METHOD_POST, JSON.stringify(payload))
+	var raw: Array = await http.request_completed
+	http.queue_free()
+	var body: Variant = null
+	var bytes := raw[3] as PackedByteArray
+	if bytes.size() > 0:
+		body = JSON.parse_string(bytes.get_string_from_utf8())
+	return [raw[1], body]
+
+# ── Public async API ──────────────────────────────────────────────────────────
+
+func validate_session(token: String) -> Dictionary:
+	# Returns {id, username} from public.users, or {} on failure.
+	var auth_raw: Array = await _async_get("/auth/v1/user", token)
+	if auth_raw[0] != 200 or not auth_raw[1] is Dictionary:
+		return {}
+	var uid: String = auth_raw[1].get("id", "")
+	if uid.is_empty():
+		return {}
+	var profile_raw: Array = await _async_get("/rest/v1/users?id=eq.%s&select=username" % uid)
+	if profile_raw[0] != 200 or not profile_raw[1] is Array or profile_raw[1].is_empty():
+		return {}
+	return {"id": uid, "username": profile_raw[1][0].get("username", "")}
+
+func fetch_game_id(slug: String) -> String:
+	var raw: Array = await _async_get("/rest/v1/games?slug=eq.%s&select=id" % slug)
+	if raw[0] != 200 or not raw[1] is Array or raw[1].is_empty():
+		return ""
+	return raw[1][0].get("id", "")
+
+func get_member_points(user_id: String) -> int:
+	var raw: Array = await _async_get(
+		"/rest/v1/member_points?user_id=eq.%s&select=total_points" % user_id)
+	if raw[0] != 200 or not raw[1] is Array or raw[1].is_empty():
+		return 0
+	return int(raw[1][0].get("total_points", 0))
+
+func get_current_streak(user_id: String, game_id: String, game_mode: String) -> int:
+	var raw: Array = await _async_get(
+		"/rest/v1/consecutive_wins?user_id=eq.%s&game_id=eq.%s&game_mode=eq.%s&select=current_streak"
+		% [user_id, game_id, game_mode])
+	if raw[0] != 200 or not raw[1] is Array or raw[1].is_empty():
+		return 0
+	return int(raw[1][0].get("current_streak", 0))
+
+func call_rpc(fn_name: String, params: Dictionary) -> Variant:
+	# Returns parsed body (200/204) or null on failure.
+	var raw: Array = await _async_post("/rest/v1/rpc/" + fn_name, params)
+	if raw[0] in [200, 204]:
+		return raw[1]
+	push_warning("SupabaseClient.call_rpc %s → %d" % [fn_name, raw[0]])
+	return null
+
+func get_leaderboard(game_id: String, limit: int = 20) -> Array:
+	# Requires member_points→users FK recognized by PostgREST.
+	var raw: Array = await _async_get(
+		"/rest/v1/member_points?select=total_points,users(username)&order=total_points.desc&limit=%d" % limit)
+	if raw[0] == 200 and raw[1] is Array:
+		return raw[1]
+	return []
