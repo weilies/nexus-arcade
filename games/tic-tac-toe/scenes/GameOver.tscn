@@ -31,6 +31,37 @@ offset_bottom = 160.0
 theme_override_constants/separation = 24
 alignment = 1
 
+[node name="LblStreakDisplay" type="Label" parent="VBoxContainer"]
+visible = false
+layout_mode = 2
+text = ""
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+horizontal_alignment = 1
+
+[node name="LblPtsEarned" type="Label" parent="VBoxContainer"]
+visible = false
+layout_mode = 2
+text = ""
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+
+[node name="MilestoneBanner" type="Panel" parent="VBoxContainer"]
+visible = false
+layout_mode = 2
+
+[node name="LblMilestone" type="Label" parent="VBoxContainer/MilestoneBanner"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+text = ""
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="LblResult" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 text = "YOU WIN!"
