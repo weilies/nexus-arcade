@@ -90,75 +90,86 @@ CREATE TABLE member_points (
 );
 
 -- Full audit log of every points award
+-- game_mode: 'classic' | 'ultimate' | 'ephemeral' | 'hybrid'
 CREATE TABLE point_transactions (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     uuid NOT NULL REFERENCES public.users ON DELETE CASCADE,
   game_id     uuid NOT NULL REFERENCES games ON DELETE CASCADE,
+  game_mode   text NOT NULL DEFAULT 'classic',
   source      text NOT NULL CHECK (source IN ('ai_win', 'online_win', 'bonus')),
   amount      int NOT NULL,
   streak_at   int NOT NULL DEFAULT 1,
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 
--- Per-user per-game consecutive win tracking
+-- Per-user per-game-mode consecutive win tracking (mode-level granularity)
+-- Enables per-mode streak ladders and traffic steering to specific modes
 CREATE TABLE consecutive_wins (
   user_id         uuid REFERENCES public.users ON DELETE CASCADE,
   game_id         uuid REFERENCES games ON DELETE CASCADE,
+  game_mode       text NOT NULL DEFAULT 'classic',
   current_streak  int NOT NULL DEFAULT 0,
   best_streak     int NOT NULL DEFAULT 0,
   last_win_at     timestamptz,
-  PRIMARY KEY (user_id, game_id)
+  PRIMARY KEY (user_id, game_id, game_mode)
 );
 
--- Admin-configured streak multiplier tiers (no default seeds)
--- game_id NULL = applies to all games; specific game_id overrides global
+-- Admin-configured streak multiplier tiers (no default seeds — must configure before launch)
+-- game_id NULL + game_mode NULL = global fallback
+-- game_id + game_mode = mode-specific override (highest specificity wins)
+-- Tier A (confirmed): 1-4=1x · 5-20=5x · >20=20x
 CREATE TABLE point_tiers (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   game_id     uuid REFERENCES games ON DELETE CASCADE,
+  game_mode   text,         -- NULL = all modes for this game
   min_streak  int NOT NULL,
   max_streak  int,          -- NULL = no upper bound
   multiplier  numeric(5,2) NOT NULL,
-  UNIQUE (game_id, min_streak)
+  UNIQUE (game_id, game_mode, min_streak)
 );
 
--- Event multiplier hook (UI deferred to Sprint 2)
+-- Base stars per game mode (replaces games.base_stars — mode-level granularity)
+-- Seed this weekend: (tic-tac-toe, classic, 1)
+-- Sprint 2 adds: (tic-tac-toe, ultimate, 5), (tic-tac-toe, ephemeral, 3)
+CREATE TABLE game_mode_stars (
+  game_id     uuid REFERENCES games ON DELETE CASCADE,
+  game_mode   text NOT NULL DEFAULT 'classic',
+  base_stars  int NOT NULL DEFAULT 1,
+  PRIMARY KEY (game_id, game_mode)
+);
+
+-- Event multiplier hook (UI deferred to Sprint 2; schema here for RPC use)
+-- game_mode NULL = applies to all modes during this event
 CREATE TABLE event_multipliers (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   season_id   uuid REFERENCES seasons ON DELETE CASCADE,
   game_id     uuid,         -- NULL = all games
+  game_mode   text,         -- NULL = all modes
   multiplier  numeric(5,2) NOT NULL DEFAULT 1.0,
   starts_at   timestamptz NOT NULL,
   ends_at     timestamptz NOT NULL
 );
 ```
 
-### Modify existing table
-
-```sql
-ALTER TABLE games ADD COLUMN base_stars int NOT NULL DEFAULT 1;
--- Seed: tic-tac-toe classic = 1 star
-UPDATE games SET base_stars = 1 WHERE slug = 'tic-tac-toe';
-```
-
 ### RPCs
 
-**`award_win_points(p_user_id, p_game_id, p_source)`**  
-Returns: `int` (points awarded)
+**`award_win_points(p_user_id, p_game_id, p_game_mode, p_source)`**  
+Returns: `int` (points awarded, 0 if no tiers configured)
 
 Logic:
-1. Increment `consecutive_wins.current_streak`, update `best_streak`
-2. Find tier: `point_tiers` WHERE `game_id = p_game_id OR game_id IS NULL`, streak in range, ORDER BY `game_id NULLS LAST, min_streak DESC LIMIT 1`
-3. Check active `event_multipliers` for current timestamp
-4. `pts = games.base_stars × tier.multiplier × event_multiplier (default 1.0)`
-5. Round to nearest int
-6. Insert `point_transactions` row
-7. Upsert `member_points` (add pts)
+1. Upsert `consecutive_wins(user_id, game_id, game_mode)` — increment `current_streak`, update `best_streak`
+2. Read `base_stars` from `game_mode_stars` WHERE `(game_id, game_mode)` — fallback 1 if missing
+3. Find tier: `point_tiers` WHERE matches `(game_id, game_mode)` or global fallback, streak in range, ORDER BY specificity DESC LIMIT 1
+4. Check active `event_multipliers` WHERE `now()` BETWEEN `starts_at` AND `ends_at`, match game/mode (nullable = wildcard)
+5. `pts = base_stars × tier.multiplier × event_multiplier` → round to nearest int
+6. Insert `point_transactions` row (with `game_mode`)
+7. Upsert `member_points` (add pts to total)
 8. Return pts
 
-If no tier configured → return 0, log warning. Admin must configure tiers before scoring activates.
+If no tier → return 0 (no error). Admin sees warning in admin UI.
 
-**`reset_win_streak(p_user_id, p_game_id)`**  
-On loss or draw: sets `consecutive_wins.current_streak = 0`. Does not affect `best_streak` or points.
+**`reset_win_streak(p_user_id, p_game_id, p_game_mode)`**  
+On loss or draw: sets `consecutive_wins.current_streak = 0` for that specific mode. Does not affect other modes, `best_streak`, or points.
 
 Both RPCs: `SECURITY DEFINER`, called from Godot via Supabase REST.
 
@@ -170,6 +181,7 @@ Both RPCs: `SECURITY DEFINER`, called from Godot via Supabase REST.
 | `point_transactions` | own rows only | — (RPC only) | all rows |
 | `consecutive_wins` | own rows only | — (RPC only) | all rows |
 | `point_tiers` | yes | no | full CRUD |
+| `game_mode_stars` | yes | no | full CRUD |
 | `event_multipliers` | yes | no | full CRUD |
 
 ### Scoring scope
@@ -201,23 +213,49 @@ GameStart
 - "SIGN IN" button (FA6 `fa-right-to-bracket`)
 - On press: `PortalBridge.send("sign_in_request")` → portal opens `/login?return_to=/games/tic-tac-toe`
 
+### Streak badge (GameBoard — always visible)
+
+Top-right corner of GameBoard, persistent during play:
+
+| Streak | Appearance |
+|--------|-----------|
+| 0 | Dim, small — `🔥 0` — doesn't distract |
+| 1–4 | Normal brightness |
+| 5–9 | Neon cyan glow pulse |
+| 10–19 | Stronger glow + scale bounce on milestone hit |
+| ≥ 20 | Full neon fire animation, magenta (`#ff2d95`) accent |
+
+Badge dims on opponent's turn, brightens on player's turn.  
+`Globals.current_streak[game_mode]` int — updated after each win RPC call.
+
 ### Win flow (GameBoard.gd / OnlineLobby.gd)
 
 ```
 Player wins
 → Determine source: "ai_win" or "online_win"
-→ SupabaseClient.call_rpc("award_win_points", {user_id, game_id, source})
+→ game_mode = Globals.current_game_mode  (e.g. "classic")
+→ SupabaseClient.call_rpc("award_win_points", {user_id, game_id, game_mode, source})
 → Receive pts_awarded (int)
 → Globals.current_user.points += pts_awarded
+→ Globals.current_streak[game_mode] += 1
+→ Update streak badge appearance
 → Show "+X ★" popup: tween scale 0→1.2→1.0 (0.15s), fade out (0.5s), duration 1.5s total
 → Navigate to GameOver scene (existing)
 ```
 
 Loss or draw:
 ```
-→ SupabaseClient.call_rpc("reset_win_streak", {user_id, game_id})
+→ SupabaseClient.call_rpc("reset_win_streak", {user_id, game_id, game_mode})
+→ Globals.current_streak[game_mode] = 0
+→ Update streak badge to dim state
 → No points awarded, no popup
 ```
+
+### GameOver scene additions
+
+- Show current mode streak: `🔥 X STREAK` (large, above points earned)
+- Show `+X ★` earned this match
+- Milestone banner (streaks 10 / 20 / 50): `"STREAK MASTER — 10 WIN STREAK!"` in neon magenta — Uma designs asset, Mary uses for social screenshots
 
 ### New: LeaderboardScene
 
@@ -239,8 +277,9 @@ Display:
 ### SupabaseClient.gd additions
 - `validate_session(token)` → REST GET `/auth/v1/user` with token header
 - `get_member_points(user_id)` → REST GET `member_points?user_id=eq.{id}&select=total_points`
+- `get_current_streak(user_id, game_id, game_mode)` → REST GET `consecutive_wins` filtered by all three keys
 - `call_rpc(fn_name, params)` → REST POST `/rest/v1/rpc/{fn_name}`
-- `get_leaderboard(game_id, limit)` → REST GET with join query
+- `get_leaderboard(game_id, limit)` → REST GET `member_points` JOIN `users`, order by `total_points DESC`, limit
 
 ---
 
@@ -253,20 +292,29 @@ Portal reads `games.name` dynamically — GameCard, GameFrame title bar, page `<
 ### Profile page (`/profile`)
 New or updated page:
 - Total stars: `member_points.total_points` with `★` icon
-- Per-game breakdown: best streak from `consecutive_wins`
-- Transaction history (last 10): game / source / amount / date
+- Per-game-mode breakdown grid: rows = games, columns = modes — shows `best_streak` from `consecutive_wins`
+- Transaction history (last 10): game / mode / source / amount / date
 
 ### Admin — Stars & Tiers (`/admin/scoring`)
 Two sections on one page:
 
-**Game Stars:**
-- Table: game name / base_stars / edit inline
-- Save → UPDATE `games.base_stars`
+**Mode Stars (`game_mode_stars`):**
+- Table: game / mode / base_stars / edit inline
+- Add row (game + mode + stars), delete row
+- This weekend seed: Hash Attack! / classic / 1★
+- Sprint 2 admin adds: Hash Attack! / ultimate / 5★, Hash Attack! / ephemeral / 3★
 
-**Streak Multiplier Tiers:**
-- Table: game (all or specific) / min streak / max streak / multiplier
+**Streak Multiplier Tiers (`point_tiers`):**
+- Table: game (all or specific) / mode (all or specific) / min streak / max streak / multiplier
 - Add row / delete row / edit inline
 - Warning banner if no tiers exist: `"No tiers configured — wins award 0 points."`
+- Confirmed tier structure (Tier A) for admin reference:
+
+| min | max | multiplier |
+|-----|-----|-----------|
+| 1 | 4 | 1× |
+| 5 | 20 | 5× |
+| 21 | — | 20× |
 
 ### postMessage handler (GameFrame.tsx)
 ```typescript
@@ -295,22 +343,41 @@ Mary owns event calendar proposals. Gladys designs challenge mechanics. Admin co
 
 ## 7. Testing Criteria (Tessa)
 
-- [ ] `award_win_points` returns correct pts for each tier boundary (1★ base, multipliers 1x/5x/20x)
-- [ ] Streak resets to 0 on loss, best_streak unchanged
-- [ ] No points awarded if no tiers configured (returns 0)
+- [ ] `award_win_points` returns correct pts: 1★ base × correct multiplier for streak band (Tier A: 1–4=1×, 5–20=5×, >20=20×)
+- [ ] Classic and Ultimate streaks tracked independently (win in classic does not increment ultimate streak)
+- [ ] Streak resets to 0 on loss for that mode only — other modes unaffected
+- [ ] `best_streak` never decreases on loss
+- [ ] No points awarded if no tiers configured (returns 0, no crash)
 - [ ] Event multiplier stacks correctly with streak multiplier
 - [ ] Signed-out user sees SIGN IN button, not profile row
 - [ ] Signed-in user sees correct username and points
+- [ ] Streak badge: dim at 0, brightens at 1+, pulses at 5+, bounces at 10, magenta at 20+
+- [ ] Streak badge dims on opponent's turn, brightens on player's turn
 - [ ] "+X ★" popup appears after AI win and online win
+- [ ] GameOver shows streak + pts earned; milestone banner at 10/20/50
 - [ ] Leaderboard shows top 20, sorted by total_points DESC
 - [ ] Admin tier table shows warning when empty
+- [ ] Admin mode stars table accepts new row for future modes
 - [ ] postMessage sign_in_request redirects to login page
 - [ ] Slug `tic-tac-toe` unchanged in all URLs after rebrand
 
 ---
 
-## 8. Open Questions / Decisions for Admin
+## 8. Resolved Decisions
 
-1. **Tier values** — No defaults. Admin must configure before launch. Gladys will provide recommended tiers as a design doc under `docs/mechanics/`.
-2. **`#` color in Godot title** — Neon cyan `#00d4ff`. Can adjust if Uma wants different treatment.
-3. **Leaderboard scope** — Global (all games combined) vs per-game. Design assumes per-game for now; global view is Sprint 2 portal page.
+| Decision | Choice | Notes |
+|----------|--------|-------|
+| Streak granularity | **Per game mode** | Classic/Ultimate/Ephemeral each independent |
+| Tier structure | **Tier A** — 1–4=1× · 5–20=5× · >20=20× | Admin enters manually, no seed |
+| Base stars schema | **`game_mode_stars` table** | Replaces `games.base_stars` column |
+| Streak badge | **Always visible** in GameBoard | Dims on opponent's turn |
+| Leaderboard scope | Per-game (mode combined) for now | Global view → Sprint 2 portal |
+| `#` color | Neon cyan `#00d4ff`, oversized | Uma may refine treatment |
+
+## 9. Admin Launch Checklist
+
+Before first player session:
+- [ ] Insert `game_mode_stars` row: Hash Attack! / classic / 1★
+- [ ] Insert `point_tiers` rows (Tier A values above) — global scope (game_id NULL)
+- [ ] Verify `award_win_points` RPC deployed to Supabase
+- [ ] Verify `reset_win_streak` RPC deployed to Supabase
