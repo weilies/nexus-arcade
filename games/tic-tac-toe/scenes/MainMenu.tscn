@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://main_menu"]
+[gd_scene load_steps=9 format=3 uid="uid://main_menu"]
 
 [ext_resource type="Script" path="res://scenes/MainMenu.gd" id="1_mainmenu"]
 [ext_resource type="Texture2D" path="res://images/icon-robot.svg" id="2_robot"]
@@ -6,6 +6,9 @@
 [ext_resource type="Texture2D" path="res://images/icon-globe.svg" id="4_globe"]
 [ext_resource type="FontFile" path="res://fonts/Orbitron.ttf" id="5_font"]
 [ext_resource type="Script" path="res://scripts/PortalBridge.gd" id="6_bridge"]
+[ext_resource type="Script" path="res://scripts/ModeCarousel.gd" id="7_carousel"]
+[ext_resource type="Script" path="res://scripts/ModePreview.gd" id="8_preview"]
+[ext_resource type="Script" path="res://scripts/ModeTile.gd" id="9_modetile"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -39,88 +42,261 @@ offset_bottom = 56.0
 theme_override_fonts/font = ExtResource("5_font")
 theme_override_font_sizes/font_size = 20
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="HeaderBar" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_top = 16.0
+offset_bottom = 64.0
+offset_left = 20.0
+offset_right = -20.0
+
+[node name="LblTitle" type="Label" parent="HeaderBar"]
+layout_mode = 2
+text = "#HashAttack!"
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 48
+theme_override_colors/font_color = Color(0, 0.831, 1, 1)
+horizontal_alignment = 0
+size_flags_horizontal = 3
+
+[node name="CarouselContainer" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -220.0
-offset_right = 200.0
-offset_bottom = 220.0
-theme_override_constants/separation = 18
-alignment = 1
+offset_left = -300.0
+offset_top = -310.0
+offset_right = 300.0
+offset_bottom = 140.0
+script = ExtResource("7_carousel")
+mouse_filter = 1
 
-[node name="LblTitle" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-text = "#HashAttack!"
+[node name="BtnArrowLeft" type="Button" parent="CarouselContainer"]
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 0.0
+offset_top = 100.0
+offset_right = 48.0
+offset_bottom = 340.0
 theme_override_fonts/font = ExtResource("5_font")
-theme_override_font_sizes/font_size = 64
+theme_override_font_sizes/font_size = 28
+
+[node name="PreviewContainer" type="Control" parent="CarouselContainer"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
+offset_left = -200.0
+offset_top = 20.0
+offset_right = 200.0
+offset_bottom = 340.0
+mouse_filter = 2
+
+[node name="ModePreview" type="Control" parent="CarouselContainer/PreviewContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("8_preview")
+mouse_filter = 2
+
+[node name="BtnArrowRight" type="Button" parent="CarouselContainer"]
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -48.0
+offset_top = 100.0
+offset_right = 0.0
+offset_bottom = 340.0
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 28
+
+[node name="LblModeName" type="Label" parent="CarouselContainer"]
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 36.0
+text = "CLASSIC"
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0, 0.831, 1, 1)
 horizontal_alignment = 1
 
-[node name="ProfileRow" type="HBoxContainer" parent="VBoxContainer"]
-visible = false
-layout_mode = 2
+[node name="TimerRow" type="HBoxContainer" parent="CarouselContainer"]
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -50.0
+offset_top = 36.0
+offset_right = 50.0
+offset_bottom = 64.0
 alignment = 1
 
-[node name="LblProfileIcon" type="Label" parent="VBoxContainer/ProfileRow"]
+[node name="LblClock" type="Label" parent="CarouselContainer/TimerRow"]
 layout_mode = 2
-text = ""
+text = "CLOCK"
 theme_override_fonts/font = ExtResource("5_font")
-theme_override_font_sizes/font_size = 24
-horizontal_alignment = 1
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.392, 0.455, 0.573, 1)
 
-[node name="LblUsername" type="Label" parent="VBoxContainer/ProfileRow"]
+[node name="CheckTimer" type="CheckBox" parent="CarouselContainer/TimerRow"]
 layout_mode = 2
-text = ""
+
+[node name="LblTimerSecs" type="Label" parent="CarouselContainer/TimerRow"]
+layout_mode = 2
+text = "10s"
 theme_override_fonts/font = ExtResource("5_font")
-theme_override_font_sizes/font_size = 24
-horizontal_alignment = 1
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0, 0.831, 1, 1)
 
-[node name="LblPoints" type="Label" parent="VBoxContainer/ProfileRow"]
+[node name="DotContainer" type="HBoxContainer" parent="CarouselContainer"]
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -30.0
+offset_top = 66.0
+offset_right = 30.0
+offset_bottom = 90.0
+alignment = 1
+
+[node name="Dot0" type="Label" parent="CarouselContainer/DotContainer"]
 layout_mode = 2
-text = ""
+text = "●"
 theme_override_fonts/font = ExtResource("5_font")
-theme_override_font_sizes/font_size = 24
-horizontal_alignment = 1
+theme_override_font_sizes/font_size = 14
 
-[node name="BtnVsAI" type="Button" parent="VBoxContainer"]
+[node name="Dot1" type="Label" parent="CarouselContainer/DotContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(360, 80)
-text = "  vs AI"
+text = "●"
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 14
+
+[node name="Dot2" type="Label" parent="CarouselContainer/DotContainer"]
+layout_mode = 2
+text = "●"
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 14
+
+[node name="TileBar" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -270.0
+offset_top = 160.0
+offset_right = 270.0
+offset_bottom = 400.0
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Row1" type="HBoxContainer" parent="TileBar"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="Btn1P" type="Button" parent="TileBar/Row1"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 160)
+text = "1P"
 icon = ExtResource("2_robot")
 expand_icon = true
+script = ExtResource("9_modetile")
+theme_override_constants/icon_max_width = 128
 theme_override_fonts/font = ExtResource("5_font")
-theme_override_font_sizes/font_size = 30
-theme_override_constants/icon_max_width = 64
+theme_override_font_sizes/font_size = 16
 
-[node name="BtnLocal" type="Button" parent="VBoxContainer"]
+[node name="Btn2P" type="Button" parent="TileBar/Row1"]
 layout_mode = 2
-custom_minimum_size = Vector2(360, 80)
-text = "  2P Local"
+custom_minimum_size = Vector2(160, 160)
+text = "2P"
 icon = ExtResource("3_users")
 expand_icon = true
+script = ExtResource("9_modetile")
+theme_override_constants/icon_max_width = 128
 theme_override_fonts/font = ExtResource("5_font")
-theme_override_font_sizes/font_size = 30
-theme_override_constants/icon_max_width = 64
+theme_override_font_sizes/font_size = 16
 
-[node name="BtnOnline" type="Button" parent="VBoxContainer"]
+[node name="BtnOnline" type="Button" parent="TileBar/Row1"]
 layout_mode = 2
-custom_minimum_size = Vector2(360, 80)
-text = "  2P Online"
+custom_minimum_size = Vector2(160, 160)
+text = "ONLINE"
 icon = ExtResource("4_globe")
 expand_icon = true
+script = ExtResource("9_modetile")
+theme_override_constants/icon_max_width = 128
 theme_override_fonts/font = ExtResource("5_font")
-theme_override_font_sizes/font_size = 30
-theme_override_constants/icon_max_width = 64
+theme_override_font_sizes/font_size = 16
 
-[node name="BtnLeaderboard" type="Button" parent="VBoxContainer"]
-visible = false
+[node name="Row2" type="HBoxContainer" parent="TileBar"]
 layout_mode = 2
-custom_minimum_size = Vector2(360, 80)
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="BtnLeaderboard" type="Button" parent="TileBar/Row2"]
+layout_mode = 2
+custom_minimum_size = Vector2(492, 80)
+text = "LEADERBOARD"
+script = ExtResource("9_modetile")
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 22
+
+[node name="ProfileRow" type="HBoxContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -100.0
+offset_top = -40.0
+offset_right = 100.0
+offset_bottom = -8.0
+alignment = 1
+
+[node name="LblProfileIcon" type="Label" parent="ProfileRow"]
+layout_mode = 2
 text = ""
 theme_override_fonts/font = ExtResource("5_font")
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 18
+
+[node name="LblUsername" type="Label" parent="ProfileRow"]
+layout_mode = 2
+text = ""
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 18
+
+[node name="LblPoints" type="Label" parent="ProfileRow"]
+layout_mode = 2
+text = ""
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 18
