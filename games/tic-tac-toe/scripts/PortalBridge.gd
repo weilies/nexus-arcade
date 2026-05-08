@@ -26,7 +26,29 @@ func _process(_delta: float) -> void:
 		return
 	match msg.get("type", ""):
 		"auth_token":
-			auth_token_received.emit(msg.get("token", ""))
+			var token: String = msg.get("token", "")
+			auth_token_received.emit(token)
+			if not token.is_empty() and not Globals.is_signed_in():
+				_populate_auth(token)
+
+func _populate_auth(token: String) -> void:
+	Globals.jwt = token
+	var profile: Dictionary = await Globals.supabase.validate_session(token)
+	if profile.is_empty():
+		return
+	Globals.current_user = {
+		"id":       profile.get("id", ""),
+		"username": profile.get("username", ""),
+		"points":   0
+	}
+	if Globals.current_game_id.is_empty():
+		Globals.current_game_id = await Globals.supabase.fetch_game_id(Globals.GAME_SLUG)
+	if not Globals.current_game_id.is_empty():
+		Globals.current_user["points"] = await Globals.supabase.get_member_points(
+			Globals.current_user["id"])
+		Globals.current_streak["classic"] = await Globals.supabase.get_current_streak(
+			Globals.current_user["id"], Globals.current_game_id, "classic")
+	Globals.auth_ready.emit()
 
 func send_game_ready() -> void:
 	_post({"type": "game_ready"})
@@ -36,6 +58,9 @@ func send_match_end(winner: String, mode: String, score: int) -> void:
 
 func request_auth() -> void:
 	_post({"type": "auth_request"})
+
+func send_sign_in_request() -> void:
+	_post({"type": "sign_in_request"})
 
 func _post(data: Dictionary) -> void:
 	if OS.has_feature("web"):
