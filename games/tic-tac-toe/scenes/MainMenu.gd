@@ -8,11 +8,12 @@ func _ready() -> void:
 	$VBoxContainer/BtnVsAI.pressed.connect(_on_vs_ai)
 	$VBoxContainer/BtnLocal.pressed.connect(_on_local)
 	$VBoxContainer/BtnOnline.pressed.connect(_on_online)
-	$VBoxContainer/BtnSignIn.pressed.connect(_on_sign_in)
+	$BtnSignInIcon.pressed.connect(_on_sign_in)
 	$VBoxContainer/BtnLeaderboard.pressed.connect(_on_leaderboard)
 
 	$VBoxContainer/ProfileRow/LblProfileIcon.text = FA6.icon("fa-user")
 	$VBoxContainer/BtnLeaderboard.text = FA6.icon("fa-trophy") + "  LEADERBOARD"
+	$BtnSignInIcon.text = FA6.icon("fa-arrow-right-to-bracket")
 
 	$Bridge.send_game_ready()
 	$Bridge.auth_token_received.connect(func(_t): pass)  # auth via Globals.auth_ready
@@ -26,7 +27,7 @@ func _refresh_auth_ui() -> void:
 	var signed_in := Globals.is_signed_in()
 	$VBoxContainer/ProfileRow.visible = signed_in
 	$VBoxContainer/BtnLeaderboard.visible = signed_in
-	$VBoxContainer/BtnSignIn.visible = not signed_in
+	$BtnSignInIcon.visible = not signed_in
 	if signed_in:
 		$VBoxContainer/ProfileRow/LblUsername.text = Globals.current_user.get("username", "")
 		$VBoxContainer/ProfileRow/LblPoints.text = "★ %d" % Globals.current_user.get("points", 0)

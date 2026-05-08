@@ -37,17 +37,23 @@ export function AuthCard({ mode }: AuthCardProps) {
     setLoading(false)
   }
 
+  function getCallbackUrl() {
+    const params = new URLSearchParams(window.location.search)
+    const returnTo = params.get('return_to') || '/'
+    return `${window.location.origin}/auth/callback?return_to=${encodeURIComponent(returnTo)}`
+  }
+
   async function signInWithGoogle() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: getCallbackUrl() },
     })
   }
 
   async function signInWithDiscord() {
     await supabase.auth.signInWithOAuth({
       provider: 'discord',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: getCallbackUrl() },
     })
   }
 

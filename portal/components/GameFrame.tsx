@@ -55,6 +55,14 @@ export function GameFrame({ slug, gameName, matchId }: GameFrameProps) {
         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>NEXUS ARCADE</span>
         <span className="font-semibold" style={{ color: 'var(--neon-cyan)' }}>▶ {gameName.toUpperCase()}</span>
         <span className="text-xs font-semibold" style={{ color: 'var(--neon-green)' }}>● LIVE</span>
+        <button
+          onClick={() => iframeRef.current?.requestFullscreen()}
+          className="text-sm hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--text-muted)' }}
+          title="Fullscreen"
+        >
+          ⛶
+        </button>
       </div>
       <iframe
         ref={iframeRef}

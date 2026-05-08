@@ -18,5 +18,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/`)
+  const returnTo = searchParams.get('return_to') || '/'
+  return NextResponse.redirect(`${origin}${returnTo}`)
 }
