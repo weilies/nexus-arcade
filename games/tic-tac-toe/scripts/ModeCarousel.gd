@@ -13,7 +13,7 @@ var _current_index: int = 0
 var _drag_start: Vector2
 var _dragging: bool = false
 
-@onready var _preview: ModePreview = $PreviewContainer/ModePreview
+@onready var _preview = $PreviewContainer/ModePreview
 @onready var _lbl_mode: Label = $LblModeName
 @onready var _btn_left: Button = $BtnArrowLeft
 @onready var _btn_right: Button = $BtnArrowRight
@@ -54,7 +54,7 @@ func _gui_input(event: InputEvent) -> void:
 				_drag_start = event.position
 				_dragging = true
 			elif _dragging:
-				var dx := event.position.x - _drag_start.x
+				var dx = event.position.x - _drag_start.x
 				if abs(dx) > 50:
 					if dx > 0: _prev()
 					else: _next()

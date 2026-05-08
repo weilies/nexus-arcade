@@ -1,6 +1,10 @@
 extends Control
 
 func _ready() -> void:
+	var bg = load("res://scripts/BackgroundLayer.gd").new()
+	add_child(bg)
+	move_child(bg, 1)
+
 	$VBoxContainer/BtnEasy.pressed.connect(_on_easy)
 	$VBoxContainer/BtnHard.pressed.connect(_on_hard)
 	$VBoxContainer/BtnBack.pressed.connect(_on_back)
