@@ -4,7 +4,7 @@ extends Node
 signal timed_out
 signal tick(seconds_left: int)
 
-const DURATION = 30
+var _duration: float = 30.0
 const PULSE_THRESHOLD = 5
 
 var _timer: Timer
@@ -21,7 +21,7 @@ func setup(label_node: Label) -> void:
 	add_child(_timer)
 
 func start() -> void:
-	_seconds_left = DURATION
+	_seconds_left = int(_duration)
 	_update_label()
 	_timer.start()
 
@@ -32,6 +32,9 @@ func stop() -> void:
 	if _label:
 		_label.add_theme_color_override("font_color", Color("#94a3b8"))
 		_label.scale = Vector2.ONE
+
+func set_duration(seconds: float) -> void:
+	_duration = seconds
 
 func reset_and_start() -> void:
 	stop()

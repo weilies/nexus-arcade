@@ -26,6 +26,11 @@ func setup_vs_ai(difficulty: TicTacToeAI.Difficulty) -> void:
 	_mode = Mode.VS_AI
 	_ai_difficulty = difficulty
 	_ai = TicTacToeAI.new()
+	# Randomize who goes first
+	if randi() % 2 == 0:
+		_player_mark = GameState.Player.X   # Player = X, goes first
+	else:
+		_player_mark = GameState.Player.O   # Player = O, AI goes first
 
 func setup_local() -> void:
 	_mode = Mode.LOCAL
@@ -51,6 +56,8 @@ func _ready() -> void:
 		_turn_timer.setup($VBoxContainer/LblTimer)
 	add_child(_turn_timer)
 	_turn_timer.timed_out.connect(_on_turn_timeout)
+	if Globals.use_timer:
+		_turn_timer.set_duration(Globals.timer_seconds)
 
 	_ai_think_timer = Timer.new()
 	_ai_think_timer.one_shot = true
@@ -67,10 +74,30 @@ func _ready() -> void:
 	_refresh_ui()
 	_update_streak_badge()
 
+	# Turn announcement
+	if _mode == Mode.VS_AI:
+		var announce = $TurnAnnounce if has_node("TurnAnnounce") else null
+		if announce:
+			if _player_mark == GameState.Player.X:
+				announce.text = "YOU GO FIRST"
+			else:
+				announce.text = "OPPONENT GOES FIRST"
+			announce.visible = true
+			announce.modulate = Color.WHITE
+			var tw := create_tween()
+			tw.tween_property(announce, "modulate:a", 0.0, 2.5).set_delay(0.5)
+			tw.tween_callback(func(): announce.visible = false)
+
 	if _mode == Mode.ONLINE:
 		_supabase_ref.realtime_message.connect(_on_online_message)
 		if _player_mark == GameState.Player.X:
-			_turn_timer.start()
+			if Globals.use_timer:
+				_turn_timer.set_duration(Globals.timer_seconds)
+				_turn_timer.start()
+
+	# AI first move if player is O
+	if _mode == Mode.VS_AI and _player_mark == GameState.Player.O:
+		_ai_take_turn.call_deferred()
 
 func _connect_cells() -> void:
 	for i in 9:
@@ -213,10 +240,17 @@ func _refresh_ui() -> void:
 	var turn_text: String
 	match _state.current_turn:
 		GameState.Player.X:
-			turn_text = "YOUR TURN — X" if _mode == Mode.VS_AI else "PLAYER 1 — X"
-		GameState.Player.O:
-			if _mode == Mode.VS_AI and _state.result == GameState.GameResult.ONGOING:
+			if _mode == Mode.VS_AI and _player_mark == GameState.Player.O:
 				turn_text = "AI THINKING..."
+			elif _mode == Mode.VS_AI:
+				turn_text = "YOUR TURN — X"
+			else:
+				turn_text = "PLAYER 1 — X"
+		GameState.Player.O:
+			if _mode == Mode.VS_AI and _player_mark == GameState.Player.X:
+				turn_text = "AI THINKING..."
+			elif _mode == Mode.VS_AI:
+				turn_text = "YOUR TURN — O"
 			elif _mode == Mode.LOCAL:
 				turn_text = "PLAYER 2 — O"
 			else:
