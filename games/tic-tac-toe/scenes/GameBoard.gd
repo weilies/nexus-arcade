@@ -20,6 +20,7 @@ var _ai_move_cell: int = -1
 var _ai_think_timer: Timer
 var _ai_dots_timer: Timer
 var _ai_dots_count: int = 0
+var _pts_awarded: int = 0
 
 func setup_vs_ai(difficulty: TicTacToeAI.Difficulty) -> void:
 	_mode = Mode.VS_AI
@@ -36,6 +37,10 @@ func setup_online(room_id: String, player_mark: GameState.Player, sb: SupabaseCl
 	_supabase_ref = sb
 
 func _ready() -> void:
+	var bg = load("res://scripts/BackgroundLayer.gd").new()
+	add_child(bg)
+	move_child(bg, 1)
+
 	_state = GameState.new()
 	_bridge = $Bridge if has_node("Bridge") else null
 	if _bridge:
@@ -60,6 +65,7 @@ func _ready() -> void:
 	$VBoxContainer/BtnHome.pressed.connect(_on_home)
 	_connect_cells()
 	_refresh_ui()
+	_update_streak_badge()
 
 	if _mode == Mode.ONLINE:
 		_supabase_ref.realtime_message.connect(_on_online_message)
@@ -232,6 +238,56 @@ func _highlight_win_line() -> void:
 		tween.tween_property(cell, "modulate", Color(1.3, 1.3, 1.3, 1.0), 0.4)
 		tween.tween_property(cell, "modulate", Color.WHITE, 0.4)
 
+func _update_streak_badge() -> void:
+	if not has_node("VBoxContainer/StreakBadge"):
+		return
+	if not Globals.is_signed_in():
+		$VBoxContainer/StreakBadge.visible = false
+		return
+	$VBoxContainer/StreakBadge.visible = true
+	var streak: int = Globals.current_streak.get(Globals.current_game_mode, 0)
+	$VBoxContainer/StreakBadge/LblStreakCount.text = str(streak)
+	var col: Color
+	if streak >= 20:
+		col = Color("#ff2d95")
+	elif streak >= 10:
+		col = Color("#a855f7")
+	elif streak >= 5:
+		col = Color("#00d4ff")
+	else:
+		col = Color(0.55, 0.55, 0.55, 0.8)
+	$VBoxContainer/StreakBadge/LblStreakIcon.add_theme_color_override("font_color", col)
+	$VBoxContainer/StreakBadge/LblStreakCount.add_theme_color_override("font_color", col)
+
+func _award_points_if_signed_in(source: String) -> void:
+	if not Globals.is_signed_in() or Globals.current_game_id.is_empty():
+		return
+	var result: Variant = await Globals.supabase.call_rpc("award_win_points", {
+		"p_user_id":   Globals.current_user["id"],
+		"p_game_id":   Globals.current_game_id,
+		"p_game_mode": Globals.current_game_mode,
+		"p_source":    source
+	})
+	_pts_awarded = int(result) if result != null else 0
+	Globals.current_user["points"] = Globals.current_user.get("points", 0) + _pts_awarded
+	Globals.current_streak[Globals.current_game_mode] = \
+		Globals.current_streak.get(Globals.current_game_mode, 0) + 1
+	_update_streak_badge()
+	if _pts_awarded > 0:
+		_show_pts_popup(_pts_awarded)
+
+func _show_pts_popup(pts: int) -> void:
+	var lbl := Label.new()
+	lbl.text = "+%d ★" % pts
+	lbl.add_theme_color_override("font_color", Color("#00d4ff"))
+	lbl.position = Vector2(size.x / 2.0 - 50, size.y / 2.0 - 40)
+	add_child(lbl)
+	var tw := create_tween()
+	tw.tween_property(lbl, "scale", Vector2(1.2, 1.2), 0.15).set_trans(Tween.TRANS_BACK)
+	tw.tween_property(lbl, "scale", Vector2.ONE, 0.06)
+	tw.tween_property(lbl, "modulate:a", 0.0, 0.5).set_delay(0.8)
+	tw.tween_callback(lbl.queue_free)
+
 func _on_game_over() -> void:
 	if _game_over_fired:
 		return
@@ -287,6 +343,35 @@ func _on_game_over() -> void:
 		_bridge.send_match_end(winner, mode_str, score)
 
 	_highlight_win_line()
+
+	var local_won := false
+	var rpc_source := "ai_win"
+	match _mode:
+		Mode.VS_AI:
+			local_won = (_state.result == GameState.GameResult.X_WINS)
+			rpc_source = "ai_win"
+		Mode.ONLINE:
+			local_won = (
+				(_player_mark == GameState.Player.X and _state.result == GameState.GameResult.X_WINS) or
+				(_player_mark == GameState.Player.O and _state.result == GameState.GameResult.O_WINS))
+			rpc_source = "online_win"
+		Mode.LOCAL:
+			local_won = false  # local 2P excluded from scoring
+
+	_pts_awarded = 0
+	if local_won:
+		await _award_points_if_signed_in(rpc_source)
+	elif _state.result != GameState.GameResult.DRAW and _mode != Mode.LOCAL:
+		if Globals.is_signed_in() and not Globals.current_game_id.is_empty():
+			Globals.current_streak[Globals.current_game_mode] = 0
+			_update_streak_badge()
+			Globals.supabase.call_rpc("reset_win_streak", {
+				"p_user_id":   Globals.current_user["id"],
+				"p_game_id":   Globals.current_game_id,
+				"p_game_mode": Globals.current_game_mode
+			})
+
 	var game_over = load("res://scenes/GameOver.tscn").instantiate()
-	game_over.setup(winner, _score_x, _score_o, _mode, self)
+	game_over.setup(winner, _score_x, _score_o, _mode, self,
+		_pts_awarded, Globals.current_streak.get(Globals.current_game_mode, 0))
 	get_tree().root.add_child(game_over)
