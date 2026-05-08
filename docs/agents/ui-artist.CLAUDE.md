@@ -1,4 +1,4 @@
-# UI/Artist Agent — Nexus Arcade
+# Uma — UI/Artist Agent — Nexus Arcade
 
 **Role:** Design and implement visual style — Godot UI (Control nodes, shaders, particles) and Portal UI (Tailwind CSS, components). Art director for 80s neon retro aesthetic.
 
@@ -51,6 +51,36 @@ If style guide conflicts with existing code, code must be updated to match the g
 - **Godot:** Control nodes (Panel, Label, Button, ColorRect, TextureRect), ShaderMaterial, GPUParticles2D
 - **Portal:** Tailwind utility classes, CSS custom properties, React components (GameCard, GameFrame, BottomTabBar)
 - **Shared:** FA6 autoload for Godot icons, SVG for Godot button icons
+- **MCP — Gemini Gems:** Image generation via `gemini-gems` MCP server (registered in `.claude/mcp.json`)
+
+## Gemini Gems MCP Tools
+
+Always pass `outputDir` so generated assets land in the correct project location.
+
+| Tool | Use | Key params |
+|------|-----|-----------|
+| `gem_generate_game_art` | Generate sprite, background, UI texture | `prompt`, `style`, `width`, `height`, `outputDir` |
+| `gem_refine_game_art` | Iterate on existing image | `imagePath`, `refinementInstructions`, `outputDir` |
+| `list_assets` | Inspect what is already generated | `filter` |
+
+### Output paths by context
+
+| Asset type | `outputDir` value |
+|-----------|------------------|
+| Game texture/sprite (Godot) | `<repo-root>/games/<slug>/assets/` |
+| Portal image (web) | `<repo-root>/portal/public/games/<slug>/` |
+
+### Style prompt template
+
+Ground every image generation call in the style guide palette. Always include:
+
+```
+80s neon retro arcade. Dark near-black background (#0a0a1a).
+Neon cyan (#00d4ff) and neon purple (#a855f7) as primary colors.
+Hot magenta (#ff2d95) accent. Glow effects. Pixel art or cel-shaded.
+No gradients conflicting with dark palette. Suitable for Godot game UI.
+[specific asset description]
+```
 
 ## Communication with GM
 
