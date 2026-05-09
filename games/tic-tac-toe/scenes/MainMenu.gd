@@ -46,14 +46,10 @@ func _ready() -> void:
 	_lbl_clock.text = FA6.icon("clock")
 	_lbl_clock.add_theme_font_override("font", fa6)
 
-	$HUDPanel/Slots/SlotProfile/LblProfileIcon.add_theme_font_override("font", fa6)
-	$HUDPanel/Slots/SlotProfile/LblProfileIcon.text = FA6.icon("user")
-	$HUDPanel/Slots/BtnSignIn.add_theme_font_override("font", fa6)
-	$HUDPanel/Slots/BtnSignIn.text = FA6.icon("arrow-right-to-bracket") + "  SIGN IN"
-	$HUDPanel/Slots/BtnLeaderboard.add_theme_font_override("font", fa6)
-	$HUDPanel/Slots/BtnLeaderboard.text = FA6.icon("trophy") + "  LEADERBOARD"
-	$HUDPanel/Slots/BtnMarketplace.add_theme_font_override("font", fa6)
-	$HUDPanel/Slots/BtnMarketplace.text = FA6.icon("lock") + "  MARKETPLACE"
+	$HUDPanel/Slots/BtnSignIn.text = ">  SIGN IN"
+	$HUDPanel/Slots/BtnLeaderboard.text = ">  LEADERBOARD"
+	$HUDPanel/Slots/BtnMarketplace.text = "   MARKETPLACE"
+	$HUDPanel/Slots/SlotProfile/LblProfileIcon.text = ""
 
 	$Bridge.send_game_ready()
 	$Bridge.auth_token_received.connect(func(_t): pass)

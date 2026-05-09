@@ -64,9 +64,11 @@ my_button.add_theme_font_override("font", fa6)
 my_button.text = FA6.icon("trophy") + "  LABEL"
 ```
 
-**NEVER set `theme_override_fonts/font` in the .tscn for any node that will show FA6 icons.** The scene-level Orbitron override conflicts with the script FA6 override. Leave the font property unset in the scene; set only in script.
+**NEVER set `theme_override_fonts/font` in the .tscn for any node that will show FA6 icons.** The scene-level Orbitron override conflicts with the script FA6 override.
 
-**Buttons with both icon + text** share one font. FA6 solid covers all ASCII so the whole string renders correctly with FA6 font. Do not try to mix fonts in one Button.
+**FA6 icons in Button text are BROKEN in GL Compatibility web export.** FA6 solid font lacks the space glyph (U+0020), so `FA6.icon("x") + "  TEXT"` renders icon + tofu boxes + text. Even with `add_theme_font_override`, the space renders as tofu. **Rule: never put FA6 icon + ASCII text in the same Button/Label.** Use one of:
+- ASCII-only text (`">  SIGN IN"`) with Orbitron — always works
+- FA6 icon in a dedicated Label with FA6 font, ASCII text in a separate Label with Orbitron
 
 ## SVG Icons
 
