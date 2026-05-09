@@ -17,11 +17,6 @@ var _dragging: bool = false
 @onready var _lbl_mode: Label = $LblModeName
 @onready var _btn_left: Button = $BtnArrowLeft
 @onready var _btn_right: Button = $BtnArrowRight
-@onready var _dots: Array[Label] = [
-	$DotContainer/Dot0,
-	$DotContainer/Dot1,
-	$DotContainer/Dot2,
-]
 
 func _ready() -> void:
 	_btn_left.pressed.connect(func(): _prev())
@@ -42,9 +37,6 @@ func _refresh() -> void:
 	var m := MODES[_current_index]
 	_lbl_mode.text = m.name.to_upper()
 	_preview.set_mode(m.id)
-	for i in _dots.size():
-		_dots[i].add_theme_color_override("font_color",
-			Color("#00d4ff") if i == _current_index else Color("#334466"))
 	mode_changed.emit(_current_index, m.id)
 
 func _gui_input(event: InputEvent) -> void:
