@@ -19,6 +19,8 @@ func _ready() -> void:
 	var bg = load("res://scripts/BackgroundLayer.gd").new()
 	add_child(bg)
 	move_child(bg, 1)
+	# BtnSignInIcon must render above HeaderBar (z-order fix)
+	move_child($BtnSignInIcon, get_child_count() - 1)
 
 	# Wire tile buttons
 	_btn_1p.pressed.connect(_on_1p)
