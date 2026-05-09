@@ -1,7 +1,7 @@
 class_name ModeTile
 extends Button
 
-const TILE_SIZE := 112.0
+const TILE_SIZE := 96.0
 const BORDER_COLOR := Color("#a855f7")
 const HOVER_COLOR := Color("#00d4ff")
 const LABEL_COLOR := Color("#94a3b8")

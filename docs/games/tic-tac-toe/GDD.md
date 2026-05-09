@@ -62,11 +62,82 @@
 
 Godot scenes inside the game (not the portal):
 
-- `MainMenu` — Mode select: vs AI, 2P Local, 2P Online. No auth prompt here.
-- `AIDifficultySelect` — Easy / Hard picker (entered from MainMenu → vs AI).
-- `OnlineLobby` — Create room or paste/join room link. Auth gate triggers here if not signed in.
+- `MainMenu` — Mode select + HUD panel. See layout below.
+- `AIDifficultySelect` — Easy / Hard picker (entered from MainMenu → 1P).
+- `OnlineLobby` — Create room or paste/join room link.
 - `GameBoard` — Active gameplay. Shows current turn, board grid, scores.
 - `GameOver` — Win / Lose / Draw result with Play Again and Menu buttons.
+- `LeaderboardScene` — Top 20 players by total stars.
+
+### MainMenu Layout
+
+```
+┌──────────────────────────────────────┐
+│  #HashAttack!                    [>] │  ← [>] = expand button (top-right)
+│                                      │
+│  ◄  ● GAME MODE: CLASSIC  ●  ►      │  ← ◄/► = mode carousel
+│       [ TIMER: [✓] 10s  ]           │  ← timer row (hidden in Ultimate)
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │    1P        2P      ONLINE  │    │  ← Row1: game mode buttons
+│  └──────────────────────────────┘    │
+│  ┌──────────────────────────────┐    │
+│  │  SIGN IN  LEADERBOARD  MKT   │    │  ← Row2: auth + nav (signed out)
+│  │  ─────────────────────────── │    │
+│  │  username  LEADERBOARD  MKT  │    │  ← Row2: profile + nav (signed in)
+│  │  ★ 123 pts                  │    │
+│  └──────────────────────────────┘    │
+│                                      │
+└──────────────────────────────────────┘
+```
+
+Row2 left slot:
+- **Signed out:** "SIGN IN" button → triggers Google OAuth via portal
+- **Signed in:** Username + points display
+
+Expand panel slides in from right (reserved for future use):
+
+┌──────────────────────────────┐
+│  [<]                         │  ← [<] = collapse
+│                              │
+│  (future slots)              │
+└──────────────────────────────┘
+```
+
+### Game Modes (via carousel ◄ ►)
+
+| Mode | Description | Timer | Status |
+|------|-------------|-------|--------|
+| **Classic** | Standard 3×3 Tic Tac Toe | Optional (checkbox) | Live |
+| **Ultimate** | 3×3 grid of 3×3 mini-boards. Win a mini-board to claim that cell in the meta-board. | Always on (30s) | Sprint 2 |
+| **Ephemeral** | Moves expire after 6 turns (oldest mark vanishes). No draws — always a winner. | Always on (30s) | Sprint 2 |
+
+Each mode shows the same 3 action buttons: **1P (VS AI)** / **2P (LOCAL)** / **ONLINE**.
+
+### HUD Expand Panel
+
+Accessible from all game scenes via top-right `[>]` button. Slides in/out from right edge.
+
+**Signed out state:**
+- `>  SIGN IN` button → triggers Google OAuth via portal
+
+**Signed in state:**
+- Profile slot: FA6 user icon + username + `★ points`
+- `>  LEADERBOARD` button → opens LeaderboardScene
+- `MARKETPLACE` button → greyed out (Sprint 5)
+
+### Screen Flow
+
+```
+MainMenu
+  ├─ 1P → AIDifficultySelect → GameBoard → GameOver → MainMenu
+  ├─ 2P → GameBoard (local) → GameOver → MainMenu
+  └─ Online → OnlineLobby → GameBoard (online) → GameOver → MainMenu
+
+[>] Expand Panel (overlay, any screen)
+  ├─ SIGN IN → portal login → back to game
+  └─ LEADERBOARD → LeaderboardScene → MainMenu
+```
 
 ---
 

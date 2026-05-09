@@ -11,7 +11,6 @@
 |----------|----------|
 | Style guide (game colors) | `docs/style/nexus-arcade-style-guide.md` section 1.1 |
 | GDD | `docs/games/tic-tac-toe/GDD.md` |
-| Game Dev agent | `docs/agents/game-dev.CLAUDE.md` |
 | Root CLAUDE.md | `CLAUDE.md` |
 
 ## Godot Export

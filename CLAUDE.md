@@ -99,6 +99,11 @@ All tables have RLS enabled. Public read allowed on all tables. Auth required fo
 - Button icons: SVG as `Texture2D` — never emoji
 - Label icons: `FA6` autoload — never emoji in Button/Label text
 
+### Godot Development Rules
+
+- **Style guide beats GDD.** If `docs/style/nexus-arcade-style-guide.md` and a game GDD conflict on visual values, style guide wins.
+- **Game code stays in `games/<slug>/`.** Do not touch `portal/` code when fixing or implementing game features.
+
 ## Visual System
 
 Single source of truth: `docs/style/nexus-arcade-style-guide.md`
@@ -114,17 +119,20 @@ Style guide change workflow: GM updates guide first → agents propagate → tes
 
 ## Gemini Gems MCP (Image Generation)
 
-Registered in `.claude/mcp.json`. UI/Artist agent owns this — see `docs/agents/ui-artist.CLAUDE.md` for tool usage, output paths, and style prompt template.
+Registered in `.claude/mcp.json`. UI/Artist agent (Uma) owns this — invoke `/uma` for tool usage, output paths, and style prompt template.
 
-## Agent Roles
+## Skills (Agent Personas)
 
-| Agent | File | Role |
-|-------|------|------|
-| Game Designer | `docs/agents/game-designer.CLAUDE.md` | Mechanics, events, progression, reward systems |
-| Game Dev | `docs/agents/game-dev.CLAUDE.md` | Godot mechanics, scenes, systems |
-| UI/Artist | `docs/agents/ui-artist.CLAUDE.md` | Visual style, shaders, CSS, components |
-| Marketer | `docs/agents/marketer.CLAUDE.md` | Social, store presence, community |
-| Tester (QA) | `docs/agents/tester.CLAUDE.md` | Bug finding, style guide compliance, regression |
+Invoke with `/name` or mention the agent name in your query. Each skill loads the agent's full role, authority, references, and toolset.
+
+| Skill | Agent | Role |
+|-------|-------|------|
+| `/uma` | UI/Artist | Visual style, shaders, CSS, components, image generation |
+| `/gladys` | Game Designer | Mechanics, events, progression, reward systems |
+| `/tessa` | Tester (QA) | Bug finding, style guide compliance, regression |
+| `/mary` | Marketer | Social, store presence, community, ad campaigns |
+
+Skill files: `.claude/skills/<name>/SKILL.md`
 
 ### Per-Project CLAUDE.md
 
@@ -142,8 +150,9 @@ nexus-arcade/
   supabase/
     migrations/      — SQL schema + seed files (applied to cloud, never local)
   assets/            — shared assets
+  .claude/
+    skills/          — agent persona skills (uma, dex, gladys, tessa, mary)
   docs/
-    agents/          — per-agent CLAUDE.md files
     games/<slug>/    — GDD and game design docs
     style/           — nexus-arcade-style-guide.md
 ```

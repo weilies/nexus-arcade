@@ -16,6 +16,8 @@ var _help_popup: Control = null
 @onready var _btn_1p: Button = $TileBar/Row1/Btn1P
 @onready var _btn_2p: Button = $TileBar/Row1/Btn2P
 @onready var _btn_online: Button = $TileBar/Row1/BtnOnline
+@onready var _btn_help: Button = $TileBar/Row1/BtnHelp
+@onready var _btn_leaderboard: Button = $TileBar/Row2/BtnLeaderboard
 @onready var _btn_left: Button = $CarouselContainer/BtnArrowLeft
 @onready var _btn_right: Button = $CarouselContainer/BtnArrowRight
 @onready var _btn_timer: Button = $CarouselContainer/TimerRow/BtnTimer
@@ -39,6 +41,8 @@ func _ready() -> void:
 	_btn_1p.pressed.connect(_on_1p)
 	_btn_2p.pressed.connect(_on_2p)
 	_btn_online.pressed.connect(_on_online)
+	_btn_help.pressed.connect(_on_help)
+	_btn_leaderboard.pressed.connect(_on_leaderboard)
 	_btn_timer.pressed.connect(_on_timer_pressed)
 
 	_btn_left.flat = true
@@ -67,37 +71,49 @@ func _ready() -> void:
 
 func _build_row2() -> void:
 	var row2 := $TileBar/Row2
-	# --- AuthSlot (SIGN IN / Profile + SIGN OUT toggle) ---
+	var orbitron := load("res://fonts/Orbitron.ttf")
+
+	# --- Auth slot (SIGN IN button / Profile + SIGN OUT toggle) ---
 	_auth_slot = VBoxContainer.new()
-	_auth_slot.custom_minimum_size = Vector2(112, 48)
+	_auth_slot.custom_minimum_size = Vector2(96, 96)
 	_auth_slot.alignment = BoxContainer.ALIGNMENT_CENTER
 	_auth_slot.mouse_filter = 1
 
 	_btn_sign_in = Button.new()
-	_btn_sign_in.flat = true
-	_btn_sign_in.text = "SIGN IN"
-	_btn_sign_in.custom_minimum_size = Vector2(112, 48)
-	_btn_sign_in.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
-	_btn_sign_in.add_theme_font_size_override("font_size", 12)
+	_btn_sign_in.custom_minimum_size = Vector2(96, 96)
+	_btn_sign_in.icon = preload("res://images/icon-user.svg")
+	_btn_sign_in.expand_icon = true
+	_btn_sign_in.add_theme_constant_override("icon_max_width", 48)
+	_btn_sign_in.add_theme_font_override("font", orbitron)
+	_btn_sign_in.add_theme_font_size_override("font_size", 14)
 	_btn_sign_in.add_theme_color_override("font_color", Color("#00d4ff"))
+	_btn_sign_in.text = "SIGN IN"
 	_btn_sign_in.pressed.connect(_on_sign_in)
 	_auth_slot.add_child(_btn_sign_in)
 
 	_slot_profile = VBoxContainer.new()
 	_slot_profile.visible = false
+	_slot_profile.custom_minimum_size = Vector2(96, 96)
 	_slot_profile.alignment = BoxContainer.ALIGNMENT_CENTER
-	_slot_profile.mouse_filter = 1  # STOP — receives clicks for toggle
+	_slot_profile.mouse_filter = 1
+
+	var prof_icon := TextureRect.new()
+	prof_icon.texture = preload("res://images/icon-user.svg")
+	prof_icon.custom_minimum_size = Vector2(36, 36)
+	prof_icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	prof_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_slot_profile.add_child(prof_icon)
 
 	_lbl_username = Label.new()
 	_lbl_username.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_username.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
+	_lbl_username.add_theme_font_override("font", orbitron)
 	_lbl_username.add_theme_font_size_override("font_size", 11)
 	_lbl_username.add_theme_color_override("font_color", Color("#00d4ff"))
 	_slot_profile.add_child(_lbl_username)
 
 	_lbl_points = Label.new()
 	_lbl_points.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_points.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
+	_lbl_points.add_theme_font_override("font", orbitron)
 	_lbl_points.add_theme_font_size_override("font_size", 10)
 	_lbl_points.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 1))
 	_slot_profile.add_child(_lbl_points)
@@ -106,8 +122,8 @@ func _build_row2() -> void:
 	_btn_sign_out.visible = false
 	_btn_sign_out.flat = true
 	_btn_sign_out.text = "SIGN OUT"
-	_btn_sign_out.custom_minimum_size = Vector2(112, 32)
-	_btn_sign_out.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
+	_btn_sign_out.custom_minimum_size = Vector2(96, 32)
+	_btn_sign_out.add_theme_font_override("font", orbitron)
 	_btn_sign_out.add_theme_font_size_override("font_size", 11)
 	_btn_sign_out.add_theme_color_override("font_color", Color("#ef4444"))
 	_btn_sign_out.pressed.connect(_on_sign_out)
@@ -115,75 +131,7 @@ func _build_row2() -> void:
 	_auth_slot.add_child(_slot_profile)
 	_auth_slot.add_child(_btn_sign_out)
 	row2.add_child(_auth_slot)
-
-	# --- Leaderboard ---
-	var lb_btn := Button.new()
-	lb_btn.flat = true
-	lb_btn.custom_minimum_size = Vector2(112, 48)
-	lb_btn.pressed.connect(_on_leaderboard)
-	var lb_hbox := HBoxContainer.new()
-	lb_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	lb_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var lb_icon := Label.new()
-	lb_icon.text = FA6.icon("ranking-star")
-	lb_icon.add_theme_font_override("font", FA6.font())
-	lb_icon.add_theme_font_size_override("font_size", 14)
-	lb_icon.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 1))
-	lb_hbox.add_child(lb_icon)
-	var lb_text := Label.new()
-	lb_text.text = "  LEADERBOARD"
-	lb_text.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
-	lb_text.add_theme_font_size_override("font_size", 11)
-	lb_text.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 1))
-	lb_hbox.add_child(lb_text)
-	lb_btn.add_child(lb_hbox)
-	row2.add_child(lb_btn)
-
-	# --- Store (disabled) ---
-	var st_btn := Button.new()
-	st_btn.flat = true
-	st_btn.disabled = true
-	st_btn.custom_minimum_size = Vector2(112, 48)
-	var st_hbox := HBoxContainer.new()
-	st_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	st_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var st_icon := Label.new()
-	st_icon.text = FA6.icon("store")
-	st_icon.add_theme_font_override("font", FA6.font())
-	st_icon.add_theme_font_size_override("font_size", 14)
-	st_icon.add_theme_color_override("font_color", Color(0.3, 0.3, 0.4, 1))
-	st_hbox.add_child(st_icon)
-	var st_text := Label.new()
-	st_text.text = "  STORE"
-	st_text.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
-	st_text.add_theme_font_size_override("font_size", 11)
-	st_text.add_theme_color_override("font_color", Color(0.3, 0.3, 0.4, 1))
-	st_hbox.add_child(st_text)
-	st_btn.add_child(st_hbox)
-	row2.add_child(st_btn)
-
-	# --- Help ---
-	var hl_btn := Button.new()
-	hl_btn.flat = true
-	hl_btn.custom_minimum_size = Vector2(112, 48)
-	hl_btn.pressed.connect(_on_help)
-	var hl_hbox := HBoxContainer.new()
-	hl_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	hl_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var hl_icon := Label.new()
-	hl_icon.text = FA6.icon("book")
-	hl_icon.add_theme_font_override("font", FA6.font())
-	hl_icon.add_theme_font_size_override("font_size", 14)
-	hl_icon.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 1))
-	hl_hbox.add_child(hl_icon)
-	var hl_text := Label.new()
-	hl_text.text = "  HELP"
-	hl_text.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
-	hl_text.add_theme_font_size_override("font_size", 11)
-	hl_text.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 1))
-	hl_hbox.add_child(hl_text)
-	hl_btn.add_child(hl_hbox)
-	row2.add_child(hl_btn)
+	row2.move_child(_auth_slot, 0)
 
 func _on_mode_changed(_index: int, mode_id: String) -> void:
 	_current_game_mode = mode_id
