@@ -34,26 +34,32 @@ func _ready() -> void:
 	_check_timer.toggled.connect(_on_timer_toggled)
 	_refresh_timer_visibility()
 
-	# Arrow buttons already wired in ModeCarousel
+	# Arrow buttons — flat (no background), FA6 font
 	var fa6 := FA6.font()
-	_btn_left.text = FA6.icon("fa-chevron-left")
+	_btn_left.flat = true
+	_btn_left.text = FA6.icon("chevron-left")
 	_btn_left.add_theme_font_override("font", fa6)
-	_btn_right.text = FA6.icon("fa-chevron-right")
+	_btn_right.flat = true
+	_btn_right.text = FA6.icon("chevron-right")
 	_btn_right.add_theme_font_override("font", fa6)
 
 	# Sign-in icon
-	$BtnSignInIcon.text = FA6.icon("fa-arrow-right-to-bracket")
+	$BtnSignInIcon.text = FA6.icon("arrow-right-to-bracket")
 	$BtnSignInIcon.add_theme_font_override("font", fa6)
 
 	# Profile icons
-	$ProfileRow/LblProfileIcon.text = FA6.icon("fa-user")
+	$ProfileRow/LblProfileIcon.text = FA6.icon("user")
 	$ProfileRow/LblProfileIcon.add_theme_font_override("font", fa6)
 	_btn_leaderboard.add_theme_font_override("font", fa6)
-	_btn_leaderboard.text = FA6.icon("fa-trophy") + "  LEADERBOARD"
+	_btn_leaderboard.text = FA6.icon("trophy") + "  LEADERBOARD"
 
 	# Clock icon
-	_lbl_clock.text = FA6.icon("fa-clock")
+	_lbl_clock.text = FA6.icon("clock")
 	_lbl_clock.add_theme_font_override("font", fa6)
+
+	# Dots must not block tile button clicks below
+	for dot in $CarouselContainer/DotContainer.get_children():
+		dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	# Auth
 	$Bridge.send_game_ready()

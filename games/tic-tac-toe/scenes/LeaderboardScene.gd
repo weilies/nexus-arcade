@@ -6,7 +6,8 @@ func _ready() -> void:
 	move_child(bg, 1)
 
 	$VBoxContainer/BtnBack.pressed.connect(_on_back)
-	$VBoxContainer/BtnBack.text = FA6.icon("fa-arrow-left") + "  BACK"
+	$VBoxContainer/BtnBack.add_theme_font_override("font", FA6.font())
+	$VBoxContainer/BtnBack.text = FA6.icon("arrow-left") + "  BACK"
 	$VBoxContainer/LblTitle.text = "LEADERBOARD"
 	_load_leaderboard()
 
