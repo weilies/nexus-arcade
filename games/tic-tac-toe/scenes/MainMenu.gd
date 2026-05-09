@@ -1,55 +1,63 @@
 extends Control
 
 var _current_game_mode: String = "classic"
-var _timer_enabled: bool = false
-var _panel_open := false
+var _timer_index: int = 0
+# 0=Off, 1=Blitz(3s), 2=Casual(6s), 3=Chill(9s)
+const TIMER_MODES: Array[Dictionary] = [
+	{ "label": "OFF", "seconds": 0 },
+	{ "label": "BLITZ", "seconds": 3 },
+	{ "label": "CASUAL", "seconds": 6 },
+	{ "label": "CHILL", "seconds": 9 },
+]
+var _show_sign_out: bool = false
+var _help_popup: Control = null
 
 @onready var _carousel: ModeCarousel = $CarouselContainer
 @onready var _btn_1p: Button = $TileBar/Row1/Btn1P
 @onready var _btn_2p: Button = $TileBar/Row1/Btn2P
 @onready var _btn_online: Button = $TileBar/Row1/BtnOnline
-@onready var _check_timer: CheckBox = $CarouselContainer/TimerRow/CheckTimer
-@onready var _lbl_clock: Label = $CarouselContainer/TimerRow/LblClock
-@onready var _lbl_timer_secs: Label = $CarouselContainer/TimerRow/LblTimerSecs
 @onready var _btn_left: Button = $CarouselContainer/BtnArrowLeft
 @onready var _btn_right: Button = $CarouselContainer/BtnArrowRight
-@onready var _btn_expand: Button = $BtnExpand
-@onready var _hud_panel: Control = $HUDPanel
+@onready var _btn_timer: Button = $CarouselContainer/TimerRow/BtnTimer
+@onready var _lbl_timer: Label = $CarouselContainer/TimerRow/BtnTimer/HBoxTimer/LblTimer
+@onready var _lbl_clock_icon: Label = $CarouselContainer/TimerRow/BtnTimer/HBoxTimer/LblClockIcon
+@onready var _lbl_mode_name: Label = $CarouselContainer/LblModeName
+
+# Row2 nodes (built programmatically)
+var _auth_slot: Control = null
+var _btn_sign_in: Button = null
+var _btn_sign_out: Button = null
+var _slot_profile: VBoxContainer = null
+var _lbl_username: Label = null
+var _lbl_points: Label = null
 
 func _ready() -> void:
 	var bg = load("res://scripts/BackgroundLayer.gd").new()
 	add_child(bg)
 	move_child(bg, 1)
-	move_child($BtnExpand, get_child_count() - 1)
 
 	_btn_1p.pressed.connect(_on_1p)
 	_btn_2p.pressed.connect(_on_2p)
 	_btn_online.pressed.connect(_on_online)
-	_btn_expand.pressed.connect(_toggle_panel)
-	$HUDPanel/Slots/BtnSignIn.pressed.connect(_on_sign_in)
-	$HUDPanel/Slots/BtnLeaderboard.pressed.connect(_on_leaderboard)
+	_btn_timer.pressed.connect(_on_timer_pressed)
 
-	_carousel.mode_changed.connect(_on_mode_changed)
-	_check_timer.toggled.connect(_on_timer_toggled)
-	_refresh_timer_visibility()
-
-	var fa6 := FA6.font()
 	_btn_left.flat = true
 	_btn_left.text = FA6.icon("chevron-left")
-	_btn_left.add_theme_font_override("font", fa6)
+	_btn_left.add_theme_font_override("font", FA6.font())
 	_btn_right.flat = true
 	_btn_right.text = FA6.icon("chevron-right")
-	_btn_right.add_theme_font_override("font", fa6)
+	_btn_right.add_theme_font_override("font", FA6.font())
 
-	_btn_expand.text = ">"
+	_lbl_clock_icon.text = FA6.icon("clock")
+	_lbl_clock_icon.add_theme_font_override("font", FA6.font())
 
-	_lbl_clock.text = FA6.icon("clock")
-	_lbl_clock.add_theme_font_override("font", fa6)
+	_carousel.mode_changed.connect(_on_mode_changed)
+	_refresh_timer_visibility()
+	_refresh_timer_label()
 
-	$HUDPanel/Slots/BtnSignIn.text = ">  SIGN IN"
-	$HUDPanel/Slots/BtnLeaderboard.text = ">  LEADERBOARD"
-	$HUDPanel/Slots/BtnMarketplace.text = "   MARKETPLACE"
-	$HUDPanel/Slots/SlotProfile/LblProfileIcon.text = ""
+	_build_row2()
+
+	_slot_profile.gui_input.connect(_on_profile_clicked)
 
 	$Bridge.send_game_ready()
 	$Bridge.auth_token_received.connect(func(_t): pass)
@@ -57,17 +65,125 @@ func _ready() -> void:
 		Globals.auth_ready.connect(_refresh_auth_ui)
 	_refresh_auth_ui()
 
-func _toggle_panel() -> void:
-	_panel_open = not _panel_open
-	_hud_panel.visible = true
-	var tw := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	if _panel_open:
-		tw.tween_property(_hud_panel, "offset_left", -240.0, 0.18)
-		_btn_expand.text = "<"
-	else:
-		tw.tween_property(_hud_panel, "offset_left", 0.0, 0.15)
-		tw.tween_callback(func(): _hud_panel.visible = false)
-		_btn_expand.text = ">"
+func _build_row2() -> void:
+	var row2 := $TileBar/Row2
+	# --- AuthSlot (SIGN IN / Profile + SIGN OUT toggle) ---
+	_auth_slot = VBoxContainer.new()
+	_auth_slot.custom_minimum_size = Vector2(112, 48)
+	_auth_slot.alignment = BoxContainer.ALIGNMENT_CENTER
+	_auth_slot.mouse_filter = 1
+
+	_btn_sign_in = Button.new()
+	_btn_sign_in.flat = true
+	_btn_sign_in.text = "SIGN IN"
+	_btn_sign_in.custom_minimum_size = Vector2(112, 48)
+	_btn_sign_in.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
+	_btn_sign_in.add_theme_font_size_override("font_size", 12)
+	_btn_sign_in.add_theme_color_override("font_color", Color("#00d4ff"))
+	_btn_sign_in.pressed.connect(_on_sign_in)
+	_auth_slot.add_child(_btn_sign_in)
+
+	_slot_profile = VBoxContainer.new()
+	_slot_profile.visible = false
+	_slot_profile.alignment = BoxContainer.ALIGNMENT_CENTER
+	_slot_profile.mouse_filter = 1  # STOP — receives clicks for toggle
+
+	_lbl_username = Label.new()
+	_lbl_username.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_lbl_username.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
+	_lbl_username.add_theme_font_size_override("font_size", 11)
+	_lbl_username.add_theme_color_override("font_color", Color("#00d4ff"))
+	_slot_profile.add_child(_lbl_username)
+
+	_lbl_points = Label.new()
+	_lbl_points.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_lbl_points.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
+	_lbl_points.add_theme_font_size_override("font_size", 10)
+	_lbl_points.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 1))
+	_slot_profile.add_child(_lbl_points)
+
+	_btn_sign_out = Button.new()
+	_btn_sign_out.visible = false
+	_btn_sign_out.flat = true
+	_btn_sign_out.text = "SIGN OUT"
+	_btn_sign_out.custom_minimum_size = Vector2(112, 32)
+	_btn_sign_out.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
+	_btn_sign_out.add_theme_font_size_override("font_size", 11)
+	_btn_sign_out.add_theme_color_override("font_color", Color("#ef4444"))
+	_btn_sign_out.pressed.connect(_on_sign_out)
+
+	_auth_slot.add_child(_slot_profile)
+	_auth_slot.add_child(_btn_sign_out)
+	row2.add_child(_auth_slot)
+
+	# --- Leaderboard ---
+	var lb_btn := Button.new()
+	lb_btn.flat = true
+	lb_btn.custom_minimum_size = Vector2(112, 48)
+	lb_btn.pressed.connect(_on_leaderboard)
+	var lb_hbox := HBoxContainer.new()
+	lb_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	lb_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var lb_icon := Label.new()
+	lb_icon.text = FA6.icon("ranking-star")
+	lb_icon.add_theme_font_override("font", FA6.font())
+	lb_icon.add_theme_font_size_override("font_size", 14)
+	lb_icon.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 1))
+	lb_hbox.add_child(lb_icon)
+	var lb_text := Label.new()
+	lb_text.text = "  LEADERBOARD"
+	lb_text.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
+	lb_text.add_theme_font_size_override("font_size", 11)
+	lb_text.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 1))
+	lb_hbox.add_child(lb_text)
+	lb_btn.add_child(lb_hbox)
+	row2.add_child(lb_btn)
+
+	# --- Store (disabled) ---
+	var st_btn := Button.new()
+	st_btn.flat = true
+	st_btn.disabled = true
+	st_btn.custom_minimum_size = Vector2(112, 48)
+	var st_hbox := HBoxContainer.new()
+	st_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	st_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var st_icon := Label.new()
+	st_icon.text = FA6.icon("store")
+	st_icon.add_theme_font_override("font", FA6.font())
+	st_icon.add_theme_font_size_override("font_size", 14)
+	st_icon.add_theme_color_override("font_color", Color(0.3, 0.3, 0.4, 1))
+	st_hbox.add_child(st_icon)
+	var st_text := Label.new()
+	st_text.text = "  STORE"
+	st_text.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
+	st_text.add_theme_font_size_override("font_size", 11)
+	st_text.add_theme_color_override("font_color", Color(0.3, 0.3, 0.4, 1))
+	st_hbox.add_child(st_text)
+	st_btn.add_child(st_hbox)
+	row2.add_child(st_btn)
+
+	# --- Help ---
+	var hl_btn := Button.new()
+	hl_btn.flat = true
+	hl_btn.custom_minimum_size = Vector2(112, 48)
+	hl_btn.pressed.connect(_on_help)
+	var hl_hbox := HBoxContainer.new()
+	hl_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hl_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var hl_icon := Label.new()
+	hl_icon.text = FA6.icon("book")
+	hl_icon.add_theme_font_override("font", FA6.font())
+	hl_icon.add_theme_font_size_override("font_size", 14)
+	hl_icon.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 1))
+	hl_hbox.add_child(hl_icon)
+	var hl_text := Label.new()
+	hl_text.text = "  HELP"
+	hl_text.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
+	hl_text.add_theme_font_size_override("font_size", 11)
+	hl_text.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 1))
+	hl_hbox.add_child(hl_text)
+	hl_btn.add_child(hl_hbox)
+	row2.add_child(hl_btn)
 
 func _on_mode_changed(_index: int, mode_id: String) -> void:
 	_current_game_mode = mode_id
@@ -76,23 +192,37 @@ func _on_mode_changed(_index: int, mode_id: String) -> void:
 func _refresh_timer_visibility() -> void:
 	$CarouselContainer/TimerRow.visible = _current_game_mode != "ultimate"
 
-func _on_timer_toggled(pressed: bool) -> void:
-	_timer_enabled = pressed
-	_lbl_timer_secs.add_theme_color_override("font_color",
-		Color("#00d4ff") if pressed else Color(0.392, 0.455, 0.573, 1))
+func _on_timer_pressed() -> void:
+	_timer_index = (_timer_index + 1) % TIMER_MODES.size()
+	_refresh_timer_label()
+
+func _refresh_timer_label() -> void:
+	var mode: Dictionary = TIMER_MODES[_timer_index]
+	var label: String = mode["label"]
+	var secs: int = mode["seconds"]
+	if secs > 0:
+		_lbl_timer.text = "TIMER: " + label + " " + str(secs) + "s"
+	else:
+		_lbl_timer.text = "TIMER: " + label
+	# Color: muted when off, cyan when on
+	var clr := Color("#00d4ff") if secs > 0 else Color(0.392, 0.455, 0.573, 1)
+	_lbl_timer.add_theme_color_override("font_color", clr)
+	_lbl_clock_icon.add_theme_color_override("font_color", clr)
+	Globals.use_timer = secs > 0
+	Globals.timer_seconds = secs
 
 func _on_1p() -> void:
 	SFX.click()
 	Globals.current_game_mode = _current_game_mode
-	Globals.use_timer = _timer_enabled
-	Globals.timer_seconds = 10
+	Globals.use_timer = TIMER_MODES[_timer_index]["seconds"] > 0
+	Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
 	get_tree().change_scene_to_file("res://scenes/AIDifficultySelect.tscn")
 
 func _on_2p() -> void:
 	SFX.click()
 	Globals.current_game_mode = _current_game_mode
-	Globals.use_timer = false
-	Globals.timer_seconds = 10
+	Globals.use_timer = TIMER_MODES[_timer_index]["seconds"] > 0
+	Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
 	var board = load("res://scenes/GameBoard.tscn").instantiate()
 	board.setup_local()
 	get_tree().root.add_child(board)
@@ -101,8 +231,8 @@ func _on_2p() -> void:
 func _on_online() -> void:
 	SFX.click()
 	Globals.current_game_mode = _current_game_mode
-	Globals.use_timer = _timer_enabled
-	Globals.timer_seconds = 10
+	Globals.use_timer = TIMER_MODES[_timer_index]["seconds"] > 0
+	Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
 	get_tree().change_scene_to_file("res://scenes/OnlineLobby.tscn")
 
 func _on_leaderboard() -> void:
@@ -113,10 +243,167 @@ func _on_sign_in() -> void:
 	SFX.click()
 	$Bridge.send_sign_in_request()
 
+func _on_sign_out() -> void:
+	SFX.click()
+	$Bridge.send_sign_out_request()
+
+func _on_help() -> void:
+	SFX.click()
+	if _help_popup:
+		_help_popup.queue_free()
+	_help_popup = _make_help_popup()
+	add_child(_help_popup)
+
+func _on_profile_clicked(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		_show_sign_out = not _show_sign_out
+		_refresh_auth_ui()
+
 func _refresh_auth_ui() -> void:
 	var signed_in := Globals.is_signed_in()
-	$HUDPanel/Slots/SlotProfile.visible = signed_in
-	$HUDPanel/Slots/BtnSignIn.visible = not signed_in
 	if signed_in:
-		$HUDPanel/Slots/SlotProfile/VBoxProfileInfo/LblUsername.text = Globals.current_user.get("username", "")
-		$HUDPanel/Slots/SlotProfile/VBoxProfileInfo/LblPoints.text = "★ %d" % Globals.current_user.get("points", 0)
+		_lbl_username.text = Globals.current_user.get("username", "")
+		_lbl_points.text = "★ %d pts" % Globals.current_user.get("points", 0)
+		_btn_sign_in.visible = false
+		_slot_profile.visible = true
+		_btn_sign_out.visible = _show_sign_out
+	else:
+		_btn_sign_in.visible = true
+		_slot_profile.visible = false
+		_btn_sign_out.visible = false
+		_show_sign_out = false
+
+func _make_help_popup() -> Control:
+	var popup := Control.new()
+	popup.set_anchors_preset(Control.PRESET_FULL_RECT)
+	popup.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	# Dim background
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0, 0, 0, 0.8)
+	dim.gui_input.connect(func(e: InputEvent):
+		if e is InputEventMouseButton and e.pressed:
+			SFX.click()
+			popup.queue_free()
+			_help_popup = null
+	)
+	popup.add_child(dim)
+
+	# Panel
+	var panel := Panel.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.offset_left = -260
+	panel.offset_top = -340
+	panel.offset_right = 260
+	panel.offset_bottom = 340
+	var ps := StyleBoxFlat.new()
+	ps.bg_color = Color(0.008, 0.008, 0.04, 0.97)
+	ps.border_width_left = 2
+	ps.border_color = Color("#00d4ff")
+	ps.corner_radius_top_left = 12
+	ps.corner_radius_top_right = 12
+	ps.corner_radius_bottom_left = 12
+	ps.corner_radius_bottom_right = 12
+	panel.add_theme_stylebox_override("panel", ps)
+	popup.add_child(panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vbox.add_theme_constant_override("separation", 12)
+	panel.add_child(vbox)
+
+	# Header
+	var hdr := HBoxContainer.new()
+	hdr.add_theme_constant_override("separation", 0)
+
+	var title := Label.new()
+	title.text = "HOW TO PLAY"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", Color("#00d4ff"))
+	hdr.add_child(title)
+
+	var close := Button.new()
+	close.flat = true
+	close.text = FA6.icon("xmark")
+	close.add_theme_font_override("font", FA6.font())
+	close.add_theme_font_size_override("font_size", 20)
+	close.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 1))
+	close.custom_minimum_size = Vector2(40, 40)
+	close.pressed.connect(func():
+		SFX.click()
+		popup.queue_free()
+		_help_popup = null
+	)
+	hdr.add_child(close)
+	vbox.add_child(hdr)
+
+	# Scrollable content
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_child(scroll)
+
+	var content := Label.new()
+	content.text = _get_help_text()
+	content.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
+	content.add_theme_font_size_override("font_size", 13)
+	content.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 1))
+	content.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.custom_minimum_size = Vector2(480, 0)
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(content)
+
+	return popup
+
+func _get_help_text() -> String:
+	var lines: Array[String] = []
+	if _current_game_mode == "classic":
+		lines.append_array(_help_classic())
+	elif _current_game_mode == "ultimate":
+		lines.append_array(_help_ultimate())
+	else:
+		lines.append_array(_help_ephemeral())
+
+	lines.append("")
+	lines.append("─── TIMER ───")
+	lines.append("Tap the timer to cycle: OFF → BLITZ (3s) → CASUAL (6s) → CHILL (9s).")
+	lines.append("When on, you must place your mark before time runs out or you SKIP your turn. The screen will shake — don't panic, it's just telling you to hurry up!")
+
+	return "\n".join(lines)
+
+func _help_classic() -> Array[String]:
+	return [
+		"═══ CLASSIC MODE ═══",
+		"",
+		"The OG. The classic. The game your grandma could beat you at.",
+		"",
+		"Get three X's (or O's) in a row — horizontally, vertically, or diagonally. First to do it wins. If the board fills up and nobody's got three in a row, it's a draw. Yes, draws happen. No, you can't argue with the grid.",
+		"",
+		"Pro strat: Take the center. No, really. That's it. That's the whole strategy.",
+	]
+
+func _help_ultimate() -> Array[String]:
+	return [
+		"═══ ULTIMATE MODE ═══",
+		"",
+		"Tic Tac Toe on steroids. It's a 3x3 grid... OF 3x3 GRIDS.",
+		"",
+		"Win a mini-board to claim that square in the mega-board. But here's the twist: your move determines which mini-board your opponent plays next. Send them to a board that's already won? They get to choose. Evil grin optional.",
+		"",
+		"This mode has TIMER always ON. No chill here — 30 seconds or bust.",
+	]
+
+func _help_ephemeral() -> Array[String]:
+	return [
+		"═══ EPHEMERAL MODE ═══",
+		"",
+		"Like classic, but your marks have commitment issues.",
+		"",
+		"After 6 turns, your oldest mark POOF — vanishes into the void. The board is always shifting. No draws possible — someone will eventually win. It's mathematically guaranteed, just like your confusion on turn 7.",
+		"",
+		"Timer is always ON here too. Keep up or get left behind.",
+	]
