@@ -8,7 +8,8 @@ export interface MatchEndMessage {
   mode: 'solo' | 'local' | 'online'
 }
 export interface AuthRequestMessage { type: 'auth_request' }
-export type GameMessage = GameReadyMessage | MatchEndMessage | AuthRequestMessage
+export interface SignInRequestMessage { type: 'sign_in_request' }
+export type GameMessage = GameReadyMessage | MatchEndMessage | AuthRequestMessage | SignInRequestMessage
 
 export function sendToGame(
   iframe: HTMLIFrameElement,
