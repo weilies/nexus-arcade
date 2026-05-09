@@ -17,18 +17,34 @@ export function GameFrame({ slug, gameName, matchId }: GameFrameProps) {
 
   useEffect(() => {
     const supabase = createClient()
+    let pendingToken: string | null = null
 
     const sendAuth = (token: string) => {
-      if (iframeRef.current) {
+      if (iframeRef.current?.contentWindow) {
         sendToGame(iframeRef.current, 'auth_token', { token }, window.location.origin)
+        pendingToken = null
+      } else {
+        pendingToken = token
       }
     }
+
+    // Pre-fetch session before game loads (avoids race after OAuth redirect)
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.access_token) {
+        if (iframeRef.current?.contentWindow) sendAuth(data.session.access_token)
+        else pendingToken = data.session.access_token
+      }
+    })
 
     const cleanup = onGameMessage(async (msg) => {
       if (!iframeRef.current) return
       if (msg.type === 'game_ready' || msg.type === 'auth_request') {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session?.access_token) sendAuth(session.access_token)
+        if (pendingToken) {
+          sendAuth(pendingToken)
+        } else {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session?.access_token) sendAuth(session.access_token)
+        }
       }
       if (msg.type === 'sign_in_request') {
         router.push('/login?return_to=' + encodeURIComponent(window.location.pathname))
@@ -42,9 +58,9 @@ export function GameFrame({ slug, gameName, matchId }: GameFrameProps) {
       }
     }, window.location.origin)
 
-    // Also push auth when session becomes available after OAuth redirect
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.access_token) sendAuth(session.access_token)
+      else pendingToken = null
     })
 
     return () => { cleanup(); subscription.unsubscribe() }
