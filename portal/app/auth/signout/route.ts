@@ -4,6 +4,6 @@ import { NextResponse } from 'next/server'
 export async function POST(request: Request) {
   const supabase = createClient()
   await supabase.auth.signOut()
-  const { origin } = new URL(request.url)
+  const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin
   return NextResponse.redirect(`${origin}/`, { status: 303 })
 }
