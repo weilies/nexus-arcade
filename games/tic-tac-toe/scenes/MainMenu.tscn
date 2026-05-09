@@ -181,10 +181,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -270.0
-offset_top = 160.0
-offset_right = 270.0
-offset_bottom = 400.0
+offset_left = -190.0
+offset_top = 170.0
+offset_right = 190.0
+offset_bottom = 290.0
 theme_override_constants/separation = 12
 alignment = 1
 
@@ -195,7 +195,7 @@ theme_override_constants/separation = 12
 
 [node name="Btn1P" type="Button" parent="TileBar/Row1"]
 layout_mode = 2
-custom_minimum_size = Vector2(160, 160)
+custom_minimum_size = Vector2(112, 112)
 text = "1P"
 icon = ExtResource("2_robot")
 expand_icon = true
@@ -206,7 +206,7 @@ theme_override_font_sizes/font_size = 16
 
 [node name="Btn2P" type="Button" parent="TileBar/Row1"]
 layout_mode = 2
-custom_minimum_size = Vector2(160, 160)
+custom_minimum_size = Vector2(112, 112)
 text = "2P"
 icon = ExtResource("3_users")
 expand_icon = true
@@ -217,7 +217,7 @@ theme_override_font_sizes/font_size = 16
 
 [node name="BtnOnline" type="Button" parent="TileBar/Row1"]
 layout_mode = 2
-custom_minimum_size = Vector2(160, 160)
+custom_minimum_size = Vector2(112, 112)
 text = "ONLINE"
 icon = ExtResource("4_globe")
 expand_icon = true
@@ -275,7 +275,6 @@ theme_override_constants/separation = 10
 [node name="LblProfileIcon" type="Label" parent="HUDPanel/Slots/SlotProfile"]
 layout_mode = 2
 text = ""
-theme_override_fonts/font = ExtResource("5_font")
 theme_override_font_sizes/font_size = 22
 
 [node name="VBoxProfileInfo" type="VBoxContainer" parent="HUDPanel/Slots/SlotProfile"]
@@ -300,7 +299,6 @@ theme_override_colors/font_color = Color(0.55, 0.6, 0.75, 1)
 layout_mode = 2
 custom_minimum_size = Vector2(0, 60)
 flat = true
-theme_override_fonts/font = ExtResource("5_font")
 theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0, 0.831, 1, 1)
 
@@ -308,7 +306,6 @@ theme_override_colors/font_color = Color(0, 0.831, 1, 1)
 layout_mode = 2
 custom_minimum_size = Vector2(0, 60)
 flat = true
-theme_override_fonts/font = ExtResource("5_font")
 theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.55, 0.6, 0.75, 1)
 
@@ -317,6 +314,5 @@ disabled = true
 layout_mode = 2
 custom_minimum_size = Vector2(0, 60)
 flat = true
-theme_override_fonts/font = ExtResource("5_font")
 theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.3, 0.3, 0.4, 1)

@@ -41,7 +41,7 @@ func _ready() -> void:
 	_btn_right.text = FA6.icon("chevron-right")
 	_btn_right.add_theme_font_override("font", fa6)
 
-	_btn_expand.text = "›"
+	_btn_expand.text = ">"
 
 	_lbl_clock.text = FA6.icon("clock")
 	_lbl_clock.add_theme_font_override("font", fa6)
@@ -67,11 +67,11 @@ func _toggle_panel() -> void:
 	var tw := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	if _panel_open:
 		tw.tween_property(_hud_panel, "offset_left", -240.0, 0.18)
-		_btn_expand.text = "‹"
+		_btn_expand.text = "<"
 	else:
 		tw.tween_property(_hud_panel, "offset_left", 0.0, 0.15)
 		tw.tween_callback(func(): _hud_panel.visible = false)
-		_btn_expand.text = "›"
+		_btn_expand.text = ">"
 
 func _on_mode_changed(_index: int, mode_id: String) -> void:
 	_current_game_mode = mode_id

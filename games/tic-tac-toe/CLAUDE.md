@@ -14,20 +14,20 @@
 | Game Dev agent | `docs/agents/game-dev.CLAUDE.md` |
 | Root CLAUDE.md | `CLAUDE.md` |
 
-## Critical Values (Style Guide Overrides)
+## Godot Export
 
-These values in the current code DO NOT match the style guide and should be corrected:
+```powershell
+Set-Location "c:\Projects\claude\nexus-arcade\games\tic-tac-toe"
+& "C:\Projects\godot\Godot_v4.6.2-stable_win64_console.exe" --headless --export-release "Web" "../../portal/public/games/tic-tac-toe/index.html"
+```
 
-| What | Current (wrong) | Style Guide (correct) |
-|------|-----------------|----------------------|
-| X mark color (GameBoard.gd:200) | `#00f2ff` | `#00d4ff` |
-| Background (GameBoard.tscn:18) | `Color(0.043, 0.043, 0.082, 1)` ≈ `#0B0B15` | `Color("#0a0a1a")` |
+**Thread support is DISABLED** (`variant/thread_support=false` in export_presets.cfg). Do not re-enable — the game runs on HTTP local network without HTTPS when threads are off.
 
 ## Scene Structure
 
 ```
 GameBoard.tscn          — main gameplay scene
-MainMenu.tscn           — mode select
+MainMenu.tscn           — mode select + HUD slide panel
 AIDifficultySelect.tscn — easy/hard picker
 OnlineLobby.tscn        — create/join room
 GameOver.tscn           — result overlay
@@ -35,31 +35,65 @@ GameOver.tscn           — result overlay
 
 ## Autoloads Used
 
-- `Globals` — cross-scene state
+- `Globals` — cross-scene state (`use_timer`, `timer_seconds`, `current_game_mode`, `current_user`, `jwt`)
 - `SFX` — sound effects (click, win, lose, tick)
-- `FA6` — FontAwesome 6 icons (labels only)
+- `FA6` — FontAwesome 6 icons (`FA6.icon(name)`, `FA6.font()`)
 
 ## State & AI
 
 - `GameState.gd` — board logic, win detection, turn management
 - `TicTacToeAI.gd` — minimax (hard) + random (easy)
 - Board: 9-element array, `Player.NONE` / `Player.X` / `Player.O`
+- AI mark is NOT always O — when player is O, AI plays as X. Use `_state.current_turn != _player_mark` to trigger AI, not `current_turn == Player.O`.
 
 ## Multiplayer
 
 - Rooms via Supabase Realtime channel `room:{id}`
 - Auth required for online mode (Google OAuth via portal bridge)
-- Turn timer: 30s, auto-forfeit on timeout
+- Turn timer: 10s per-turn (configurable via Globals), off by default
 
-## Color Fixes Needed
+## FA6 Icons — RULES (do not repeat these mistakes)
 
-1. In `scenes/GameBoard.gd` line 200: change `Color("#00f2ff")` → `Color("#00d4ff")`
-2. In `scenes/GameBoard.tscn` line 18: change `color = Color(0.043, 0.043, 0.082, 1)` → `color = Color("#0a0a1a")`
-3. Verify `scenes/GameBoard.gd` line 203: `Color("#a855f7")` already matches — no change needed
+**Icon name format:** cheatsheet keys have NO `fa-` prefix. Use `FA6.icon("clock")` not `FA6.icon("fa-clock")`.
 
-## Export
-
-```powershell
-cd games/tic-tac-toe
-& "C:\Program Files\Godot 4\godot.windows.console.x86_64.exe" --headless --export-release "Web" "../../portal/public/games/tic-tac-toe/index.html"
+**Font override on buttons/labels showing FA6 icons:**
+```gdscript
+# MUST call both: set font AND set text
+var fa6 := FA6.font()
+my_button.add_theme_font_override("font", fa6)
+my_button.text = FA6.icon("trophy") + "  LABEL"
 ```
+
+**NEVER set `theme_override_fonts/font` in the .tscn for any node that will show FA6 icons.** The scene-level Orbitron override conflicts with the script FA6 override. Leave the font property unset in the scene; set only in script.
+
+**Buttons with both icon + text** share one font. FA6 solid covers all ASCII so the whole string renders correctly with FA6 font. Do not try to mix fonts in one Button.
+
+## SVG Icons
+
+SVG import scale MUST be `svg/scale=4.0` (not 1.0) for crisp rendering in web export. After changing `.import` file, delete `.godot/imported/<name>.ctex` and re-export to force reimport.
+
+## Layout — CarouselContainer children
+
+Nodes inside `CarouselContainer` must use `anchor_top=0.0` (not `1.0`). `anchor_top=1.0` positions the top edge at the parent's bottom edge, causing children to extend BELOW the parent into TileBar's Y range, blocking tile button clicks.
+
+## Layout — Z-order
+
+Nodes added last in the scene tree receive input first. If a new child node is added dynamically (e.g., BackgroundLayer), call `move_child($BtnExpand, get_child_count() - 1)` to keep the overlay button on top.
+
+## Web / HTTPS
+
+- Godot 4 web with threads needs SharedArrayBuffer → requires `cross-origin-isolated` context (HTTPS or COOP+COEP on parent page)
+- **Primary fix:** `variant/thread_support=false` in export_presets.cfg — game works on HTTP (local network)
+- **Secondary fix:** next.config.js adds `COOP: same-origin` + `COEP: credentialless` to `/games/:slug` page so iframe is cross-origin isolated even with threads on
+- Do NOT re-enable thread support without also verifying mobile local-network access works
+
+## Auth Flow (Portal ↔ Game)
+
+1. Game `_ready()` → `Bridge.send_game_ready()` → portal receives, calls `supabase.auth.getSession()` → sends `auth_token` to game
+2. After OAuth redirect, session may not be ready when `game_ready` fires → `onAuthStateChange` in `GameFrame.tsx` catches it and sends token again
+3. `PortalBridge._populate_auth(token)` → validates JWT with Supabase → populates `Globals.current_user` → emits `Globals.auth_ready`
+4. `MainMenu._refresh_auth_ui()` connected to `auth_ready` → updates HUD panel
+
+## HUD Slide Panel (MainMenu)
+
+Right-edge drawer. `BtnExpand` toggles. `HUDPanel` slides in/out via `tween_property(offset_left)`. Contains: `SlotProfile` (signed in) OR `BtnSignIn` (signed out), `BtnLeaderboard`, `BtnMarketplace` (disabled). Add new slots here as features grow — do not clutter the main HUD.
