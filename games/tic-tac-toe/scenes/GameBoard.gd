@@ -138,7 +138,7 @@ func _do_place(cell_index: int) -> void:
 	if _state.result != GameState.GameResult.ONGOING:
 		_on_game_over()
 		return
-	if _mode == Mode.VS_AI and _state.current_turn == GameState.Player.O:
+	if _mode == Mode.VS_AI and _state.current_turn != _player_mark:
 		_ai_take_turn.call_deferred()
 
 func _ai_take_turn() -> void:
@@ -342,14 +342,18 @@ func _on_game_over() -> void:
 		GameState.GameResult.X_WINS:
 			if _mode == Mode.LOCAL:
 				SFX.win()
-			elif _mode == Mode.VS_AI:
+			elif _mode == Mode.VS_AI and _player_mark == GameState.Player.X:
 				SFX.win()
+			elif _mode == Mode.VS_AI:
+				SFX.lose()
 			elif _player_mark == GameState.Player.X:
 				SFX.win()
 			else:
 				SFX.lose()
 		GameState.GameResult.O_WINS:
 			if _mode == Mode.LOCAL:
+				SFX.win()
+			elif _mode == Mode.VS_AI and _player_mark == GameState.Player.O:
 				SFX.win()
 			elif _mode == Mode.VS_AI:
 				SFX.lose()
@@ -382,7 +386,9 @@ func _on_game_over() -> void:
 	var rpc_source := "ai_win"
 	match _mode:
 		Mode.VS_AI:
-			local_won = (_state.result == GameState.GameResult.X_WINS)
+			local_won = (
+				(_player_mark == GameState.Player.X and _state.result == GameState.GameResult.X_WINS) or
+				(_player_mark == GameState.Player.O and _state.result == GameState.GameResult.O_WINS))
 			rpc_source = "ai_win"
 		Mode.ONLINE:
 			local_won = (
