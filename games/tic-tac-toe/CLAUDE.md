@@ -26,8 +26,7 @@ Set-Location "c:\Projects\claude\nexus-arcade\games\tic-tac-toe"
 
 ```
 GameBoard.tscn          — main gameplay scene
-MainMenu.tscn           — mode select + HUD slide panel
-AIDifficultySelect.tscn — easy/hard picker
+MainMenu.tscn           — mode select (timer + difficulty inline) + HUD slide panel
 OnlineLobby.tscn        — create/join room
 GameOver.tscn           — result overlay
 ```

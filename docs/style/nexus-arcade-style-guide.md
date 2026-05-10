@@ -60,19 +60,35 @@ Both contexts share the same background, panel, and text values.
 
 ### 2.1 Portal (Web)
 
-| Role | Font | Weight | Size |
-|------|------|--------|------|
-| Headings, nav, buttons | `Orbitron` (via Google Fonts) | 700 / 900 | Responsive |
-| Body text | `system-ui, -apple-system, sans-serif` | 400 | 15–17px |
-| Monospace (code) | `ui-monospace, monospace` | 400 | 14px |
+| Role | Font | Weight | Size (desktop) | Size (mobile ≤768px) |
+|------|------|--------|----------------|----------------------|
+| Headings, nav, buttons | `Orbitron` | 700 / 900 | Responsive | min `18px` |
+| Body text | `system-ui, -apple-system, sans-serif` | 400 | 15–17px | min `16px` |
+| Help text, captions | `system-ui` | 400 | 14px | min `15px` — never `12px` |
+| Monospace (code) | `ui-monospace, monospace` | 400 | 14px | 14px |
 
 `font-pixel` Tailwind alias → `Orbitron`.
 
-### 2.2 Godot (Game)
+**Mobile rule:** Never set text smaller than `15px` on portal at any breakpoint. Help text at `12px` or `13px` is a bug.
 
-- **ArcadeTheme.tres** — to be populated with Godot default font + neon-tinted Theme values
-- All game UI uses Control nodes with `add_theme_*_override()` for per-instance styling
-- Marks (X/O) use `Label` nodes with `font_color` override — no custom font file needed
+### 2.2 Godot (Game) — Mobile Type Scale
+
+Base viewport: **720×960** (`canvas_items` stretch). All sizes below are logical pixels at that viewport. On a real device (e.g. Note 10+, 6.8") each logical px maps to ~2 physical px — sizes must be larger than web px to be readable.
+
+| Role | Min size | Typical size | Notes |
+|------|----------|--------------|-------|
+| Help text, captions | **24px** | 26px | Absolute floor — never go smaller |
+| Body / status labels | **28px** | 30px | Scores, turn indicators, info |
+| Button labels | **30px** | 32px | All interactive button text |
+| Subheadings / section titles | **36px** | 40px | Panel headers, mode names |
+| Headings / screen titles | **48px** | 56px | Menu titles, game name |
+| Score display (primary) | **56px** | 64px | Live score, counters |
+| Win/lose/draw result | **72px** | 88px | End-of-match overlay |
+
+**Rules:**
+- All sizes go into `ArcadeTheme.tres` — never hardcode `add_theme_font_size_override()` inline
+- If a design needs smaller text to fit, redesign the layout — do not shrink below minimums
+- Bold/700 weight on all interactive and heading text; regular/400 for body and help text
 
 ---
 
@@ -183,3 +199,4 @@ Apply via `ShaderMaterial` on `ColorRect` or `TextureRect` nodes (e.g. grid bord
 | Date | Author | Summary |
 |------|--------|---------|
 | 2026-05-05 | GM resolution | Initial guide — resolved 5 color discrepancies, documented intentional portal/game split |
+| 2026-05-10 | GM resolution | Added mobile typography scales — Godot 720×960 logical px floors (help text 24px min), portal mobile floors (body 16px min, help 15px min). Addresses unreadable text on real devices (Note 10+). |

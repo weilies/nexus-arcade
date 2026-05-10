@@ -71,7 +71,7 @@ Layer 3: EXECUTION (graphic designer)
 | Don't need to research | Already have it in |
 |------------------------|-------------------|
 | Color palette | Style guide sections 1.1, 1.2 |
-| Typography | Style guide section 2 |
+| Typography + minimum sizes | Style guide sections 2.1 (portal) and 2.2 (Godot) — full type scale with hard floors |
 | Animation values | Style guide sections 3.1–3.3 |
 | Spacing, touch targets | Mobile Layout Rules (this skill) |
 | Icon style | FA6 rules + FontAwesome copyright rule |
@@ -156,6 +156,21 @@ Know these games. Study their UI before designing in same genre:
 | Screen edge padding | 16px | 32px |
 | Text padding in buttons | 12px v, 16px h | 24px v, 32px h |
 | Bottom thumb-zone clearance | 60px from screen bottom | 120px |
+
+### Typography hard constraints (violations = bug)
+
+Full scale in style guide section 2.2 (Godot) and 2.1 (Portal). Hard floors:
+
+| Text role | Portal mobile min | Godot min (720×960 logical px) |
+|-----------|------------------|-------------------------------|
+| Help text / captions | `15px` | **24px** |
+| Body / labels | `16px` | **28px** |
+| Button labels | `16px` | **30px** |
+| Section headings | `18px` | **36px** |
+
+**Godot rule:** All font sizes go in `ArcadeTheme.tres`. Do NOT use inline `add_theme_font_size_override()` — it bypasses the theme and creates inconsistency. If a size is missing from the theme, add it there first.
+
+**Portal rule:** No `text-xs` (`12px`) or `text-sm` (`14px`) on mobile viewports for any user-facing content. Use `text-base` (`16px`) minimum. Help text uses `text-sm` only on `md:` and above breakpoints.
 
 ### Overlap prevention
 
