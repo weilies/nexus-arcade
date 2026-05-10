@@ -148,6 +148,11 @@ func _on_cell_input(event: InputEvent, cell_index: int) -> void:
 	_do_place(cell_index)
 
 func _do_place(cell_index: int) -> void:
+	# Ephemeral: redirect to handle eviction animation before placing
+	if Globals.current_game_mode == "ephemeral" and _ephemeral_state != null:
+		_do_place_ephemeral(cell_index)
+		return
+
 	if not _state.place(cell_index):
 		return
 	SFX.click()
@@ -157,6 +162,35 @@ func _do_place(cell_index: int) -> void:
 		_on_game_over()
 		return
 	if _mode == Mode.VS_AI and _state.current_turn != _player_mark:
+		_ai_take_turn.call_deferred()
+
+func _do_place_ephemeral(cell_index: int) -> void:
+	var queue := _ephemeral_state.x_moves if _ephemeral_state.current_turn == GameState.Player.X \
+		else _ephemeral_state.o_moves
+	var evicted_cell := queue[0] if queue.size() == 4 else -1
+
+	if not _ephemeral_state.place(cell_index):
+		return
+	SFX.click()
+
+	# Animate eviction (fade out the old cell label)
+	if evicted_cell >= 0:
+		var evicted_node = $VBoxContainer/Grid.get_child(evicted_cell)
+		var evicted_mark: Label = evicted_node.get_node("Mark")
+		var tw := create_tween()
+		tw.tween_property(evicted_mark, "modulate:a", 0.0, 0.2)
+		tw.tween_callback(func():
+			evicted_mark.text = ""
+			evicted_mark.modulate.a = 1.0
+		)
+
+	_animate_piece(cell_index)
+	_refresh_ui()
+
+	if _ephemeral_state.result != GameState.GameResult.ONGOING:
+		_on_game_over()
+		return
+	if _mode == Mode.VS_AI and _ephemeral_state.current_turn != _player_mark:
 		_ai_take_turn.call_deferred()
 
 func _ai_take_turn() -> void:
@@ -281,6 +315,13 @@ func _refresh_ui() -> void:
 				mark_label.add_theme_color_override("font_color", Color("#a855f7"))
 			_:
 				mark_label.text = ""
+
+		# Ephemeral: apply fade opacity based on cell age
+		if Globals.current_game_mode == "ephemeral" and _ephemeral_state != null:
+			var opacity := _ephemeral_state.get_cell_opacity(i)
+			mark_label.modulate.a = opacity if opacity > 0.0 else 1.0
+		else:
+			mark_label.modulate.a = 1.0
 
 	var turn_text: String
 	match _state.current_turn:
