@@ -54,17 +54,58 @@ Before any release, verify:
 - [ ] Tailwind config has no meadow palette
 - [ ] All `.text-neon-*` classes reference correct variables
 
+## Mechanical Anti-Pattern Checks (run these BEFORE any other QA)
+
+These are grep-level checks. Run them on every PR. Each one maps to a past production bug.
+
+### 1. Non-ASCII in Label/Button text (Orbitron renders ASCII only)
+
+```powershell
+# Flag any .gd file assigning non-ASCII chars in .text strings
+Select-String -Path "games/**/*.gd" -Pattern '\.text\s*=.*[^\x00-\x7F]' -Recurse
+```
+Expected: zero results. Any hit = bug. Replace with ASCII equivalent or FA6 label.
+
+### 2. Timer never started for VS_AI / LOCAL
+
+In `GameBoard.gd`, verify `_turn_timer.start()` is called for non-ONLINE modes:
+```powershell
+Select-String -Path "games/tic-tac-toe/scenes/GameBoard.gd" -Pattern "_turn_timer.start"
+```
+Must appear in at least two code paths (ONLINE + non-ONLINE). One result = timer bug.
+
+### 3. Popup panels missing content margin
+
+In any `.gd` that creates a Panel + VBoxContainer overlay:
+```powershell
+Select-String -Path "games/**/*.gd" -Pattern "offset_left" -Recurse
+```
+Every Panel+VBox popup must set `offset_left/top/right/bottom`. Missing = content flush against border.
+
+### 4. FA6 icon + ASCII text in same Label/Button
+
+```powershell
+Select-String -Path "games/**/*.gd" -Pattern 'FA6\.icon.*\+' -Recurse
+```
+Flag any result where FA6.icon() output is concatenated with ASCII text in a Button.text or single Label.text. Rule: FA6 icon and ASCII text must be in separate Label nodes.
+
+### 5. Widget structure consistency
+
+For any two controls that serve the same UX role (e.g., timer row and difficulty row), verify they use identical node structure. If one uses `Button > HBoxContainer > [Icon Label, Text Label]`, the other must too. Structural mismatch = visual inconsistency even if colors match.
+
 ## Test Areas
 
 ### Godot Game
 - Scene transitions (every screen reachable)
-- All game modes (vs AI easy/hard, local 2P, online)
-- Win/draw detection correctness
-- AI difficulty behavior (easy = random, hard = minimax perfect)
+- All game modes (vs AI easy/hard/unbeatable, local 2P, online)
+- Win/draw detection correctness per mode (Ephemeral: no draws possible)
+- AI difficulty: Easy=random, Hard=beatable by fork, Unbeatable=never loses
+- Turn timer: starts on 1P and 2P modes (not just Online); stops during AI think; restarts after AI places
+- Ephemeral: eviction fires on 5th placement; fade animation visible (0.25s tween); opacity slots correct (0.25/0.50/0.75/1.0)
+- Ultimate: active board constraint enforced; free-choice fires on won/full destination
 - Online multiplayer: room creation, join, move sync, disconnect, reconnect
-- Turn timer: start, reset, timeout → forfeit
 - Sound effects: play on correct events, no overlap
-- Touch input on mobile viewport
+- Touch input on mobile viewport (Note 10+ or equivalent)
 - Animation: correct timing, no tween leaks, no orphan nodes
 
 ### Portal

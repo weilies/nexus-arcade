@@ -50,6 +50,21 @@ GameOver.tscn           — result overlay
 - Auth required for online mode (Google OAuth via portal bridge)
 - Turn timer: 10s per-turn (configurable via Globals), off by default
 
+## Font Glyph Rule — ORBITRON ASCII ONLY
+
+**Orbitron renders only ASCII characters (U+0020–U+007E).** Every other codepoint renders as a tofu box in GL Compatibility web export.
+
+Banned in any Label/Button using Orbitron:
+- Unicode box-drawing: `═`, `─`, `│`, `┌`, etc.
+- Unicode arrows/triangles: `▸`, `→`, `◄`, `►`, etc.
+- Any emoji, dingbat, or symbol outside basic Latin
+
+Use instead:
+- Plain ASCII: `---`, `>`, `<`, `|`, `=`
+- FA6 icons: use a **separate** Label with `FA6.font()` override (see FA6 rules below)
+
+Tessa: grep for non-ASCII strings in any `.gd` file that assigns `.text`. Flag every hit.
+
 ## FA6 Icons — RULES (do not repeat these mistakes)
 
 **Icon name format:** cheatsheet keys have NO `fa-` prefix. Use `FA6.icon("clock")` not `FA6.icon("fa-clock")`.
@@ -93,6 +108,27 @@ Nodes added last in the scene tree receive input first. If a new child node is a
 2. After OAuth redirect, session may not be ready when `game_ready` fires → `onAuthStateChange` in `GameFrame.tsx` catches it and sends token again
 3. `PortalBridge._populate_auth(token)` → validates JWT with Supabase → populates `Globals.current_user` → emits `Globals.auth_ready`
 4. `MainMenu._refresh_auth_ui()` connected to `auth_ready` → updates HUD panel
+
+## TurnTimer Rules
+
+- `_turn_timer.set_duration(n)` only configures — it does NOT start the timer.
+- Call `_turn_timer.start()` explicitly for VS_AI and LOCAL modes in `_ready()`.
+- Stop timer before AI think (`_turn_timer.stop()`), restart after AI places.
+- Timer in ONLINE mode: only start on your turn (X starts on first move).
+
+## Popup / Panel Content Padding
+
+Any programmatic `Panel` + `VBoxContainer` inside it must set explicit offsets:
+
+```gdscript
+vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+vbox.offset_left   = 20
+vbox.offset_top    = 16
+vbox.offset_right  = -20
+vbox.offset_bottom = -16
+```
+
+Without this, content sits flush against the panel border.
 
 ## HUD Slide Panel (MainMenu)
 
