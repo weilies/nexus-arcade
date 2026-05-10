@@ -3,7 +3,7 @@ extends RefCounted
 
 # Returns the cell index AI wants to play (-1 if no move available).
 # Override get_move in subclasses for different state types.
-func get_move(state: GameState, difficulty: Globals.AIDifficulty) -> int:
+func get_move(state: GameState, difficulty: Globals.AIDifficulty):
 	match difficulty:
 		Globals.AIDifficulty.EASY:
 			return _random_move(state)
