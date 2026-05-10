@@ -65,6 +65,5 @@ func _on_play_again() -> void:
 
 func _on_menu() -> void:
 	SFX.click()
-	_board_ref.queue_free()
 	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
 	queue_free()

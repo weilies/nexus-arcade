@@ -12,13 +12,16 @@ var _label: Label
 var _seconds_left: int
 var _pulse_tween: Tween
 
+func _ready() -> void:
+	if not _timer:
+		_timer = Timer.new()
+		_timer.wait_time = 1.0
+		_timer.autostart = false
+		_timer.timeout.connect(_on_tick)
+		add_child(_timer)
+
 func setup(label_node: Label) -> void:
 	_label = label_node
-	_timer = Timer.new()
-	_timer.wait_time = 1.0
-	_timer.autostart = false
-	_timer.timeout.connect(_on_tick)
-	add_child(_timer)
 
 func start() -> void:
 	_seconds_left = int(_duration)

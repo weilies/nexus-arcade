@@ -378,7 +378,6 @@ func _on_home() -> void:
 		_supabase_ref.broadcast("room:" + _room_id, "forfeit",
 			{"player": GameState.player_to_str(_player_mark)})
 	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
-	queue_free()
 
 func _exit_tree() -> void:
 	if _supabase_ref and _supabase_ref.realtime_message.is_connected(_on_online_message):

@@ -211,6 +211,7 @@ func _on_1p() -> void:
 	var board = load("res://scenes/GameBoard.tscn").instantiate()
 	board.setup_vs_ai(Globals.ai_difficulty)
 	get_tree().root.add_child(board)
+	get_tree().current_scene = board
 	queue_free()
 
 func _on_2p() -> void:
@@ -223,6 +224,7 @@ func _on_2p() -> void:
 	var board = load("res://scenes/GameBoard.tscn").instantiate()
 	board.setup_local()
 	get_tree().root.add_child(board)
+	get_tree().current_scene = board
 	queue_free()
 
 func _on_online() -> void:

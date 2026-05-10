@@ -100,6 +100,7 @@ func _launch_game() -> void:
 	var board = load("res://scenes/GameBoard.tscn").instantiate()
 	board.setup_online(_room_id, _player_mark, Globals.supabase)
 	get_tree().root.add_child(board)
+	get_tree().current_scene = board
 	queue_free()
 
 func _exit_tree() -> void:
