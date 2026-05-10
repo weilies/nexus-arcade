@@ -11,6 +11,15 @@ const TIMER_MODES: Array[Dictionary] = [
 ]
 var _show_sign_out: bool = false
 var _help_popup: Control = null
+var _difficulty_index: int = 0
+const DIFFICULTY_MODES: Array[Dictionary] = [
+	{ "label": "EASY",       "difficulty": 0, "color": Color("#00ff88") },
+	{ "label": "HARD",       "difficulty": 1, "color": Color("#ffd700") },
+	{ "label": "UNBEATABLE", "difficulty": 2, "color": Color("#ff2d95") },
+]
+
+var _btn_difficulty: Button = null
+var _lbl_difficulty: Label = null
 
 @onready var _carousel: ModeCarousel = $CarouselContainer
 @onready var _btn_1p: Button = $TileBar/Row1/Btn1P
@@ -60,6 +69,7 @@ func _ready() -> void:
 	_refresh_timer_label()
 
 	_build_row2()
+	_build_difficulty_row()
 
 	_slot_profile.gui_input.connect(_on_profile_clicked)
 
@@ -133,44 +143,103 @@ func _build_row2() -> void:
 	row2.add_child(_auth_slot)
 	row2.move_child(_auth_slot, 0)
 
+func _build_difficulty_row() -> void:
+	var orbitron := load("res://fonts/Orbitron.ttf")
+	var carousel := $CarouselContainer
+
+	var row := HBoxContainer.new()
+	row.name = "DifficultyRow"
+	row.add_theme_constant_override("separation", 12)
+	row.alignment = BoxContainer.ALIGNMENT_BEGIN
+
+	var lbl_prefix := Label.new()
+	lbl_prefix.text = "DIFFICULTY"
+	lbl_prefix.add_theme_font_override("font", orbitron)
+	lbl_prefix.add_theme_font_size_override("font_size", 20)
+	lbl_prefix.add_theme_color_override("font_color", Color(0.667, 0.667, 0.8, 1.0))
+	lbl_prefix.custom_minimum_size = Vector2(180, 0)
+	row.add_child(lbl_prefix)
+
+	_btn_difficulty = Button.new()
+	_btn_difficulty.flat = false
+	_btn_difficulty.custom_minimum_size = Vector2(220, 56)
+	_btn_difficulty.add_theme_font_override("font", orbitron)
+	_btn_difficulty.add_theme_font_size_override("font_size", 22)
+
+	_lbl_difficulty = Label.new()
+	_lbl_difficulty.text = ""
+	_btn_difficulty.add_child(_lbl_difficulty)
+	_btn_difficulty.pressed.connect(_on_difficulty_pressed)
+	row.add_child(_btn_difficulty)
+
+	# Insert after TimerRow
+	var timer_row := carousel.get_node("TimerRow")
+	var insert_idx := timer_row.get_index() + 1
+	carousel.add_child(row)
+	carousel.move_child(row, insert_idx)
+
+	_refresh_difficulty_label()
+
 func _on_mode_changed(_index: int, mode_id: String) -> void:
 	_current_game_mode = mode_id
 	_refresh_timer_visibility()
 
 func _refresh_timer_visibility() -> void:
-	$CarouselContainer/TimerRow.visible = _current_game_mode != "ultimate"
+	var locked := _current_game_mode in ["ultimate", "ephemeral"]
+	$CarouselContainer/TimerRow.visible = not locked
+	if has_node("CarouselContainer/DifficultyRow"):
+		$CarouselContainer/DifficultyRow.visible = true
 
 func _on_timer_pressed() -> void:
 	_timer_index = (_timer_index + 1) % TIMER_MODES.size()
 	_refresh_timer_label()
 
+func _refresh_difficulty_label() -> void:
+	var mode: Dictionary = DIFFICULTY_MODES[_difficulty_index]
+	_lbl_difficulty.text = mode["label"] + " ▸"
+	var clr: Color = mode["color"]
+	_lbl_difficulty.add_theme_color_override("font_color", clr)
+	Globals.ai_difficulty = mode["difficulty"] as Globals.AIDifficulty
+
+func _on_difficulty_pressed() -> void:
+	SFX.click()
+	_difficulty_index = (_difficulty_index + 1) % DIFFICULTY_MODES.size()
+	_refresh_difficulty_label()
+
 func _refresh_timer_label() -> void:
 	var mode: Dictionary = TIMER_MODES[_timer_index]
 	var label: String = mode["label"]
 	var secs: int = mode["seconds"]
-	if secs > 0:
-		_lbl_timer.text = "TIMER: " + label + " " + str(secs) + "s"
-	else:
-		_lbl_timer.text = "TIMER: " + label
-	# Color: muted when off, cyan when on
-	var clr := Color("#00d4ff") if secs > 0 else Color(0.392, 0.455, 0.573, 1)
+	_lbl_timer.text = label
+	var clr: Color
+	match label:
+		"BLITZ":  clr = Color("#ff2d95")
+		"CASUAL": clr = Color("#ffd700")
+		"CHILL":  clr = Color("#00ff88")
+		_:        clr = Color(0.392, 0.455, 0.573, 1.0)
 	_lbl_timer.add_theme_color_override("font_color", clr)
 	_lbl_clock_icon.add_theme_color_override("font_color", clr)
-	Globals.use_timer = secs > 0
 	Globals.timer_seconds = secs
 
 func _on_1p() -> void:
 	SFX.click()
 	Globals.current_game_mode = _current_game_mode
-	Globals.use_timer = TIMER_MODES[_timer_index]["seconds"] > 0
-	Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
-	get_tree().change_scene_to_file("res://scenes/AIDifficultySelect.tscn")
+	if _current_game_mode in ["ultimate", "ephemeral"]:
+		Globals.timer_seconds = 6
+	else:
+		Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
+	var board = load("res://scenes/GameBoard.tscn").instantiate()
+	board.setup_vs_ai(Globals.ai_difficulty)
+	get_tree().root.add_child(board)
+	queue_free()
 
 func _on_2p() -> void:
 	SFX.click()
 	Globals.current_game_mode = _current_game_mode
-	Globals.use_timer = TIMER_MODES[_timer_index]["seconds"] > 0
-	Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
+	if _current_game_mode in ["ultimate", "ephemeral"]:
+		Globals.timer_seconds = 6
+	else:
+		Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
 	var board = load("res://scenes/GameBoard.tscn").instantiate()
 	board.setup_local()
 	get_tree().root.add_child(board)
@@ -179,8 +248,10 @@ func _on_2p() -> void:
 func _on_online() -> void:
 	SFX.click()
 	Globals.current_game_mode = _current_game_mode
-	Globals.use_timer = TIMER_MODES[_timer_index]["seconds"] > 0
-	Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
+	if _current_game_mode in ["ultimate", "ephemeral"]:
+		Globals.timer_seconds = 6
+	else:
+		Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
 	get_tree().change_scene_to_file("res://scenes/OnlineLobby.tscn")
 
 func _on_leaderboard() -> void:
@@ -342,7 +413,7 @@ func _help_ultimate() -> Array[String]:
 		"",
 		"Win a mini-board to claim that square in the mega-board. But here's the twist: your move determines which mini-board your opponent plays next. Send them to a board that's already won? They get to choose. Evil grin optional.",
 		"",
-		"This mode has TIMER always ON. No chill here — 30 seconds or bust.",
+		"This mode has TIMER always on (CASUAL). No chill here — place fast!",
 	]
 
 func _help_ephemeral() -> Array[String]:
@@ -353,5 +424,5 @@ func _help_ephemeral() -> Array[String]:
 		"",
 		"After 6 turns, your oldest mark POOF — vanishes into the void. The board is always shifting. No draws possible — someone will eventually win. It's mathematically guaranteed, just like your confusion on turn 7.",
 		"",
-		"Timer is always ON here too. Keep up or get left behind.",
+		"Timer is always CASUAL here. Keep up or get left behind.",
 	]
