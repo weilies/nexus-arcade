@@ -19,7 +19,6 @@ const DIFFICULTY_MODES: Array[Dictionary] = [
 ]
 
 var _btn_difficulty: Button = null
-var _lbl_difficulty: Label = null
 
 @onready var _carousel: ModeCarousel = $CarouselContainer
 @onready var _btn_1p: Button = $TileBar/Row1/Btn1P
@@ -147,19 +146,9 @@ func _build_difficulty_row() -> void:
 	row.add_theme_constant_override("separation", 12)
 	row.alignment = BoxContainer.ALIGNMENT_BEGIN
 
-	var lbl_prefix := Label.new()
-	lbl_prefix.text = "DIFFICULTY"
-	lbl_prefix.add_theme_color_override("font_color", Color(0.667, 0.667, 0.8, 1.0))
-	lbl_prefix.custom_minimum_size = Vector2(180, 0)
-	row.add_child(lbl_prefix)
-
 	_btn_difficulty = Button.new()
 	_btn_difficulty.flat = false
-	_btn_difficulty.custom_minimum_size = Vector2(220, 56)
-
-	_lbl_difficulty = Label.new()
-	_lbl_difficulty.text = ""
-	_btn_difficulty.add_child(_lbl_difficulty)
+	_btn_difficulty.custom_minimum_size = Vector2(300, 56)
 	_btn_difficulty.pressed.connect(_on_difficulty_pressed)
 	row.add_child(_btn_difficulty)
 
@@ -176,7 +165,7 @@ func _on_mode_changed(_index: int, mode_id: String) -> void:
 	_refresh_timer_visibility()
 
 func _refresh_timer_visibility() -> void:
-	var locked := _current_game_mode in ["ultimate", "ephemeral"]
+	var locked := _current_game_mode in ["ultimate", "ephemerate"]
 	$CarouselContainer/TimerRow.visible = not locked
 	if has_node("CarouselContainer/DifficultyRow"):
 		$CarouselContainer/DifficultyRow.visible = true
@@ -187,9 +176,9 @@ func _on_timer_pressed() -> void:
 
 func _refresh_difficulty_label() -> void:
 	var mode: Dictionary = DIFFICULTY_MODES[_difficulty_index]
-	_lbl_difficulty.text = mode["label"] + " >"
+	_btn_difficulty.text = mode["label"]
 	var clr: Color = mode["color"]
-	_lbl_difficulty.add_theme_color_override("font_color", clr)
+	_btn_difficulty.add_theme_color_override("font_color", clr)
 	Globals.ai_difficulty = mode["difficulty"] as Globals.AIDifficulty
 
 func _on_difficulty_pressed() -> void:
@@ -215,7 +204,7 @@ func _refresh_timer_label() -> void:
 func _on_1p() -> void:
 	SFX.click()
 	Globals.current_game_mode = _current_game_mode
-	if _current_game_mode in ["ultimate", "ephemeral"]:
+	if _current_game_mode in ["ultimate", "ephemerate"]:
 		Globals.timer_seconds = 6
 	else:
 		Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
@@ -227,7 +216,7 @@ func _on_1p() -> void:
 func _on_2p() -> void:
 	SFX.click()
 	Globals.current_game_mode = _current_game_mode
-	if _current_game_mode in ["ultimate", "ephemeral"]:
+	if _current_game_mode in ["ultimate", "ephemerate"]:
 		Globals.timer_seconds = 6
 	else:
 		Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
@@ -239,7 +228,7 @@ func _on_2p() -> void:
 func _on_online() -> void:
 	SFX.click()
 	Globals.current_game_mode = _current_game_mode
-	if _current_game_mode in ["ultimate", "ephemeral"]:
+	if _current_game_mode in ["ultimate", "ephemerate"]:
 		Globals.timer_seconds = 6
 	else:
 		Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]

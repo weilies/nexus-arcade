@@ -1,6 +1,24 @@
 class_name GameBoard
 extends Control
 
+class TimerRing extends Control:
+	var progress: float = 1.0
+	var ring_color: Color = Color("#00d4ff")
+	const RING_W := 5.0
+
+	func _draw() -> void:
+		var center := size / 2.0
+		var r := minf(size.x, size.y) / 2.0 - RING_W - 1.0
+		draw_arc(center, r, -PI / 2.0, -PI / 2.0 + TAU, 48,
+			Color(0.15, 0.15, 0.22, 0.55), RING_W, true)
+		if progress > 0.01:
+			draw_arc(center, r, -PI / 2.0, -PI / 2.0 + TAU * progress, 48,
+				ring_color, RING_W, true)
+
+	func set_progress(p: float) -> void:
+		progress = clampf(p, 0.0, 1.0)
+		queue_redraw()
+
 enum Mode { VS_AI, LOCAL, ONLINE }
 
 var _state: GameState
@@ -25,7 +43,9 @@ var _ultimate_board_node: Control = null
 var _ephemeral_state: EphemeralGameState
 var _ultimate_state: UltimateGameState
 var _pending_ultimate_move: Dictionary = {}
-var _evicting_cell: int = -1  # cell currently being fade-animated; _refresh_ui skips it
+var _evicting_cell: int = -1
+var _ring_x: TimerRing = null
+var _ring_o: TimerRing = null
 
 func setup_vs_ai(_ignored_difficulty: int = 0) -> void:
 	_mode = Mode.VS_AI
@@ -57,7 +77,7 @@ func _ready() -> void:
 				_ai = UltimateAI.new()
 			_setup_ultimate_board()
 			$VBoxContainer/Grid.visible = false
-		"ephemeral":
+		"ephemerate":
 			_ephemeral_state = EphemeralGameState.new()
 			_state = _ephemeral_state
 			if _mode == Mode.VS_AI:
@@ -75,8 +95,11 @@ func _ready() -> void:
 		_turn_timer.setup($VBoxContainer/LblTimer)
 	add_child(_turn_timer)
 	_turn_timer.timed_out.connect(_on_turn_timeout)
+	_turn_timer.tick.connect(_on_timer_tick)
 	if Globals.timer_seconds > 0:
 		_turn_timer.set_duration(Globals.timer_seconds)
+	call_deferred("_init_timer_rings")
+	call_deferred("_setup_game_info_label")
 
 	_ai_think_timer = Timer.new()
 	_ai_think_timer.one_shot = true
@@ -155,7 +178,7 @@ func _on_cell_input(event: InputEvent, cell_index: int) -> void:
 
 func _do_place(cell_index: int) -> void:
 	# Ephemeral: redirect to handle eviction animation before placing
-	if Globals.current_game_mode == "ephemeral" and _ephemeral_state != null:
+	if Globals.current_game_mode == "ephemerate" and _ephemeral_state != null:
 		_do_place_ephemeral(cell_index)
 		return
 
@@ -219,7 +242,7 @@ func _do_place_ephemeral(cell_index: int) -> void:
 func _ai_take_turn() -> void:
 	_turn_timer.stop()  # pause timer during AI think
 	var move_cell: int
-	if Globals.current_game_mode == "ephemeral":
+	if Globals.current_game_mode == "ephemerate":
 		var eph_ai := _ai as EphemeralAI
 		move_cell = eph_ai.get_move(_ephemeral_state, Globals.ai_difficulty)
 	elif Globals.current_game_mode == "ultimate":
@@ -303,10 +326,51 @@ func _on_online_message(channel: String, event: String, payload: Dictionary) -> 
 			_on_game_over()
 
 func _on_turn_timeout() -> void:
-	var my_mark = GameState.player_to_str(_player_mark)
-	_supabase_ref.broadcast("room:" + _room_id, "forfeit", {"player": my_mark})
-	_state.result = GameState.GameResult.O_WINS if _player_mark == GameState.Player.X else GameState.GameResult.X_WINS
-	_on_game_over()
+	if _mode == Mode.ONLINE:
+		var my_mark = GameState.player_to_str(_player_mark)
+		_supabase_ref.broadcast("room:" + _room_id, "forfeit", {"player": my_mark})
+		_state.result = GameState.GameResult.O_WINS if _player_mark == GameState.Player.X else GameState.GameResult.X_WINS
+		_on_game_over()
+		return
+
+	# VS_AI and LOCAL: skip turn, no forfeit
+	if _state.result != GameState.GameResult.ONGOING:
+		return
+	SFX.click()
+	_show_times_up_banner()
+	_shake_screen()
+	_state.current_turn = GameState.Player.O if _state.current_turn == GameState.Player.X else GameState.Player.X
+	_refresh_ui()
+	if Globals.timer_seconds > 0:
+		_turn_timer.start()
+	if _mode == Mode.VS_AI and _state.current_turn != _player_mark:
+		_ai_take_turn.call_deferred()
+
+func _show_times_up_banner() -> void:
+	var orbitron := load("res://fonts/Orbitron.ttf")
+	var lbl := Label.new()
+	lbl.text = "TIME'S UP!"
+	lbl.add_theme_font_override("font", orbitron)
+	lbl.add_theme_font_size_override("font_size", 56)
+	lbl.add_theme_color_override("font_color", Color("#ff2d95"))
+	lbl.set_anchors_preset(Control.PRESET_CENTER)
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	add_child(lbl)
+	lbl.scale = Vector2.ZERO
+	lbl.pivot_offset = Vector2(lbl.size.x / 2.0, lbl.size.y / 2.0)
+	var tw := create_tween()
+	tw.tween_property(lbl, "scale", Vector2(1.1, 1.1), 0.15).set_trans(Tween.TRANS_BACK)
+	tw.tween_property(lbl, "scale", Vector2.ONE, 0.08)
+	tw.tween_property(lbl, "modulate:a", 0.0, 0.6).set_delay(0.4)
+	tw.tween_callback(lbl.queue_free)
+
+func _shake_screen() -> void:
+	var origin := position
+	var tw := create_tween()
+	for i in 5:
+		var off := Vector2(randf_range(-10.0, 10.0), randf_range(-5.0, 5.0))
+		tw.tween_property(self, "position", origin + off, 0.04)
+	tw.tween_property(self, "position", origin, 0.04)
 
 func _on_home() -> void:
 	SFX.click()
@@ -337,22 +401,23 @@ func _refresh_ui() -> void:
 
 		var cell = $VBoxContainer/Grid.get_child(i)
 		var mark_label: Label = cell.get_node("Mark")
+		var is_ephemerate := Globals.current_game_mode == "ephemerate" and _ephemeral_state != null
 		match _state.board[i]:
 			GameState.Player.X:
 				mark_label.text = "X"
-				mark_label.add_theme_color_override("font_color", Color("#00d4ff"))
+				var cx := Color("#00d4ff")
+				if is_ephemerate:
+					cx.a = _ephemeral_state.get_cell_opacity(i)
+				mark_label.add_theme_color_override("font_color", cx)
 			GameState.Player.O:
 				mark_label.text = "O"
-				mark_label.add_theme_color_override("font_color", Color("#a855f7"))
+				var co := Color("#a855f7")
+				if is_ephemerate:
+					co.a = _ephemeral_state.get_cell_opacity(i)
+				mark_label.add_theme_color_override("font_color", co)
 			_:
 				mark_label.text = ""
-
-		# Ephemeral: apply fade opacity based on cell age
-		if Globals.current_game_mode == "ephemeral" and _ephemeral_state != null:
-			var opacity := _ephemeral_state.get_cell_opacity(i)
-			mark_label.modulate.a = opacity if opacity > 0.0 else 1.0
-		else:
-			mark_label.modulate.a = 1.0
+		mark_label.modulate.a = 1.0
 
 	var turn_text: String
 	match _state.current_turn:
@@ -378,6 +443,14 @@ func _refresh_ui() -> void:
 
 	$VBoxContainer/ScoreRow/LblScoreX.text = "X: %d" % _score_x
 	$VBoxContainer/ScoreRow/LblScoreO.text = "O: %d" % _score_o
+	if _ring_x and _ring_o and Globals.timer_seconds > 0:
+		var x_active := _state.current_turn == GameState.Player.X
+		if _ring_x.visible != x_active:
+			_ring_x.visible = x_active
+			_ring_x.set_progress(1.0)
+		_ring_o.visible = not x_active
+		if not x_active and _ring_o.progress > 0.99:
+			_ring_o.set_progress(1.0)
 
 func _highlight_win_line() -> void:
 	var line = _state.get_winning_line()
@@ -388,6 +461,67 @@ func _highlight_win_line() -> void:
 		var tween = create_tween().set_loops()
 		tween.tween_property(cell, "modulate", Color(1.3, 1.3, 1.3, 1.0), 0.4)
 		tween.tween_property(cell, "modulate", Color.WHITE, 0.4)
+
+func _init_timer_rings() -> void:
+	if Globals.timer_seconds <= 0:
+		return
+	var sz := Vector2(56.0, 56.0)
+	var lbl_x: Label = $VBoxContainer/ScoreRow/LblScoreX
+	var lbl_o: Label = $VBoxContainer/ScoreRow/LblScoreO
+	_ring_x = TimerRing.new()
+	_ring_x.custom_minimum_size = sz
+	_ring_x.size = sz
+	_ring_x.ring_color = Color("#00d4ff")
+	_ring_x.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var cx := to_local(lbl_x.get_global_rect().get_center())
+	_ring_x.position = cx - sz / 2.0
+	add_child(_ring_x)
+	_ring_o = TimerRing.new()
+	_ring_o.custom_minimum_size = sz
+	_ring_o.size = sz
+	_ring_o.ring_color = Color("#a855f7")
+	_ring_o.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var co := to_local(lbl_o.get_global_rect().get_center())
+	_ring_o.position = co - sz / 2.0
+	add_child(_ring_o)
+	_ring_x.visible = false
+	_ring_o.visible = false
+
+func _on_timer_tick(seconds_left: int) -> void:
+	if Globals.timer_seconds <= 0:
+		return
+	var p := float(seconds_left) / float(Globals.timer_seconds)
+	if _state.current_turn == GameState.Player.X and _ring_x:
+		_ring_x.set_progress(p)
+	elif _ring_o:
+		_ring_o.set_progress(p)
+
+func _setup_game_info_label() -> void:
+	var parts: Array[String] = []
+	if Globals.timer_seconds > 0:
+		match Globals.timer_seconds:
+			3: parts.append("BLITZ")
+			6: parts.append("CASUAL")
+			9: parts.append("CHILL")
+	if _mode == Mode.VS_AI:
+		match Globals.ai_difficulty:
+			Globals.AIDifficulty.EASY:       parts.append("EASY")
+			Globals.AIDifficulty.HARD:       parts.append("HARD")
+			Globals.AIDifficulty.UNBEATABLE: parts.append("UNBEATABLE")
+	if parts.is_empty():
+		return
+	var orbitron := load("res://fonts/Orbitron.ttf")
+	var lbl := Label.new()
+	lbl.name = "LblGameInfo"
+	lbl.text = " | ".join(parts)
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_override("font", orbitron)
+	lbl.add_theme_font_size_override("font_size", 22)
+	lbl.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 0.75))
+	var vbox := $VBoxContainer
+	vbox.add_child(lbl)
+	var status_idx := $VBoxContainer/LblStatus.get_index()
+	vbox.move_child(lbl, status_idx + 1)
 
 func _update_streak_badge() -> void:
 	if not has_node("VBoxContainer/StreakBadge"):
