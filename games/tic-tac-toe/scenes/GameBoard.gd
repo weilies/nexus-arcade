@@ -6,7 +6,6 @@ enum Mode { VS_AI, LOCAL, ONLINE }
 var _state: GameState
 var _ai: TicTacToeAI
 var _mode: Mode
-var _ai_difficulty: TicTacToeAI.Difficulty
 var _score_x: int = 0
 var _score_o: int = 0
 var _room_id: String = ""
@@ -22,11 +21,14 @@ var _ai_dots_timer: Timer
 var _ai_dots_count: int = 0
 var _pts_awarded: int = 0
 
-func setup_vs_ai(difficulty: TicTacToeAI.Difficulty) -> void:
+var _ultimate_board_node: Control = null   # built in code for Ultimate
+var _ephemeral_state: EphemeralGameState   # typed alias for ephemeral mode
+var _ultimate_state: UltimateGameState     # typed alias for ultimate mode
+var _pending_ultimate_move: Dictionary = {}
+
+func setup_vs_ai(_ignored_difficulty: int = 0) -> void:
 	_mode = Mode.VS_AI
-	_ai_difficulty = difficulty
-	_ai = TicTacToeAI.new()
-	# Randomize who goes first
+	# AI and difficulty read from Globals in _ready()
 	if randi() % 2 == 0:
 		_player_mark = GameState.Player.X   # Player = X, goes first
 	else:
@@ -46,7 +48,23 @@ func _ready() -> void:
 	add_child(bg)
 	move_child(bg, 1)
 
-	_state = GameState.new()
+	match Globals.current_game_mode:
+		"ultimate":
+			_ultimate_state = UltimateGameState.new()
+			_state = _ultimate_state
+			if _mode == Mode.VS_AI:
+				_ai = UltimateAI.new()
+			_setup_ultimate_board()
+			$VBoxContainer/Grid.visible = false
+		"ephemeral":
+			_ephemeral_state = EphemeralGameState.new()
+			_state = _ephemeral_state
+			if _mode == Mode.VS_AI:
+				_ai = EphemeralAI.new()
+		_:  # classic
+			_state = GameState.new()
+			if _mode == Mode.VS_AI:
+				_ai = TicTacToeAI.new()
 	_bridge = $Bridge if has_node("Bridge") else null
 	if _bridge:
 		_bridge.send_game_ready()
@@ -56,7 +74,7 @@ func _ready() -> void:
 		_turn_timer.setup($VBoxContainer/LblTimer)
 	add_child(_turn_timer)
 	_turn_timer.timed_out.connect(_on_turn_timeout)
-	if Globals.use_timer:
+	if Globals.timer_seconds > 0:
 		_turn_timer.set_duration(Globals.timer_seconds)
 
 	_ai_think_timer = Timer.new()
@@ -91,7 +109,7 @@ func _ready() -> void:
 	if _mode == Mode.ONLINE:
 		_supabase_ref.realtime_message.connect(_on_online_message)
 		if _player_mark == GameState.Player.X:
-			if Globals.use_timer:
+			if Globals.timer_seconds > 0:
 				_turn_timer.set_duration(Globals.timer_seconds)
 				_turn_timer.start()
 
@@ -142,7 +160,16 @@ func _do_place(cell_index: int) -> void:
 		_ai_take_turn.call_deferred()
 
 func _ai_take_turn() -> void:
-	_ai_move_cell = _ai.get_move(_state, _ai_difficulty)
+	var move_cell: int
+	if Globals.current_game_mode == "ephemeral":
+		var eph_ai := _ai as EphemeralAI
+		move_cell = eph_ai.get_move(_ephemeral_state, Globals.ai_difficulty)
+	elif Globals.current_game_mode == "ultimate":
+		_ai_take_turn_ultimate()
+		return
+	else:
+		move_cell = _ai.get_move(_state, Globals.ai_difficulty)
+	_ai_move_cell = move_cell
 	if _ai_move_cell < 0:
 		return
 	_ai_thinking = true
@@ -150,10 +177,28 @@ func _ai_take_turn() -> void:
 	_ai_dots_timer.start()
 	_ai_think_timer.start(randf_range(1.0, 3.0))
 
+func _ai_take_turn_ultimate() -> void:
+	var ultimate_ai := _ai as UltimateAI
+	var move: Dictionary = ultimate_ai.get_move(_ultimate_state, Globals.ai_difficulty)
+	if move.is_empty():
+		return
+	_ai_thinking = true
+	_ai_dots_count = 0
+	_ai_dots_timer.start()
+	_ai_think_timer.start(randf_range(1.0, 3.0))
+	# Store board+cell encoded for _ai_do_move
+	_pending_ultimate_move = move
+
 func _ai_do_move() -> void:
 	_ai_dots_timer.stop()
 	_ai_thinking = false
-	_do_place(_ai_move_cell)
+	if Globals.current_game_mode == "ultimate":
+		if not _pending_ultimate_move.is_empty():
+			var m: Dictionary = _pending_ultimate_move
+			_pending_ultimate_move = {}
+			_do_ultimate_place(m["board"], m["cell"])
+	else:
+		_do_place(_ai_move_cell)
 
 func _ai_update_dots() -> void:
 	_ai_dots_count = (_ai_dots_count + 1) % 5
@@ -322,6 +367,164 @@ func _show_pts_popup(pts: int) -> void:
 	tw.tween_property(lbl, "modulate:a", 0.0, 0.5).set_delay(0.8)
 	tw.tween_callback(lbl.queue_free)
 
+func _do_ultimate_place(board_idx: int, cell_idx: int) -> void:
+	if not _ultimate_state.place_on(board_idx, cell_idx):
+		return
+	SFX.click()
+	_animate_ultimate_piece(board_idx, cell_idx)
+	_refresh_ultimate_ui()
+	if _ultimate_state.result != GameState.GameResult.ONGOING:
+		_on_game_over()
+		return
+	if _mode == Mode.VS_AI and _ultimate_state.current_turn != _player_mark:
+		_ai_take_turn_ultimate.call_deferred()
+
+func _setup_ultimate_board() -> void:
+	var orbitron := load("res://fonts/Orbitron.ttf")
+
+	_ultimate_board_node = Control.new()
+	_ultimate_board_node.name = "UltimateBoard"
+	_ultimate_board_node.set_anchors_preset(Control.PRESET_FULL_RECT)
+
+	var grid := GridContainer.new()
+	grid.columns = 3
+	grid.add_theme_constant_override("h_separation", 6)
+	grid.add_theme_constant_override("v_separation", 6)
+	grid.set_anchors_preset(Control.PRESET_CENTER)
+	grid.custom_minimum_size = Vector2(660, 660)
+	grid.offset_left = -330
+	grid.offset_top = -330
+	_ultimate_board_node.add_child(grid)
+
+	for b in 9:
+		var mini_panel := Panel.new()
+		mini_panel.name = "Mini%d" % b
+		mini_panel.custom_minimum_size = Vector2(214, 214)
+
+		var mini_grid := GridContainer.new()
+		mini_grid.name = "Grid"
+		mini_grid.columns = 3
+		mini_grid.add_theme_constant_override("h_separation", 3)
+		mini_grid.add_theme_constant_override("v_separation", 3)
+		mini_grid.set_anchors_preset(Control.PRESET_FULL_RECT)
+		mini_grid.offset_left = 4
+		mini_grid.offset_top = 4
+		mini_grid.offset_right = -4
+		mini_grid.offset_bottom = -4
+		mini_panel.add_child(mini_grid)
+
+		for c in 9:
+			var btn := Button.new()
+			btn.name = "Cell%d" % c
+			btn.custom_minimum_size = Vector2(66, 66)
+			btn.flat = false
+			btn.add_theme_font_override("font", orbitron)
+			btn.add_theme_font_size_override("font_size", 28)
+			btn.gui_input.connect(_on_ultimate_cell_input.bind(b, c))
+			mini_grid.add_child(btn)
+
+		# Won overlay label (hidden initially)
+		var won_label := Label.new()
+		won_label.name = "WonMark"
+		won_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+		won_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		won_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		won_label.add_theme_font_override("font", orbitron)
+		won_label.add_theme_font_size_override("font_size", 80)
+		won_label.visible = false
+		mini_panel.add_child(won_label)
+
+		grid.add_child(mini_panel)
+
+	add_child(_ultimate_board_node)
+	_refresh_ultimate_ui()
+
+func _on_ultimate_cell_input(event: InputEvent, board_idx: int, cell_idx: int) -> void:
+	if not event is InputEventMouseButton:
+		return
+	if not event.pressed or event.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if _ai_thinking:
+		return
+	_do_ultimate_place(board_idx, cell_idx)
+
+func _refresh_ultimate_ui() -> void:
+	if _ultimate_board_node == null:
+		return
+
+	var grid_node := _ultimate_board_node.get_child(0)  # the GridContainer
+	for b in 9:
+		var mini_panel := grid_node.get_child(b)
+
+		# Border style based on board state
+		var style := StyleBoxFlat.new()
+		style.corner_radius_top_left = 4
+		style.corner_radius_top_right = 4
+		style.corner_radius_bottom_left = 4
+		style.corner_radius_bottom_right = 4
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+
+		var meta_val = _ultimate_state.meta_board[b]
+		if meta_val != GameState.Player.NONE:
+			# Won board
+			style.bg_color = Color(0.1, 0.1, 0.2, 0.6)
+			style.border_color = Color("#00d4ff") if meta_val == GameState.Player.X else Color("#a855f7")
+			mini_panel.add_theme_stylebox_override("panel", style)
+			var won_lbl := mini_panel.get_node("WonMark") as Label
+			won_lbl.visible = true
+			won_lbl.text = "X" if meta_val == GameState.Player.X else "O"
+			won_lbl.add_theme_color_override("font_color",
+				Color("#00d4ff") if meta_val == GameState.Player.X else Color("#a855f7"))
+			# Dim the mini grid cells
+			mini_panel.get_node("Grid").modulate = Color(0.3, 0.3, 0.3, 1.0)
+		elif _ultimate_state.active_board == b:
+			# Active board
+			style.bg_color = Color("#1a1a2e")
+			style.border_color = Color("#00d4ff")
+			mini_panel.add_theme_stylebox_override("panel", style)
+			mini_panel.get_node("Grid").modulate = Color.WHITE
+		elif _ultimate_state.active_board == -1:
+			# Free choice — all open boards dim-glow
+			style.bg_color = Color("#1a1a2e")
+			style.border_color = Color(0.0, 0.831, 1.0, 0.4)
+			mini_panel.add_theme_stylebox_override("panel", style)
+			mini_panel.get_node("Grid").modulate = Color.WHITE
+		else:
+			# Inactive
+			style.bg_color = Color("#12122a")
+			style.border_color = Color("#2a2a4a")
+			mini_panel.add_theme_stylebox_override("panel", style)
+			mini_panel.get_node("Grid").modulate = Color(0.5, 0.5, 0.5, 1.0)
+
+		# Update cell labels in this mini-board
+		var mini_state := _ultimate_state.mini_boards[b] as GameState
+		var cell_grid := mini_panel.get_node("Grid")
+		for c in 9:
+			var btn := cell_grid.get_child(c) as Button
+			match mini_state.board[c]:
+				GameState.Player.X:
+					btn.text = "X"
+					btn.add_theme_color_override("font_color", Color("#00d4ff"))
+				GameState.Player.O:
+					btn.text = "O"
+					btn.add_theme_color_override("font_color", Color("#a855f7"))
+				_:
+					btn.text = ""
+
+func _animate_ultimate_piece(board_idx: int, cell_idx: int) -> void:
+	var grid_node := _ultimate_board_node.get_child(0)
+	var mini_panel := grid_node.get_child(board_idx)
+	var cell_grid := mini_panel.get_node("Grid")
+	var btn := cell_grid.get_child(cell_idx)
+	btn.scale = Vector2.ZERO
+	btn.pivot_offset = btn.size / 2.0
+	var tw := create_tween()
+	tw.tween_property(btn, "scale", Vector2(1.1, 1.1), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(btn, "scale", Vector2.ONE, 0.06)
+
 func _on_game_over() -> void:
 	if _game_over_fired:
 		return
@@ -380,7 +583,8 @@ func _on_game_over() -> void:
 	if _bridge:
 		_bridge.send_match_end(winner, mode_str, score)
 
-	_highlight_win_line()
+	if Globals.current_game_mode != "ultimate":
+		_highlight_win_line()
 
 	var local_won := false
 	var rpc_source := "ai_win"
