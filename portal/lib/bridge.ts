@@ -9,7 +9,8 @@ export interface MatchEndMessage {
 }
 export interface AuthRequestMessage { type: 'auth_request' }
 export interface SignInRequestMessage { type: 'sign_in_request' }
-export type GameMessage = GameReadyMessage | MatchEndMessage | AuthRequestMessage | SignInRequestMessage
+export interface SignOutRequestMessage { type: 'sign_out_request' }
+export type GameMessage = GameReadyMessage | MatchEndMessage | AuthRequestMessage | SignInRequestMessage | SignOutRequestMessage
 
 export function sendToGame(
   iframe: HTMLIFrameElement,
