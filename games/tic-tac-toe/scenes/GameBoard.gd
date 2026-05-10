@@ -21,10 +21,11 @@ var _ai_dots_timer: Timer
 var _ai_dots_count: int = 0
 var _pts_awarded: int = 0
 
-var _ultimate_board_node: Control = null   # built in code for Ultimate
-var _ephemeral_state: EphemeralGameState   # typed alias for ephemeral mode
-var _ultimate_state: UltimateGameState     # typed alias for ultimate mode
+var _ultimate_board_node: Control = null
+var _ephemeral_state: EphemeralGameState
+var _ultimate_state: UltimateGameState
 var _pending_ultimate_move: Dictionary = {}
+var _evicting_cell: int = -1  # cell currently being fade-animated; _refresh_ui skips it
 
 func setup_vs_ai(_ignored_difficulty: int = 0) -> void:
 	_mode = Mode.VS_AI
@@ -112,6 +113,11 @@ func _ready() -> void:
 			if Globals.timer_seconds > 0:
 				_turn_timer.set_duration(Globals.timer_seconds)
 				_turn_timer.start()
+	elif Globals.timer_seconds > 0:
+		# VS_AI and LOCAL: start timer immediately (player moves first or AI goes first)
+		_turn_timer.set_duration(Globals.timer_seconds)
+		if not (_mode == Mode.VS_AI and _player_mark == GameState.Player.O):
+			_turn_timer.start()
 
 	# AI first move if player is O
 	if _mode == Mode.VS_AI and _player_mark == GameState.Player.O:
@@ -163,25 +169,40 @@ func _do_place(cell_index: int) -> void:
 		return
 	if _mode == Mode.VS_AI and _state.current_turn != _player_mark:
 		_ai_take_turn.call_deferred()
+	elif _mode != Mode.ONLINE and Globals.timer_seconds > 0:
+		_turn_timer.start()  # restart for next player's turn
 
 func _do_place_ephemeral(cell_index: int) -> void:
 	var queue := _ephemeral_state.x_moves if _ephemeral_state.current_turn == GameState.Player.X \
 		else _ephemeral_state.o_moves
 	var evicted_cell := queue[0] if queue.size() == 4 else -1
 
+	# Capture evicted mark appearance BEFORE place() wipes board[evicted]
+	var evicted_text := ""
+	var evicted_color := Color.WHITE
+	if evicted_cell >= 0:
+		evicted_text = "X" if _ephemeral_state.board[evicted_cell] == GameState.Player.X else "O"
+		evicted_color = Color("#00d4ff") if evicted_text == "X" else Color("#a855f7")
+
 	if not _ephemeral_state.place(cell_index):
 		return
 	SFX.click()
 
-	# Animate eviction (fade out the old cell label)
+	# Animate eviction: re-show mark briefly then tween to invisible.
+	# _evicting_cell tells _refresh_ui to skip this cell while tween runs.
 	if evicted_cell >= 0:
+		_evicting_cell = evicted_cell
 		var evicted_node = $VBoxContainer/Grid.get_child(evicted_cell)
 		var evicted_mark: Label = evicted_node.get_node("Mark")
+		evicted_mark.text = evicted_text
+		evicted_mark.add_theme_color_override("font_color", evicted_color)
+		evicted_mark.modulate.a = 0.25  # was oldest = 0.25 before vanish
 		var tw := create_tween()
-		tw.tween_property(evicted_mark, "modulate:a", 0.0, 0.2)
+		tw.tween_property(evicted_mark, "modulate:a", 0.0, 0.25)
 		tw.tween_callback(func():
 			evicted_mark.text = ""
 			evicted_mark.modulate.a = 1.0
+			_evicting_cell = -1
 		)
 
 	_animate_piece(cell_index)
@@ -192,8 +213,11 @@ func _do_place_ephemeral(cell_index: int) -> void:
 		return
 	if _mode == Mode.VS_AI and _ephemeral_state.current_turn != _player_mark:
 		_ai_take_turn.call_deferred()
+	elif _mode != Mode.ONLINE and Globals.timer_seconds > 0:
+		_turn_timer.start()
 
 func _ai_take_turn() -> void:
+	_turn_timer.stop()  # pause timer during AI think
 	var move_cell: int
 	if Globals.current_game_mode == "ephemeral":
 		var eph_ai := _ai as EphemeralAI
@@ -233,6 +257,9 @@ func _ai_do_move() -> void:
 			_do_ultimate_place(m["board"], m["cell"])
 	else:
 		_do_place(_ai_move_cell)
+	# Restart timer for player's turn after AI places
+	if _mode != Mode.ONLINE and Globals.timer_seconds > 0 and _state.result == GameState.GameResult.ONGOING:
+		_turn_timer.start()
 
 func _ai_update_dots() -> void:
 	_ai_dots_count = (_ai_dots_count + 1) % 5
@@ -304,6 +331,10 @@ func _animate_piece(cell_index: int) -> void:
 
 func _refresh_ui() -> void:
 	for i in 9:
+		# Skip cell being eviction-animated — tween owns it until callback clears _evicting_cell
+		if i == _evicting_cell:
+			continue
+
 		var cell = $VBoxContainer/Grid.get_child(i)
 		var mark_label: Label = cell.get_node("Mark")
 		match _state.board[i]:

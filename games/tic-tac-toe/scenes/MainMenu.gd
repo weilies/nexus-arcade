@@ -187,7 +187,7 @@ func _on_timer_pressed() -> void:
 
 func _refresh_difficulty_label() -> void:
 	var mode: Dictionary = DIFFICULTY_MODES[_difficulty_index]
-	_lbl_difficulty.text = mode["label"] + " ▸"
+	_lbl_difficulty.text = mode["label"] + " >"
 	var clr: Color = mode["color"]
 	_lbl_difficulty.add_theme_color_override("font_color", clr)
 	Globals.ai_difficulty = mode["difficulty"] as Globals.AIDifficulty
@@ -320,6 +320,10 @@ func _make_help_popup() -> Control:
 
 	var vbox := VBoxContainer.new()
 	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vbox.offset_left = 20
+	vbox.offset_top = 16
+	vbox.offset_right = -20
+	vbox.offset_bottom = -16
 	vbox.add_theme_constant_override("separation", 12)
 	panel.add_child(vbox)
 
@@ -376,41 +380,41 @@ func _get_help_text() -> String:
 		lines.append_array(_help_ephemeral())
 
 	lines.append("")
-	lines.append("─── TIMER ───")
-	lines.append("Tap the timer to cycle: OFF → BLITZ (3s) → CASUAL (6s) → CHILL (9s).")
-	lines.append("When on, you must place your mark before time runs out or you SKIP your turn. The screen will shake — don't panic, it's just telling you to hurry up!")
+	lines.append("--- TIMER ---")
+	lines.append("Tap TIMER to cycle: OFF > BLITZ (3s) > CASUAL (6s) > CHILL (9s).")
+	lines.append("When on, place your mark before time runs out or you SKIP your turn.")
 
 	return "\n".join(lines)
 
 func _help_classic() -> Array[String]:
 	return [
-		"═══ CLASSIC MODE ═══",
+		"CLASSIC MODE",
 		"",
 		"The OG. The classic. The game your grandma could beat you at.",
 		"",
-		"Get three X's (or O's) in a row — horizontally, vertically, or diagonally. First to do it wins. If the board fills up and nobody's got three in a row, it's a draw. Yes, draws happen. No, you can't argue with the grid.",
+		"Get three X's (or O's) in a row — horizontal, vertical, or diagonal. Board fills with no winner? Draw. Yes, draws happen. No, you can't argue with the grid.",
 		"",
-		"Pro strat: Take the center. No, really. That's it. That's the whole strategy.",
+		"Pro strat: Take the center. That's it. That's the whole strategy.",
 	]
 
 func _help_ultimate() -> Array[String]:
 	return [
-		"═══ ULTIMATE MODE ═══",
+		"ULTIMATE MODE",
 		"",
-		"Tic Tac Toe on steroids. It's a 3x3 grid... OF 3x3 GRIDS.",
+		"Tic Tac Toe on steroids. A 3x3 grid OF 3x3 grids.",
 		"",
-		"Win a mini-board to claim that square in the mega-board. But here's the twist: your move determines which mini-board your opponent plays next. Send them to a board that's already won? They get to choose. Evil grin optional.",
+		"Win a mini-board to claim that square on the mega-board. Twist: your move picks which mini-board your opponent plays next. Send them to an already-won board? They play anywhere. Evil grin optional.",
 		"",
-		"This mode has TIMER always on (CASUAL). No chill here — place fast!",
+		"TIMER always on (CASUAL). Place fast.",
 	]
 
 func _help_ephemeral() -> Array[String]:
 	return [
-		"═══ EPHEMERAL MODE ═══",
+		"EPHEMERAL MODE",
 		"",
 		"Like classic, but your marks have commitment issues.",
 		"",
-		"After 6 turns, your oldest mark POOF — vanishes into the void. The board is always shifting. No draws possible — someone will eventually win. It's mathematically guaranteed, just like your confusion on turn 7.",
+		"Place your 5th mark and your oldest mark vanishes. Marks fade as they age — brightest is newest, dimmest is next to go. No draws — someone always wins.",
 		"",
-		"Timer is always CASUAL here. Keep up or get left behind.",
+		"TIMER always on (CASUAL). Keep up.",
 	]
