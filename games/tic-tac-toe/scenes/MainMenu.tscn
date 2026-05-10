@@ -130,9 +130,9 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -100.0
+offset_left = -191.0
 offset_top = 398.0
-offset_right = 100.0
+offset_right = 9.0
 offset_bottom = 434.0
 grow_horizontal = 2
 
@@ -166,6 +166,27 @@ layout_mode = 2
 theme_override_fonts/font = ExtResource("5_font")
 theme_override_font_sizes/font_size = 14
 text = "TIMER: OFF"
+
+[node name="DifficultyRow" type="HBoxContainer" parent="CarouselContainer" unique_id=808538065]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -11.0
+offset_top = 398.0
+offset_right = 189.0
+offset_bottom = 434.0
+grow_horizontal = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="BtnDifficulty" type="Button" parent="CarouselContainer/DifficultyRow" unique_id=1744422792]
+custom_minimum_size = Vector2(200, 36)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 14
+text = "EASY"
+flat = true
 
 [node name="TileBar" type="VBoxContainer" parent="." unique_id=936627550]
 layout_mode = 1
@@ -221,7 +242,7 @@ icon = ExtResource("4_globe")
 expand_icon = true
 script = ExtResource("9_modetile")
 
-[node name="BtnHelp" type="Button" parent="TileBar/Row1"]
+[node name="BtnHelp" type="Button" parent="TileBar/Row1" unique_id=464696221]
 custom_minimum_size = Vector2(96, 96)
 layout_mode = 2
 theme_override_constants/icon_max_width = 48
@@ -237,7 +258,7 @@ layout_mode = 2
 theme_override_constants/separation = 12
 alignment = 1
 
-[node name="BtnLeaderboard" type="Button" parent="TileBar/Row2"]
+[node name="BtnLeaderboard" type="Button" parent="TileBar/Row2" unique_id=11386477]
 custom_minimum_size = Vector2(96, 96)
 layout_mode = 2
 theme_override_constants/icon_max_width = 48
@@ -248,13 +269,13 @@ icon = ExtResource("11_trophy")
 expand_icon = true
 script = ExtResource("9_modetile")
 
-[node name="BtnStore" type="Button" parent="TileBar/Row2"]
+[node name="BtnStore" type="Button" parent="TileBar/Row2" unique_id=1134808238]
 custom_minimum_size = Vector2(96, 96)
 layout_mode = 2
-disabled = true
 theme_override_constants/icon_max_width = 48
 theme_override_fonts/font = ExtResource("5_font")
 theme_override_font_sizes/font_size = 14
+disabled = true
 text = "STORE"
 icon = ExtResource("12_store")
 expand_icon = true

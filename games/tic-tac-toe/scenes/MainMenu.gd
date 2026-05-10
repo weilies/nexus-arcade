@@ -1,4 +1,4 @@
-﻿extends Control
+extends Control
 
 var _current_game_mode: String = "classic"
 var _timer_index: int = 0
@@ -18,7 +18,7 @@ const DIFFICULTY_MODES: Array[Dictionary] = [
 	{ "label": "UNBEATABLE", "difficulty": 2, "color": Color("#ff2d95") },
 ]
 
-var _btn_difficulty: Button = null
+@onready var _btn_difficulty: Button = $CarouselContainer/DifficultyRow/BtnDifficulty
 
 @onready var _carousel: ModeCarousel = $CarouselContainer
 @onready var _btn_1p: Button = $TileBar/Row1/Btn1P
@@ -73,7 +73,8 @@ func _ready() -> void:
 	_refresh_timer_label()
 
 	_build_row2()
-	_build_difficulty_row()
+	_btn_difficulty.pressed.connect(_on_difficulty_pressed)
+	_refresh_difficulty_label()
 
 	_slot_profile.gui_input.connect(_on_profile_clicked)
 
@@ -137,29 +138,6 @@ func _build_row2() -> void:
 	_auth_slot.add_child(_btn_sign_out)
 	row2.add_child(_auth_slot)
 	row2.move_child(_auth_slot, 0)
-
-func _build_difficulty_row() -> void:
-	var carousel := $CarouselContainer
-
-	var row := HBoxContainer.new()
-	row.name = "DifficultyRow"
-	row.add_theme_constant_override("separation", 12)
-	row.alignment = BoxContainer.ALIGNMENT_BEGIN
-
-	_btn_difficulty = Button.new()
-	_btn_difficulty.flat = true
-	_btn_difficulty.add_theme_font_size_override("font_size", 14)
-	_btn_difficulty.custom_minimum_size = Vector2(200, 36)
-	_btn_difficulty.pressed.connect(_on_difficulty_pressed)
-	row.add_child(_btn_difficulty)
-
-	# Insert after TimerRow
-	var timer_row := carousel.get_node("TimerRow")
-	var insert_idx := timer_row.get_index() + 1
-	carousel.add_child(row)
-	carousel.move_child(row, insert_idx)
-
-	_refresh_difficulty_label()
 
 func _on_mode_changed(_index: int, mode_id: String) -> void:
 	_current_game_mode = mode_id
