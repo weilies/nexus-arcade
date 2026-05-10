@@ -47,6 +47,11 @@ func _ready() -> void:
 	add_child(bg)
 	move_child(bg, 1)
 
+	# Apply ArcadeTheme for programmatic nodes (Button=30px, Label=28px)
+	var arcade_theme := load("res://theme/ArcadeTheme.tres") as Theme
+	arcade_theme.default_font = load("res://fonts/Orbitron.ttf")
+	theme = arcade_theme
+
 	_btn_1p.pressed.connect(_on_1p)
 	_btn_2p.pressed.connect(_on_2p)
 	_btn_online.pressed.connect(_on_online)
@@ -81,7 +86,6 @@ func _ready() -> void:
 
 func _build_row2() -> void:
 	var row2 := $TileBar/Row2
-	var orbitron := load("res://fonts/Orbitron.ttf")
 
 	# --- Auth slot (SIGN IN button / Profile + SIGN OUT toggle) ---
 	_auth_slot = VBoxContainer.new()
@@ -94,8 +98,6 @@ func _build_row2() -> void:
 	_btn_sign_in.icon = preload("res://images/icon-user.svg")
 	_btn_sign_in.expand_icon = true
 	_btn_sign_in.add_theme_constant_override("icon_max_width", 48)
-	_btn_sign_in.add_theme_font_override("font", orbitron)
-	_btn_sign_in.add_theme_font_size_override("font_size", 14)
 	_btn_sign_in.add_theme_color_override("font_color", Color("#00d4ff"))
 	_btn_sign_in.text = "SIGN IN"
 	_btn_sign_in.pressed.connect(_on_sign_in)
@@ -116,15 +118,11 @@ func _build_row2() -> void:
 
 	_lbl_username = Label.new()
 	_lbl_username.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_username.add_theme_font_override("font", orbitron)
-	_lbl_username.add_theme_font_size_override("font_size", 11)
 	_lbl_username.add_theme_color_override("font_color", Color("#00d4ff"))
 	_slot_profile.add_child(_lbl_username)
 
 	_lbl_points = Label.new()
 	_lbl_points.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_points.add_theme_font_override("font", orbitron)
-	_lbl_points.add_theme_font_size_override("font_size", 10)
 	_lbl_points.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 1))
 	_slot_profile.add_child(_lbl_points)
 
@@ -133,8 +131,6 @@ func _build_row2() -> void:
 	_btn_sign_out.flat = true
 	_btn_sign_out.text = "SIGN OUT"
 	_btn_sign_out.custom_minimum_size = Vector2(96, 32)
-	_btn_sign_out.add_theme_font_override("font", orbitron)
-	_btn_sign_out.add_theme_font_size_override("font_size", 11)
 	_btn_sign_out.add_theme_color_override("font_color", Color("#ef4444"))
 	_btn_sign_out.pressed.connect(_on_sign_out)
 
@@ -144,7 +140,6 @@ func _build_row2() -> void:
 	row2.move_child(_auth_slot, 0)
 
 func _build_difficulty_row() -> void:
-	var orbitron := load("res://fonts/Orbitron.ttf")
 	var carousel := $CarouselContainer
 
 	var row := HBoxContainer.new()
@@ -154,8 +149,6 @@ func _build_difficulty_row() -> void:
 
 	var lbl_prefix := Label.new()
 	lbl_prefix.text = "DIFFICULTY"
-	lbl_prefix.add_theme_font_override("font", orbitron)
-	lbl_prefix.add_theme_font_size_override("font_size", 20)
 	lbl_prefix.add_theme_color_override("font_color", Color(0.667, 0.667, 0.8, 1.0))
 	lbl_prefix.custom_minimum_size = Vector2(180, 0)
 	row.add_child(lbl_prefix)
@@ -163,8 +156,6 @@ func _build_difficulty_row() -> void:
 	_btn_difficulty = Button.new()
 	_btn_difficulty.flat = false
 	_btn_difficulty.custom_minimum_size = Vector2(220, 56)
-	_btn_difficulty.add_theme_font_override("font", orbitron)
-	_btn_difficulty.add_theme_font_size_override("font_size", 22)
 
 	_lbl_difficulty = Label.new()
 	_lbl_difficulty.text = ""
@@ -340,8 +331,7 @@ func _make_help_popup() -> Control:
 	title.text = "HOW TO PLAY"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
-	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_font_size_override("font_size", 36)
 	title.add_theme_color_override("font_color", Color("#00d4ff"))
 	hdr.add_child(title)
 
@@ -349,7 +339,6 @@ func _make_help_popup() -> Control:
 	close.flat = true
 	close.text = FA6.icon("xmark")
 	close.add_theme_font_override("font", FA6.font())
-	close.add_theme_font_size_override("font_size", 20)
 	close.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 1))
 	close.custom_minimum_size = Vector2(40, 40)
 	close.pressed.connect(func():
@@ -368,8 +357,7 @@ func _make_help_popup() -> Control:
 
 	var content := Label.new()
 	content.text = _get_help_text()
-	content.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
-	content.add_theme_font_size_override("font_size", 13)
+	content.add_theme_font_size_override("font_size", 24)
 	content.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 1))
 	content.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.custom_minimum_size = Vector2(480, 0)

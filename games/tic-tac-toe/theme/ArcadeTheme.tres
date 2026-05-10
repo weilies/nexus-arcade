@@ -1,3 +1,7 @@
 [gd_resource type="Theme" format=3 uid="uid://arcade_theme"]
 
 [resource]
+; Type scale per style guide section 2.2. minima:
+; Help/captions 24, Body/status 28, Button 30, Subheading 36, Heading 48, Score 56, Win/lose 72
+Button/font_sizes/font_size = 30
+Label/font_sizes/font_size = 28

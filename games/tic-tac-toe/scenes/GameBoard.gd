@@ -421,11 +421,14 @@ func _do_ultimate_place(board_idx: int, cell_idx: int) -> void:
 		_ai_take_turn_ultimate.call_deferred()
 
 func _setup_ultimate_board() -> void:
-	var orbitron := load("res://fonts/Orbitron.ttf")
+	var arcade_theme := load("res://theme/ArcadeTheme.tres") as Theme
+	arcade_theme.default_font = load("res://fonts/Orbitron.ttf")
+	arcade_theme.set_font_size("font_size", "WonOverlay", 48)
 
 	_ultimate_board_node = Control.new()
 	_ultimate_board_node.name = "UltimateBoard"
 	_ultimate_board_node.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_ultimate_board_node.theme = arcade_theme
 
 	var grid := GridContainer.new()
 	grid.columns = 3
@@ -459,19 +462,15 @@ func _setup_ultimate_board() -> void:
 			btn.name = "Cell%d" % c
 			btn.custom_minimum_size = Vector2(66, 66)
 			btn.flat = false
-			btn.add_theme_font_override("font", orbitron)
-			btn.add_theme_font_size_override("font_size", 28)
 			btn.gui_input.connect(_on_ultimate_cell_input.bind(b, c))
 			mini_grid.add_child(btn)
 
-		# Won overlay label (hidden initially)
 		var won_label := Label.new()
 		won_label.name = "WonMark"
+		won_label.add_theme_type_variation("WonOverlay")
 		won_label.set_anchors_preset(Control.PRESET_FULL_RECT)
 		won_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		won_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		won_label.add_theme_font_override("font", orbitron)
-		won_label.add_theme_font_size_override("font_size", 80)
 		won_label.visible = false
 		mini_panel.add_child(won_label)
 
