@@ -14,27 +14,27 @@ func test_initial_meta_all_none():
 
 func test_place_on_wrong_board_fails():
 	# First move: free choice. Place on board 0, cell 4.
-	state.place(0, 4)
+	state.place_on(0, 4)
 	# Now active_board == 4. Placing on board 3 must fail.
-	assert_false(state.place(3, 0))
+	assert_false(state.place_on(3, 0))
 
 func test_place_sends_to_correct_next_board():
-	state.place(0, 4)   # X plays board 0, cell 4 -> next active = 4
+	state.place_on(0, 4)   # X plays board 0, cell 4 -> next active = 4
 	assert_eq(state.active_board, 4)
 
 func test_place_on_correct_board_succeeds():
-	state.place(0, 4)   # active now 4
-	assert_true(state.place(4, 0))
+	state.place_on(0, 4)   # active now 4
+	assert_true(state.place_on(4, 0))
 
 func test_won_mini_board_recorded_in_meta():
 	# Win mini-board 0 for X via middle column [1,4,7]
 	# Each move's cell_idx determines opponent's active board.
 	# O plays cell 0 to send X back to board 0 each time.
-	state.place(0, 1)   # X board 0 cell 1 -> active=1
-	state.place(1, 0)   # O board 1 cell 0 -> active=0
-	state.place(0, 4)   # X board 0 cell 4 -> active=4
-	state.place(4, 0)   # O board 4 cell 0 -> active=0
-	state.place(0, 7)   # X board 0 cell 7 -> X wins board 0, meta[0]=X
+	state.place_on(0, 1)   # X board 0 cell 1 -> active=1
+	state.place_on(1, 0)   # O board 1 cell 0 -> active=0
+	state.place_on(0, 4)   # X board 0 cell 4 -> active=4
+	state.place_on(4, 0)   # O board 4 cell 0 -> active=0
+	state.place_on(0, 7)   # X board 0 cell 7 -> X wins board 0, meta[0]=X
 	assert_eq(state.meta_board[0], GameState.Player.X)
 
 func test_sent_to_won_board_gives_free_choice():
@@ -49,7 +49,7 @@ func test_meta_win_ends_game():
 	assert_eq(state.result, GameState.GameResult.X_WINS)
 
 func test_get_legal_moves_respects_active_board():
-	state.place(0, 4)   # active = 4
+	state.place_on(0, 4)   # active = 4
 	var moves := state.get_legal_moves()
 	for m in moves:
 		assert_eq(m["board"], 4)

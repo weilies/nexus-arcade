@@ -1,14 +1,13 @@
 class_name UltimateGameState
-extends RefCounted
+extends GameState
 
 # 9 mini-boards, each a classic 3x3 GameState
 var mini_boards: Array = []       # Array[GameState], size 9
 var meta_board: Array = []        # Array of GameState.Player, size 9
 var active_board: int = -1        # -1 = free choice (first move or sent to won/full)
-var current_turn: int = GameState.Player.X
-var result: int = GameState.GameResult.ONGOING
 
 func _init() -> void:
+	super._init()
 	meta_board.resize(9)
 	meta_board.fill(GameState.Player.NONE)
 	for i in 9:
@@ -16,7 +15,7 @@ func _init() -> void:
 
 # Place a mark on mini-board board_idx, cell cell_idx.
 # Returns false if move is invalid.
-func place(board_idx: int, cell_idx: int) -> bool:
+func place_on(board_idx: int, cell_idx: int) -> bool:
 	if result != GameState.GameResult.ONGOING:
 		return false
 	if active_board != -1 and active_board != board_idx:
