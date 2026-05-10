@@ -58,9 +58,7 @@ func _shake() -> void:
 
 func _on_play_again() -> void:
 	SFX.click()
-	_board_ref._game_over_fired = false
-	_board_ref._state = GameState.new()
-	_board_ref._refresh_ui()
+	_board_ref.reset_for_replay()
 	queue_free()
 
 func _on_menu() -> void:

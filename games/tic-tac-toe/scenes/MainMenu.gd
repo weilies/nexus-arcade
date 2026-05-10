@@ -1,4 +1,4 @@
-extends Control
+﻿extends Control
 
 var _current_game_mode: String = "classic"
 var _timer_index: int = 0
@@ -90,7 +90,7 @@ func _build_row2() -> void:
 	_auth_slot = VBoxContainer.new()
 	_auth_slot.custom_minimum_size = Vector2(96, 96)
 	_auth_slot.alignment = BoxContainer.ALIGNMENT_CENTER
-	_auth_slot.mouse_filter = 1
+	_auth_slot.mouse_filter = Control.MOUSE_FILTER_STOP
 
 	_btn_sign_in = Button.new()
 	_btn_sign_in.custom_minimum_size = Vector2(96, 96)
@@ -106,7 +106,7 @@ func _build_row2() -> void:
 	_slot_profile.visible = false
 	_slot_profile.custom_minimum_size = Vector2(96, 96)
 	_slot_profile.alignment = BoxContainer.ALIGNMENT_CENTER
-	_slot_profile.mouse_filter = 1
+	_slot_profile.mouse_filter = Control.MOUSE_FILTER_STOP
 
 	var prof_icon := TextureRect.new()
 	prof_icon.texture = preload("res://images/icon-user.svg")
@@ -147,8 +147,9 @@ func _build_difficulty_row() -> void:
 	row.alignment = BoxContainer.ALIGNMENT_BEGIN
 
 	_btn_difficulty = Button.new()
-	_btn_difficulty.flat = false
-	_btn_difficulty.custom_minimum_size = Vector2(300, 56)
+	_btn_difficulty.flat = true
+	_btn_difficulty.add_theme_font_size_override("font_size", 14)
+	_btn_difficulty.custom_minimum_size = Vector2(200, 36)
 	_btn_difficulty.pressed.connect(_on_difficulty_pressed)
 	row.add_child(_btn_difficulty)
 
@@ -165,10 +166,7 @@ func _on_mode_changed(_index: int, mode_id: String) -> void:
 	_refresh_timer_visibility()
 
 func _refresh_timer_visibility() -> void:
-	var locked := _current_game_mode in ["ultimate", "ephemerate"]
-	$CarouselContainer/TimerRow.visible = not locked
-	if has_node("CarouselContainer/DifficultyRow"):
-		$CarouselContainer/DifficultyRow.visible = true
+	$CarouselContainer/TimerRow.visible = true
 
 func _on_timer_pressed() -> void:
 	_timer_index = (_timer_index + 1) % TIMER_MODES.size()
@@ -204,10 +202,7 @@ func _refresh_timer_label() -> void:
 func _on_1p() -> void:
 	SFX.click()
 	Globals.current_game_mode = _current_game_mode
-	if _current_game_mode in ["ultimate", "ephemerate"]:
-		Globals.timer_seconds = 6
-	else:
-		Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
+	Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
 	var board = load("res://scenes/GameBoard.tscn").instantiate()
 	board.setup_vs_ai(Globals.ai_difficulty)
 	get_tree().root.add_child(board)
@@ -217,10 +212,7 @@ func _on_1p() -> void:
 func _on_2p() -> void:
 	SFX.click()
 	Globals.current_game_mode = _current_game_mode
-	if _current_game_mode in ["ultimate", "ephemerate"]:
-		Globals.timer_seconds = 6
-	else:
-		Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
+	Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
 	var board = load("res://scenes/GameBoard.tscn").instantiate()
 	board.setup_local()
 	get_tree().root.add_child(board)
@@ -230,10 +222,7 @@ func _on_2p() -> void:
 func _on_online() -> void:
 	SFX.click()
 	Globals.current_game_mode = _current_game_mode
-	if _current_game_mode in ["ultimate", "ephemerate"]:
-		Globals.timer_seconds = 6
-	else:
-		Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
+	Globals.timer_seconds = TIMER_MODES[_timer_index]["seconds"]
 	get_tree().change_scene_to_file("res://scenes/OnlineLobby.tscn")
 
 func _on_leaderboard() -> void:
@@ -264,7 +253,7 @@ func _refresh_auth_ui() -> void:
 	var signed_in := Globals.is_signed_in()
 	if signed_in:
 		_lbl_username.text = Globals.current_user.get("username", "")
-		_lbl_points.text = "★ %d pts" % Globals.current_user.get("points", 0)
+		_lbl_points.text = "â˜… %d pts" % Globals.current_user.get("points", 0)
 		_btn_sign_in.visible = false
 		_slot_profile.visible = true
 		_btn_sign_out.visible = _show_sign_out
@@ -383,7 +372,7 @@ func _help_classic() -> Array[String]:
 		"",
 		"The OG. The classic. The game your grandma could beat you at.",
 		"",
-		"Get three X's (or O's) in a row — horizontal, vertical, or diagonal. Board fills with no winner? Draw. Yes, draws happen. No, you can't argue with the grid.",
+		"Get three X's (or O's) in a row â€” horizontal, vertical, or diagonal. Board fills with no winner? Draw. Yes, draws happen. No, you can't argue with the grid.",
 		"",
 		"Pro strat: Take the center. That's it. That's the whole strategy.",
 	]
@@ -405,7 +394,7 @@ func _help_ephemeral() -> Array[String]:
 		"",
 		"Like classic, but your marks have commitment issues.",
 		"",
-		"Place your 5th mark and your oldest mark vanishes. Marks fade as they age — brightest is newest, dimmest is next to go. No draws — someone always wins.",
+		"Place your 5th mark and your oldest mark vanishes. Marks fade as they age â€” brightest is newest, dimmest is next to go. No draws â€” someone always wins.",
 		"",
 		"TIMER always on (CASUAL). Keep up.",
 	]

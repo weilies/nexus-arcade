@@ -1,4 +1,4 @@
-class_name GameBoard
+﻿class_name GameBoard
 extends Control
 
 class TimerRing extends Control:
@@ -353,11 +353,12 @@ func _show_times_up_banner() -> void:
 	lbl.add_theme_font_override("font", orbitron)
 	lbl.add_theme_font_size_override("font_size", 56)
 	lbl.add_theme_color_override("font_color", Color("#ff2d95"))
-	lbl.set_anchors_preset(Control.PRESET_CENTER)
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(lbl)
 	lbl.scale = Vector2.ZERO
-	lbl.pivot_offset = Vector2(lbl.size.x / 2.0, lbl.size.y / 2.0)
+	await get_tree().process_frame
+	lbl.position = (size - lbl.size) / 2.0
+	lbl.pivot_offset = lbl.size / 2.0
 	var tw := create_tween()
 	tw.tween_property(lbl, "scale", Vector2(1.1, 1.1), 0.15).set_trans(Tween.TRANS_BACK)
 	tw.tween_property(lbl, "scale", Vector2.ONE, 0.08)
@@ -372,12 +373,40 @@ func _shake_screen() -> void:
 		tw.tween_property(self, "position", origin + off, 0.04)
 	tw.tween_property(self, "position", origin, 0.04)
 
+func reset_for_replay() -> void:
+	_game_over_fired = false
+
+	match Globals.current_game_mode:
+		"ultimate":
+			_ultimate_state = UltimateGameState.new()
+			_state = _ultimate_state
+			_refresh_ultimate_ui()
+		"ephemerate":
+			_ephemeral_state = EphemeralGameState.new()
+			_state = _ephemeral_state
+		_:
+			_state = GameState.new()
+
+	_refresh_ui()
+
+	if _mode != Mode.ONLINE and Globals.timer_seconds > 0:
+		_turn_timer.set_duration(Globals.timer_seconds)
+		if not (_mode == Mode.VS_AI and _player_mark == GameState.Player.O):
+			_turn_timer.start()
+
+	if _mode == Mode.VS_AI and _player_mark == GameState.Player.O:
+		_ai_take_turn.call_deferred()
+
 func _on_home() -> void:
+	_turn_timer.stop()
 	SFX.click()
 	if _mode == Mode.ONLINE and _supabase_ref:
 		_supabase_ref.broadcast("room:" + _room_id, "forfeit",
 			{"player": GameState.player_to_str(_player_mark)})
-	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+	var menu = load("res://scenes/MainMenu.tscn").instantiate()
+	get_tree().root.add_child(menu)
+	get_tree().current_scene = menu
+	queue_free()
 
 func _exit_tree() -> void:
 	if _supabase_ref and _supabase_ref.realtime_message.is_connected(_on_online_message):
@@ -394,7 +423,7 @@ func _animate_piece(cell_index: int) -> void:
 
 func _refresh_ui() -> void:
 	for i in 9:
-		# Skip cell being eviction-animated — tween owns it until callback clears _evicting_cell
+		# Skip cell being eviction-animated â€” tween owns it until callback clears _evicting_cell
 		if i == _evicting_cell:
 			continue
 
@@ -424,18 +453,18 @@ func _refresh_ui() -> void:
 			if _mode == Mode.VS_AI and _player_mark == GameState.Player.O:
 				turn_text = "AI THINKING..."
 			elif _mode == Mode.VS_AI:
-				turn_text = "YOUR TURN — X"
+				turn_text = "YOUR TURN â€” X"
 			else:
-				turn_text = "PLAYER 1 — X"
+				turn_text = "PLAYER 1 â€” X"
 		GameState.Player.O:
 			if _mode == Mode.VS_AI and _player_mark == GameState.Player.X:
 				turn_text = "AI THINKING..."
 			elif _mode == Mode.VS_AI:
-				turn_text = "YOUR TURN — O"
+				turn_text = "YOUR TURN â€” O"
 			elif _mode == Mode.LOCAL:
-				turn_text = "PLAYER 2 — O"
+				turn_text = "PLAYER 2 â€” O"
 			else:
-				turn_text = "OPPONENT — O"
+				turn_text = "OPPONENT â€” O"
 		_:
 			turn_text = ""
 	$VBoxContainer/LblStatus.text = turn_text
@@ -472,7 +501,7 @@ func _init_timer_rings() -> void:
 	_ring_x.size = sz
 	_ring_x.ring_color = Color("#00d4ff")
 	_ring_x.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var cx := to_local(lbl_x.get_global_rect().get_center())
+	var cx := lbl_x.get_global_rect().get_center() - global_position
 	_ring_x.position = cx - sz / 2.0
 	add_child(_ring_x)
 	_ring_o = TimerRing.new()
@@ -480,7 +509,7 @@ func _init_timer_rings() -> void:
 	_ring_o.size = sz
 	_ring_o.ring_color = Color("#a855f7")
 	_ring_o.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var co := to_local(lbl_o.get_global_rect().get_center())
+	var co := lbl_o.get_global_rect().get_center() - global_position
 	_ring_o.position = co - sz / 2.0
 	add_child(_ring_o)
 	_ring_x.visible = false
@@ -562,10 +591,14 @@ func _award_points_if_signed_in(source: String) -> void:
 
 func _show_pts_popup(pts: int) -> void:
 	var lbl := Label.new()
-	lbl.text = "+%d ★" % pts
+	lbl.text = "+%d â˜…" % pts
 	lbl.add_theme_color_override("font_color", Color("#00d4ff"))
 	lbl.position = Vector2(size.x / 2.0 - 50, size.y / 2.0 - 40)
 	add_child(lbl)
+	lbl.scale = Vector2.ZERO
+	await get_tree().process_frame
+	lbl.position = (size - lbl.size) / 2.0
+	lbl.pivot_offset = lbl.size / 2.0
 	var tw := create_tween()
 	tw.tween_property(lbl, "scale", Vector2(1.2, 1.2), 0.15).set_trans(Tween.TRANS_BACK)
 	tw.tween_property(lbl, "scale", Vector2.ONE, 0.06)
@@ -592,6 +625,7 @@ func _setup_ultimate_board() -> void:
 	_ultimate_board_node = Control.new()
 	_ultimate_board_node.name = "UltimateBoard"
 	_ultimate_board_node.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_ultimate_board_node.mouse_filter = Control.MOUSE_FILTER_PASS
 	_ultimate_board_node.theme = arcade_theme
 
 	var grid := GridContainer.new()
@@ -631,7 +665,7 @@ func _setup_ultimate_board() -> void:
 
 		var won_label := Label.new()
 		won_label.name = "WonMark"
-		won_label.add_theme_type_variation("WonOverlay")
+		won_label.theme_type_variation = "WonOverlay"
 		won_label.set_anchors_preset(Control.PRESET_FULL_RECT)
 		won_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		won_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -691,7 +725,7 @@ func _refresh_ultimate_ui() -> void:
 			mini_panel.add_theme_stylebox_override("panel", style)
 			mini_panel.get_node("Grid").modulate = Color.WHITE
 		elif _ultimate_state.active_board == -1:
-			# Free choice — all open boards dim-glow
+			# Free choice â€” all open boards dim-glow
 			style.bg_color = Color("#1a1a2e")
 			style.border_color = Color(0.0, 0.831, 1.0, 0.4)
 			mini_panel.add_theme_stylebox_override("panel", style)
@@ -733,6 +767,11 @@ func _on_game_over() -> void:
 	if _game_over_fired:
 		return
 	_game_over_fired = true
+	_turn_timer.stop()
+	if _ring_x:
+		_ring_x.visible = false
+	if _ring_o:
+		_ring_o.visible = false
 	match _state.result:
 		GameState.GameResult.X_WINS: _score_x += 1
 		GameState.GameResult.O_WINS: _score_o += 1

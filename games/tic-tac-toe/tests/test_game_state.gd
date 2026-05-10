@@ -48,12 +48,12 @@ func test_diagonal_win_detection():
 	assert_eq(state.result, GameState.GameResult.X_WINS)
 
 func test_draw_detection():
-	# X O X / O X O / O X O
+	# X O X / O O X / X X O  — no winner, board full
 	state.place(0); state.place(1)
-	state.place(3); state.place(6)
-	state.place(4); state.place(2)
-	state.place(7); state.place(5)
-	state.place(8)
+	state.place(2); state.place(3)
+	state.place(5); state.place(4)
+	state.place(6); state.place(8)
+	state.place(7)
 	assert_eq(state.result, GameState.GameResult.DRAW)
 
 func test_get_empty_cells_count():
