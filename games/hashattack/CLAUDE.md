@@ -1,8 +1,8 @@
 Skill loaded. Text given inline — compressing directly.
 
-# Tic Tac Toe — Game-Specific Instructions
+# Hash Attack — Game-Specific Instructions
 
-**Slug:** `tic-tac-toe`
+**Slug:** `hashattack`
 **Engine:** Godot 4.x (GL Compatibility)
 **Viewport:** 720×960, stretch mode `canvas_items`
 **Framerate:** 60 fps target
@@ -18,8 +18,8 @@ Skill loaded. Text given inline — compressing directly.
 ## Godot Export
 
 ```powershell
-Set-Location "c:\Projects\claude\nexus-arcade\games\tic-tac-toe"
-& "C:\Projects\godot\Godot_v4.6.2-stable_win64_console.exe" --headless --export-release "Web" "../../portal/public/games/tic-tac-toe/index.html"
+Set-Location "c:\Projects\claude\nexus-arcade\games\hashattack"
+& "C:\Projects\godot\Godot_v4.6.2-stable_win64_console.exe" --headless --export-release "Web" "../../portal/public/games/hashattack/index.html"
 ```
 
 Thread support DISABLED (`variant/thread_support=false` in export_presets.cfg). Don't re-enable — game runs on HTTP local network without HTTPS when threads off.

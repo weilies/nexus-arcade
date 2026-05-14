@@ -57,7 +57,7 @@ Avoid: MMORPG complexity, ultra-realistic military aesthetics, AAA cinematic UI,
 | Portal CSS | `portal/app/globals.css` — active CSS custom properties |
 | Tailwind config | `portal/tailwind.config.ts` — token palette |
 | Game GDD (art section) | `docs/games/<slug>/GDD.md` — section 6 |
-| NeonGlow shader | `games/tic-tac-toe/shaders/NeonGlow.gdshader` |
+| NeonGlow shader | `games/hashattack/shaders/NeonGlow.gdshader` |
 | ArcadeTheme.tres | `games/<slug>/theme/ArcadeTheme.tres` |
 
 ## Style Guide Dependency

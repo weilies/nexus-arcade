@@ -70,7 +70,7 @@ Expected: zero results. Any hit = bug. Replace with ASCII equivalent or FA6 labe
 
 In `GameBoard.gd`, verify `_turn_timer.start()` is called for non-ONLINE modes:
 ```powershell
-Select-String -Path "games/tic-tac-toe/scenes/GameBoard.gd" -Pattern "_turn_timer.start"
+Select-String -Path "games/hashattack/scenes/GameBoard.gd" -Pattern "_turn_timer.start"
 ```
 Must appear in at least two code paths (ONLINE + non-ONLINE). One result = timer bug.
 

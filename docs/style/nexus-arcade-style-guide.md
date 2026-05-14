@@ -128,7 +128,7 @@ Base viewport: **720×960** (`canvas_items` stretch). All sizes below are logica
 
 ### 4.1 NeonGlow (Godot canvas_item shader)
 
-Location: `games/tic-tac-toe/shaders/NeonGlow.gdshader`
+Location: `games/hashattack/shaders/NeonGlow.gdshader`
 
 | Uniform | Default | Usage |
 |---------|---------|-------|

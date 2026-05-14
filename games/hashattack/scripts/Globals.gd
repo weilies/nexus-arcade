@@ -1,6 +1,6 @@
 extends Node
 
-const GAME_SLUG := "tic-tac-toe"
+const GAME_SLUG := "hashattack"
 
 signal auth_ready
 

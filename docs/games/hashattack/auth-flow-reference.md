@@ -17,11 +17,11 @@
              ▼
 ┌─────────────────────────────────────────────────┐
 │  Godot Game (Web export)                        │
-│  games/tic-tac-toe/                             │
+│  games/hashattack/                             │
 │  - PortalBridge.gd — receives JWT               │
 │  - SupabaseClient.gd — REST calls to Supabase   │
 │  - Globals.gd — auth state, user, streak        │
-│  - Exported to: portal/public/games/tic-tac-toe/ │
+│  - Exported to: portal/public/games/hashattack/ │
 │  - Rendered in: <iframe> inside GameFrame       │
 └────────────┬────────────────────────────────────┘
              │ REST / Realtime
@@ -39,7 +39,7 @@
 ## Auth Flow (SSO — Google OAuth)
 
 ```
-1. User opens /games/tic-tac-toe
+1. User opens /games/hashattack
 2. Portal renders GameFrame → creates <iframe> with Godot web build
 3. Godot PortalBridge._ready() → polls for postMessage events
 4. Godot MainMenu._ready() → Bridge.send_game_ready()
@@ -55,14 +55,14 @@
    a. Godot MainMenu shows "SIGN IN" button
    b. User clicks → Bridge.send_sign_in_request()
    c. Portal receives "sign_in_request" postMessage
-   d. Portal router.push('/login?return_to=/games/tic-tac-toe')
+   d. Portal router.push('/login?return_to=/games/hashattack')
    e. AuthCard.tsx renders Google OAuth button
-   f. redirectTo = `${origin}/auth/callback?return_to=/games/tic-tac-toe`
+   f. redirectTo = `${origin}/auth/callback?return_to=/games/hashattack`
    g. Supabase initiates Google OAuth flow
    h. Google redirects to Supabase Auth callback
    i. Supabase redirects to /auth/callback?code=...&return_to=...
    j. Auth callback exchanges code for session
-   k. Redirects to /games/tic-tac-toe
+   k. Redirects to /games/hashattack
    l. GameFrame onAuthStateChange fires → sends fresh JWT to Godot
    m. Go to step 7c
 ```
@@ -143,10 +143,10 @@ No `NEXT_PUBLIC_SITE_URL` set — falls back to `new URL(request.url).origin` in
 - `portal/lib/supabase/browser.ts` — Browser Supabase client
 
 ### Godot (auth)
-- `games/tic-tac-toe/scripts/PortalBridge.gd` — postMessage listener, JWT validation, `sign_in_request` sender
-- `games/tic-tac-toe/scripts/Globals.gd` — Auth state: `current_user`, `jwt`, `is_signed_in()`, `auth_ready` signal
-- `games/tic-tac-toe/scripts/SupabaseClient.gd` — REST API client: `validate_session()`, `call_rpc()`, `get_member_points()`
-- `games/tic-tac-toe/scenes/MainMenu.gd` — Auth-aware UI: profile row / SIGN IN / leaderboard
+- `games/hashattack/scripts/PortalBridge.gd` — postMessage listener, JWT validation, `sign_in_request` sender
+- `games/hashattack/scripts/Globals.gd` — Auth state: `current_user`, `jwt`, `is_signed_in()`, `auth_ready` signal
+- `games/hashattack/scripts/SupabaseClient.gd` — REST API client: `validate_session()`, `call_rpc()`, `get_member_points()`
+- `games/hashattack/scenes/MainMenu.gd` — Auth-aware UI: profile row / SIGN IN / leaderboard
 
 ### Supabase
 - `supabase/migrations/001_initial_schema.sql` — Base schema (users, games, scores, matches)

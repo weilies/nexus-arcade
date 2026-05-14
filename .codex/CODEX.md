@@ -7,8 +7,8 @@ changes scoped to the user request.
 ## Project Map
 
 - `portal/` - Next.js 14 App Router portal, Tailwind CSS, Supabase SSR auth.
-- `games/tic-tac-toe/` - Godot 4.x game project and GUT tests.
-- `portal/public/games/tic-tac-toe/` - Godot web export consumed by the portal.
+- `games/hashattack/` - Godot 4.x game project and GUT tests.
+- `portal/public/games/hashattack/` - Godot web export consumed by the portal.
 - `supabase/migrations/` - database schema and seed migrations.
 - `docs/style/nexus-arcade-style-guide.md` - visual source of truth.
 - `.claude/skills/` - project-local Claude persona skills.
@@ -17,7 +17,7 @@ changes scoped to the user request.
 
 1. Read root `CLAUDE.md` for project architecture and commands.
 2. If working in the portal, read `portal/CLAUDE.md`.
-3. If working on the Godot game, read `games/tic-tac-toe/CLAUDE.md`.
+3. If working on the Godot game, read `games/hashattack/CLAUDE.md`.
 4. If visuals are involved, read `docs/style/nexus-arcade-style-guide.md`.
 5. Check `git status --short` before edits and preserve user changes.
 

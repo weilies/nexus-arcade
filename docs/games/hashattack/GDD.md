@@ -1,9 +1,9 @@
-# Tic Tac Toe — Game Design Document
+# Hash Attack — Game Design Document
 
 > **Status:** `in-development`
 > **Engine:** Godot 4
 > **Target quarter:** Q2 2026
-> **Slug:** `tic-tac-toe`
+> **Slug:** `hashattack`
 
 ---
 
@@ -49,7 +49,7 @@
 - No turn timer.
 
 ### Online 2P
-- Host creates room → Supabase inserts `game_rooms` row with `game_slug = "tic-tac-toe"` → `room_code` is a 6-char random alphanumeric string → shareable URL format: `https://<portal>/games/tic-tac-toe?room=XXXXXX`.
+- Host creates room → Supabase inserts `game_rooms` row with `game_slug = "hashattack"` → `room_code` is a 6-char random alphanumeric string → shareable URL format: `https://<portal>/games/hashattack?room=XXXXXX`.
 - Guest opens URL → Godot reads `room` query param → joins room → both connect to Supabase Realtime channel `room:{id}`.
 - Moves broadcast as Realtime channel messages; game state stored in `game_rooms.state` (jsonb).
 - **Turn timer:** 30 seconds per turn. Timeout = auto-forfeit.
@@ -208,7 +208,7 @@ Auth flow: Godot sends `auth_request` → portal checks Supabase session → if 
 ```sql
 create table game_rooms (
   id          uuid primary key default gen_random_uuid(),
-  game_slug   text not null,              -- 'tic-tac-toe'
+  game_slug   text not null,              -- 'hashattack'
   room_code   text unique not null,       -- short shareable code
   host_id     uuid references auth.users,
   guest_id    uuid references auth.users,

@@ -143,8 +143,66 @@ Skill files: `.claude/skills/<name>/SKILL.md`
 
 | Project | File |
 |---------|------|
-| Tic Tac Toe | `games/tic-tac-toe/CLAUDE.md` |
+| Hash Attack | `games/hashattack/CLAUDE.md` |
 | Portal | `portal/CLAUDE.md` |
+
+## Doc-Rot Prevention (MANDATORY — Claude-enforced, not user-triggered)
+
+Docs drift from code unless gates enforce sync. These rules apply EVERY session WITHOUT user prompting.
+
+### Rule 1 — Pre-commit Doc Sync Gate
+
+Before committing code that touches any of these areas, Claude MUST check listed doc and flag drift:
+
+| Code area | Authoritative doc | Trigger |
+|-----------|-------------------|---------|
+| Any `*AI.gd` file | `docs/games/<slug>/ai-algorithms.md` | AI algo change → verify spec still matches |
+| `PortalBridge.gd`, `bridge.ts`, `GameFrame.tsx` | `docs/games/<slug>/auth-flow-reference.md` + GDD §5 | postMessage signature change → update both docs |
+| `GameState.gd`, `*GameState.gd` | `docs/games/<slug>/GDD.md` §2 | Win/draw rule change → update GDD |
+| `Globals.gd` GAME_SLUG, folder rename | All docs + Supabase migrations | Slug change → run grep across repo |
+| Scene `.tscn` add/remove | GDD §4 scene list + game CLAUDE.md scene structure | Scene change → update list |
+| Style values in `.gd`/CSS | `docs/style/nexus-arcade-style-guide.md` | Color/font/animation change → update guide FIRST then code |
+
+If drift found: STOP, list affected docs, ask user "fix docs in same commit or separate?" before proceeding.
+
+### Rule 2 — LOCKED Doc Respect
+
+Docs marked `> **Status:** LOCKED` cannot be overridden by chat instruction. Implementation MUST match locked spec.
+
+Currently locked: `docs/games/hashattack/ai-algorithms.md`
+
+If user requests change conflicting with locked doc: flag conflict, ask user to update LOCKED status FIRST, then proceed.
+
+### Rule 3 — Slug/Rename Discipline
+
+Any rename (folder, slug, class, file) triggers immediate full-repo grep BEFORE first commit. Active files (code + docs/) get updated; historical files (docs/superpowers/plans/, supabase/migrations/) stay untouched as point-in-time snapshots.
+
+### Rule 4 — New Plan/Spec Hygiene
+
+When writing new `docs/superpowers/plans/*.md`:
+- Reference current GDD section, not paste content
+- Use slug from `Globals.gd` GAME_SLUG, not hardcoded
+- After execution complete, propose moving to `docs/superpowers/archive/`
+
+### Rule 5 — Active vs Historical Distinction
+
+| Folder | Treat as |
+|--------|---------|
+| `docs/games/<slug>/` | Active — keep in sync with code |
+| `docs/style/` | Active — single source of truth |
+| `docs/superpowers/specs/` | Active spec — sync when feature in flight, archive when done |
+| `docs/superpowers/plans/` | Historical once executed — don't rewrite slug renames into past plans |
+| `supabase/migrations/` | Historical — never edit, add new migration to fix |
+| `*.original.md` | Caveman compression backups — update when active version changes |
+
+### Rule 6 — Drift Audit Schedule
+
+Run `docs/review/` audit when:
+- 3+ commits touched same code area without doc update
+- User says "review docs" / "alignment check" / "verify spec"
+- Sprint boundary (suggest at end of sprint plan execution)
+
+Output: `docs/review/YYYY-MM-DD-<topic>.md` with severity-ranked drifts.
 
 ## Project Structure
 

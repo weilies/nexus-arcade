@@ -1,7 +1,7 @@
 class_name RoomManager
 extends RefCounted
 
-const GAME_SLUG = "tic-tac-toe"
+const GAME_SLUG = "hashattack"
 const ROOM_CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 static func generate_room_code() -> String:
@@ -14,7 +14,7 @@ static func get_share_url(room_code: String) -> String:
 	if OS.has_feature("web"):
 		var base = JavaScriptBridge.eval("window.location.origin + window.location.pathname")
 		return "%s?room=%s" % [base, room_code]
-	return "http://localhost:3000/games/tic-tac-toe?room=" + room_code
+	return "http://localhost:3000/games/hashattack?room=" + room_code
 
 static func get_room_code_from_url() -> String:
 	if OS.has_feature("web"):
