@@ -1,4 +1,4 @@
-export type PortalMessageType = 'auth_token' | 'season_info'
+export type PortalMessageType = 'auth_token'
 
 export interface GameReadyMessage { type: 'game_ready' }
 export interface MatchEndMessage {

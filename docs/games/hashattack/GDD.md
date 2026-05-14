@@ -39,9 +39,12 @@
 
 ### Solo (vs AI)
 - **Easy:** AI picks a random valid cell each turn. Beatable by anyone.
-- **Hard:** AI runs full minimax (no depth limit — 3×3 is trivially fast). Unbeatable; best outcome is draw.
-- AI plays as O; player always plays as X.
-- **Thinking delay:** AI waits 1–3 seconds (random) before placing its mark, with animated "AI THINKING...." dots to simulate human deliberation. Player input is blocked during this window.
+- **Hard:** Rule-based heuristic (win → block → center → corner → edge). Beatable via fork setups (two simultaneous threats).
+- **Unbeatable:** Full minimax (Classic) / iterative deepening minimax (Ephemeral) / MCTS 500 sims (Ultimate). Best outcome for player: draw (Classic) or rare exploit (Ephemeral/Ultimate).
+- **Player color:** Player picks X or O at game start; AI plays the other mark. Code uses `state.current_turn != player_mark` to detect AI turn — NOT `current_turn == Player.O`.
+- **Difficulty selected on MainMenu** via tap-cycle row (no separate AIDifficultySelect scene).
+- **Thinking delay:** AI waits `randf_range(1.0, 3.0)` seconds before placing, with animated "AI THINKING...." dots. Player input blocked during delay. Covers MCTS compute time.
+- **Full algorithm spec:** `docs/games/hashattack/ai-algorithms.md` (LOCKED).
 
 ### Local 2P (same screen)
 - Alternating turns on same device.
@@ -52,7 +55,7 @@
 - Host creates room → Supabase inserts `game_rooms` row with `game_slug = "hashattack"` → `room_code` is a 6-char random alphanumeric string → shareable URL format: `https://<portal>/games/hashattack?room=XXXXXX`.
 - Guest opens URL → Godot reads `room` query param → joins room → both connect to Supabase Realtime channel `room:{id}`.
 - Moves broadcast as Realtime channel messages; game state stored in `game_rooms.state` (jsonb).
-- **Turn timer:** 30 seconds per turn. Timeout = auto-forfeit.
+- **Turn timer:** Configurable via `Globals.timer_seconds` — values `0` (off), `3` (blitz), `6` (casual), `9` (chill). Default off. Timeout = auto-forfeit.
 - **Disconnect behavior:** 10-second grace period. If no reconnect, opponent wins.
 - **Auth required:** Google sign-in (via Supabase Auth) gated at Online mode entry. VS AI and 2P Local are guest-friendly.
 
@@ -62,8 +65,7 @@
 
 Godot scenes inside the game (not the portal):
 
-- `MainMenu` — Mode select + HUD panel. See layout below.
-- `AIDifficultySelect` — Easy / Hard picker (entered from MainMenu → 1P).
+- `MainMenu` — Mode select + difficulty cycle + HUD panel. See layout below.
 - `OnlineLobby` — Create room or paste/join room link.
 - `GameBoard` — Active gameplay. Shows current turn, board grid, scores.
 - `GameOver` — Win / Lose / Draw result with Play Again and Menu buttons.
@@ -108,9 +110,9 @@ Expand panel slides in from right (reserved for future use):
 
 | Mode | Description | Timer | Status |
 |------|-------------|-------|--------|
-| **Classic** | Standard 3×3 Tic Tac Toe | Optional (checkbox) | Live |
-| **Ultimate** | 3×3 grid of 3×3 mini-boards. Win a mini-board to claim that cell in the meta-board. | Always on (30s) | Sprint 2 |
-| **Ephemeral** | Moves expire after 6 turns (oldest mark vanishes). No draws — always a winner. | Always on (30s) | Sprint 2 |
+| **Classic** | Standard 3×3 Tic Tac Toe | Optional (0/3/6/9s) | Live |
+| **Ultimate** | 3×3 grid of 3×3 mini-boards. Win mini-board to claim that cell in meta-board. | Optional (0/3/6/9s) | Live |
+| **Ephemeral** | Each player keeps last 4 marks; 5th placement evicts their oldest. No draws — always a winner. | Optional (0/3/6/9s) | Live |
 
 Each mode shows the same 3 action buttons: **1P (VS AI)** / **2P (LOCAL)** / **ONLINE**.
 
@@ -129,8 +131,8 @@ Accessible from all game scenes via top-right `[>]` button. Slides in/out from r
 ### Screen Flow
 
 ```
-MainMenu
-  ├─ 1P → AIDifficultySelect → GameBoard → GameOver → MainMenu
+MainMenu (mode + difficulty preset inline)
+  ├─ 1P → GameBoard → GameOver → MainMenu
   ├─ 2P → GameBoard (local) → GameOver → MainMenu
   └─ Online → OnlineLobby → GameBoard (online) → GameOver → MainMenu
 
@@ -146,25 +148,30 @@ MainMenu
 Events Godot sends to the Next.js portal:
 
 ```js
-// Game ready
+// Game ready (Godot scene initialized)
 { type: "game_ready" }
 
-// Match ended
-{ type: "match_end", winner: "player" | "opponent" | "draw", mode: "solo" | "local" | "online" }
+// Match ended (score: win=100, draw=50, loss=0)
+{ type: "match_end", score: 100 | 50 | 0, winner: "player" | "opponent" | "draw", mode: "solo" | "local" | "online" }
 
-// Request auth token (online mode entry)
+// Request auth token (online mode entry, or re-request if first send raced JS listener)
 { type: "auth_request" }
+
+// Trigger portal Google OAuth flow
+{ type: "sign_in_request" }
+
+// Sign out current Supabase session
+{ type: "sign_out_request" }
 ```
 
 Events the portal sends to Godot:
 
 ```js
-// Auth token after sign-in
+// Auth token after sign-in (or on initial session restore)
 { type: "auth_token", token: "supabase_jwt_string" }
-
-// Season info (future use)
-{ type: "season_info", name: "Q2 2026", ends_at: "2026-06-30" }
 ```
+
+Source of truth: `portal/lib/bridge.ts` (TypeScript) and `games/hashattack/scripts/PortalBridge.gd` (GDScript).
 
 Auth flow: Godot sends `auth_request` → portal checks Supabase session → if logged in returns JWT immediately, else triggers Google OAuth (Supabase Auth, auto-link by verified email) → returns JWT → Godot uses JWT for Realtime channel auth.
 
@@ -307,5 +314,6 @@ Not in scope for v1. See Out of Scope.
 
 | Date | Author | Summary |
 |------|--------|---------|
+| 2026-05-13 | Claude (doc alignment review) | Rebrand title to Hash Attack; §3 AI: 3 difficulty levels + player-color rule; remove AIDifficultySelect; §3 timer 0/3/6/9s; §4 carousel: Ephemeral eviction rule fixed, Ultimate/Ephemeral status Live; §5 bridge: add `score` to match_end, add `sign_in_request`/`sign_out_request`, drop dead `season_info` |
 | 2026-05-02 | @weilies | Added AI thinking delay (1–3s random) with animated dots |
 | 2026-05-01 | @weilies | Initial draft — POC spec |
