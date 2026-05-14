@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "gemini-gems": {
+      "command": "node",
+      "args": [
+        "C:/Projects/claude/mcp-gemini/mcp-gemini-gems/dist/index.js"
+      ],
+      "env": {}
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($content = Get-Content \"C:\\\\Projects\\\\claude\\\\nexus-arcade\\\\games\\\\tic-tac-toe\\\\scenes\\\\GameBoard.gd\"; $line = $content[284]; Write-Output \"Line 285: [$line] len=$\\($line.Length\\)\"; $line.ToCharArray\\(\\) | ForEach-Object { \"{0} \\(0x{1:X2}\\)\" -f $_, [int]$_ })",
+      "Edit(/.claude/skills/tessa/**)",
+      "Bash(Set-Location \"c:\\\\Projects\\\\claude\\\\nexus-arcade\\\\games\\\\tic-tac-toe\")",
+      "mcp__godot-mcp__run_project",
+      "mcp__godot-mcp__get_debug_output",
+      "Read(//c//**)",
+      "mcp__godot-mcp__list_projects",
+      "mcp__godot-mcp__stop_project",
+      "mcp__godot-mcp__update_project_uids",
+      "Bash(\"C:/Projects/godot/Godot_v4.6.2-stable_win64_console.exe\" --headless -s addons/gut/gut_cmdln.gd)",
+      "Bash(\"C:/Projects/godot/Godot_v4.6.2-stable_win64_console.exe\" --headless --export-release \"Web\" \"../../portal/public/games/tic-tac-toe/index.html\")",
+      "Bash(Remove-Item \"C:\\\\Users\\\\WeiTatCHOK\\\\.claude\\\\projects\\\\c--Projects-claude-nexus-arcade\\\\memory\\\\project_strict_tech_stack.md\", \"C:\\\\Users\\\\WeiTatCHOK\\\\.claude\\\\projects\\\\c--Projects-claude-nexus-arcade\\\\memory\\\\project_portal_plan1.md\", \"C:\\\\Users\\\\WeiTatCHOK\\\\.claude\\\\projects\\\\c--Projects-claude-nexus-arcade\\\\memory\\\\project_godot_export.md\", \"C:\\\\Users\\\\WeiTatCHOK\\\\.claude\\\\projects\\\\c--Projects-claude-nexus-arcade\\\\memory\\\\feedback_godot_emoji_bug.md\", \"C:\\\\Users\\\\WeiTatCHOK\\\\.claude\\\\projects\\\\c--Projects-claude-nexus-arcade\\\\memory\\\\project_fa6_setup.md\", \"C:\\\\Users\\\\WeiTatCHOK\\\\.claude\\\\projects\\\\c--Projects-claude-nexus-arcade\\\\memory\\\\project_godot_icon_rules.md\")",
+      "Bash(Test-Path \"c:\\\\Projects\\\\claude\\\\nexus-arcade\\\\.worktrees\\\\feat-tic-tac-toe\")",
+      "Edit(/.claude/skills/uma/**)",
+      "Bash(curl -s -o NUL -w \"%{http_code}\" http://localhost:3000/games)",
+      "Bash(curl -s http://localhost:3000/games)",
+      "Bash(Select-Object -First 30)",
+      "Bash(curl -s http://localhost:3000/games/tic-tac-toe)",
+      "Bash(curl -s http://localhost:3000/admin)",
+      "Bash(curl -s http://localhost:3000/register)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(git lfs *)",
+      "Bash(git rev-list *)",
+      "Bash(git cat-file *)",
+      "Bash(awk '$2==\"blob\" && $1>1000000 {print $1/1024/1024 \"MB \" $3}')"
+    ]
+  }
+}

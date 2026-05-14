@@ -1,0 +1,47 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
+[application]
+
+config/name="Tic Tac Toe"
+run/main_scene="res://scenes/MainMenu.tscn"
+config/features=PackedStringArray("4.6", "GL Compatibility")
+
+[autoload]
+
+Globals="*res://scripts/Globals.gd"
+SFX="*res://scripts/SFX.gd"
+FA6="*res://scripts/FA6.gd"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=960
+window/stretch/mode="canvas_items"
+
+[editor_plugins]
+
+enabled=PackedStringArray()
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+2d/snap/snap_2d_transforms_to_pixel=true
+2d/snap/snap_2d_vertices_to_pixel=true
+
+[supabase]
+
+url="https://mdvmxjxhfjovbpshbbzr.supabase.co"
+anon_key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kdm14anhoZmpvdmJwc2hiYnpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMTQ3MDgsImV4cCI6MjA5Mjc5MDcwOH0.i6iHsmg76Sjh3PjM9XF2USJWKfywn2OwUZ-mDa_i95g"

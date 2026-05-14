@@ -1,0 +1,55 @@
+import type { Metadata, Viewport } from 'next'
+import './globals.css'
+import { BottomTabBar } from '@/components/BottomTabBar'
+import { isPlatformAdmin } from '@/lib/data/admin'
+
+export const metadata: Metadata = {
+  title: 'Nexus Arcade',
+  description: 'Casual games. Compete. Conquer.',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const serverIsAdmin = await isPlatformAdmin()
+
+  return (
+    <html lang="en">
+      <body className="min-h-screen flex flex-col bg-retro-glow">
+        <BottomTabBar hideOn={['/games/tictactoe']} serverIsAdmin={serverIsAdmin} />
+        <main className="flex-1 flex flex-col pb-20 md:pb-0">
+          {children}
+        </main>
+        <footer className="flex items-center justify-center gap-6 py-5 px-4 border-t"
+                style={{ background: 'rgba(10,10,26,0.96)', borderColor: 'rgba(42,42,74,0.6)' }}>
+          <a
+            href="https://facebook.com/YOUR_PROFILE"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 font-pixel text-xs font-semibold min-h-[48px] min-w-[48px] justify-center"
+            style={{ color: '#8888aa' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+            Facebook
+          </a>
+          <a
+            href="mailto:hello@nexusarcade.com"
+            className="flex items-center gap-2 font-pixel text-xs font-semibold min-h-[48px] min-w-[48px] justify-center"
+            style={{ color: '#8888aa' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <path d="m22 4-10 8L2 4"/>
+            </svg>
+            Email
+          </a>
+        </footer>
+      </body>
+    </html>
+  )
+}

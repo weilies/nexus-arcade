@@ -1,0 +1,282 @@
+[gd_scene format=3 uid="uid://bsdoi8ppt01jf"]
+
+[ext_resource type="Script" uid="uid://be7q83x7t05va" path="res://scenes/MainMenu.gd" id="1_mainmenu"]
+[ext_resource type="Texture2D" uid="uid://dtgbp067r3dr7" path="res://images/icon-robot.svg" id="2_robot"]
+[ext_resource type="Texture2D" uid="uid://bcg3iefigbt17" path="res://images/icon-users.svg" id="3_users"]
+[ext_resource type="Texture2D" uid="uid://blkeb44xf6il6" path="res://images/icon-globe.svg" id="4_globe"]
+[ext_resource type="FontFile" uid="uid://np2i2lixekd0" path="res://fonts/Orbitron.ttf" id="5_font"]
+[ext_resource type="Script" uid="uid://igkqalnk1tgl" path="res://scripts/PortalBridge.gd" id="6_bridge"]
+[ext_resource type="Script" uid="uid://bpnkfqbd4po31" path="res://scripts/ModeCarousel.gd" id="7_carousel"]
+[ext_resource type="Script" uid="uid://5hie3wovigs" path="res://scripts/ModePreview.gd" id="8_preview"]
+[ext_resource type="Script" uid="uid://c48h10tq8nrtb" path="res://scripts/ModeTile.gd" id="9_modetile"]
+[ext_resource type="Texture2D" uid="uid://dcjxx5dy2g4nl" path="res://images/icon-help.svg" id="10_help"]
+[ext_resource type="Texture2D" uid="uid://bahvv32w0fdlj" path="res://images/icon-trophy.svg" id="11_trophy"]
+[ext_resource type="Texture2D" uid="uid://cbiww43x1gemk" path="res://images/icon-store.svg" id="12_store"]
+
+[node name="MainMenu" type="Control" unique_id=1157175397]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_mainmenu")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1619318622]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.039, 0.039, 0.102, 1)
+
+[node name="Bridge" type="Node" parent="." unique_id=603002042]
+script = ExtResource("6_bridge")
+
+[node name="HeaderBar" type="HBoxContainer" parent="." unique_id=1700793854]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 16.0
+offset_right = -20.0
+offset_bottom = 64.0
+grow_horizontal = 2
+
+[node name="LblTitle" type="Label" parent="HeaderBar" unique_id=1334339655]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0.831, 1, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 48
+text = "#HashAttack!"
+
+[node name="CarouselContainer" type="Control" parent="." unique_id=510450315]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -310.0
+offset_right = 300.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("7_carousel")
+
+[node name="BtnArrowLeft" type="Button" parent="CarouselContainer" unique_id=2126551941]
+layout_mode = 1
+offset_top = 100.0
+offset_right = 48.0
+offset_bottom = 340.0
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 28
+
+[node name="PreviewContainer" type="Control" parent="CarouselContainer" unique_id=1237375963]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 20.0
+offset_right = 200.0
+offset_bottom = 340.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="ModePreview" type="Control" parent="CarouselContainer/PreviewContainer" unique_id=1915240339]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("8_preview")
+
+[node name="BtnArrowRight" type="Button" parent="CarouselContainer" unique_id=1935036096]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -48.0
+offset_top = 100.0
+offset_bottom = 340.0
+grow_horizontal = 0
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 28
+
+[node name="LblModeName" type="Label" parent="CarouselContainer" unique_id=221310138]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 1.0
+offset_top = 360.0
+offset_right = 1.0
+offset_bottom = 394.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0, 0.831, 1, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 22
+text = "CLASSIC"
+horizontal_alignment = 1
+
+[node name="TimerRow" type="Control" parent="CarouselContainer" unique_id=1546005970]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -191.0
+offset_top = 398.0
+offset_right = 9.0
+offset_bottom = 434.0
+grow_horizontal = 2
+
+[node name="BtnTimer" type="Button" parent="CarouselContainer/TimerRow" unique_id=1031232748]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+
+[node name="HBoxTimer" type="HBoxContainer" parent="CarouselContainer/TimerRow/BtnTimer" unique_id=1120484197]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="LblClockIcon" type="Label" parent="CarouselContainer/TimerRow/BtnTimer/HBoxTimer" unique_id=178054475]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.392, 0.455, 0.573, 1)
+theme_override_font_sizes/font_size = 14
+
+[node name="LblTimer" type="Label" parent="CarouselContainer/TimerRow/BtnTimer/HBoxTimer" unique_id=1141500923]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 14
+text = "TIMER: OFF"
+
+[node name="DifficultyRow" type="HBoxContainer" parent="CarouselContainer" unique_id=808538065]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -11.0
+offset_top = 398.0
+offset_right = 189.0
+offset_bottom = 434.0
+grow_horizontal = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="BtnDifficulty" type="Button" parent="CarouselContainer/DifficultyRow" unique_id=1744422792]
+custom_minimum_size = Vector2(200, 36)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 14
+text = "EASY"
+flat = true
+
+[node name="TileBar" type="VBoxContainer" parent="." unique_id=936627550]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -216.0
+offset_top = 170.0
+offset_right = 216.0
+offset_bottom = 374.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Row1" type="HBoxContainer" parent="TileBar" unique_id=502157359]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Btn1P" type="Button" parent="TileBar/Row1" unique_id=1073872937]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_constants/icon_max_width = 48
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 16
+text = "1P"
+icon = ExtResource("2_robot")
+expand_icon = true
+script = ExtResource("9_modetile")
+
+[node name="Btn2P" type="Button" parent="TileBar/Row1" unique_id=579400768]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_constants/icon_max_width = 48
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 16
+text = "2P"
+icon = ExtResource("3_users")
+expand_icon = true
+script = ExtResource("9_modetile")
+
+[node name="BtnOnline" type="Button" parent="TileBar/Row1" unique_id=1745213479]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_constants/icon_max_width = 48
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 16
+text = "ONLINE"
+icon = ExtResource("4_globe")
+expand_icon = true
+script = ExtResource("9_modetile")
+
+[node name="BtnHelp" type="Button" parent="TileBar/Row1" unique_id=464696221]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_constants/icon_max_width = 48
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 16
+text = "HELP"
+icon = ExtResource("10_help")
+expand_icon = true
+script = ExtResource("9_modetile")
+
+[node name="Row2" type="HBoxContainer" parent="TileBar" unique_id=1753401173]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="BtnLeaderboard" type="Button" parent="TileBar/Row2" unique_id=11386477]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_constants/icon_max_width = 48
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 14
+text = "LEADERBOARD"
+icon = ExtResource("11_trophy")
+expand_icon = true
+script = ExtResource("9_modetile")
+
+[node name="BtnStore" type="Button" parent="TileBar/Row2" unique_id=1134808238]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_constants/icon_max_width = 48
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 14
+disabled = true
+text = "STORE"
+icon = ExtResource("12_store")
+expand_icon = true
+script = ExtResource("9_modetile")

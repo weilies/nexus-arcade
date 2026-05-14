@@ -1,0 +1,24 @@
+# Godot web exports — large binary build artifacts
+portal/public/games/
+
+# Node modules
+portal/node_modules/
+portal/.next/
+
+# Godot build caches
+games/**/.godot/
+games/**/addons/gut/
+
+# Binary / generated assets
+**/*.wasm
+**/*.pck
+**/*.import
+**/*.ttf
+**/*.otf
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.svg
+**/*.mp3
+**/*.ogg
+**/*.wav

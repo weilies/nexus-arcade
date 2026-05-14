@@ -1,0 +1,34 @@
+# Node
+node_modules/
+.next/
+.env.local
+.env*.local
+
+# Godot
+games/*/web-export/
+games/*/.godot/
+*.import
+# Godot web exports — tracked via Git LFS (*.wasm, *.pck)
+# Do NOT add portal/public/games/ here — Railway needs these files at deploy
+
+# Superpowers brainstorm
+.superpowers/
+
+# Git worktrees
+.worktrees/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test & Coverage
+coverage/
+.vitest/
+
+# Build metadata
+*.tsbuildinfo
+
+# Logs
+npm-debug.log*
+yarn-error.log*
+*.log
