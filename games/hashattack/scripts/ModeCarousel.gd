@@ -6,7 +6,7 @@ signal mode_changed(index: int, mode_name: String)
 const MODES: Array[Dictionary] = [
 	{ "name": "Classic", "id": "classic" },
 	{ "name": "Ultimate", "id": "ultimate" },
-	{ "name": "Ephemerate", "id": "ephemerate" },
+	{ "name": "Ephemeral", "id": "ephemeral" },
 ]
 
 var _current_index: int = 0

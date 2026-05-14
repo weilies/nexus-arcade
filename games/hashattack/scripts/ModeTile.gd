@@ -13,11 +13,10 @@ func _ready() -> void:
 	_apply_style()
 
 func _apply_style() -> void:
-	add_theme_constant_override("corner_radius", 0)
 	add_theme_color_override("font_color", LABEL_COLOR)
 	icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
-	alignment = HORIZONTAL_ALIGNMENT_LEFT
+	alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 func _on_hover() -> void:
 	var t := create_tween()

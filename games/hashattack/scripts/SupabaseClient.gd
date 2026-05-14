@@ -8,7 +8,6 @@ var _url: String
 var _anon_key: String
 var _jwt: String = ""
 
-var _http: HTTPRequest
 var _ws: WebSocketPeer = null
 var _ws_ready: bool = false
 var _ws_ref: int = 0
@@ -22,25 +21,35 @@ func set_jwt(jwt: String) -> void:
 	_jwt = jwt
 
 func _ready() -> void:
-	_http = HTTPRequest.new()
-	add_child(_http)
-	_http.request_completed.connect(_on_http_done)
+	pass  # fire-and-forget methods now use disposable nodes
+
+func _fire(method: int, path: String, extra_headers: Array = [], body: String = "") -> void:
+	var h := HTTPRequest.new()
+	add_child(h)
+	h.request_completed.connect(func(_r: int, code: int, _hdrs: PackedStringArray, raw: PackedByteArray):
+		var parsed: Variant = null
+		if raw.size() > 0:
+			parsed = JSON.parse_string(raw.get_string_from_utf8())
+		rest_completed.emit(code, parsed)
+		h.queue_free()
+	)
+	h.request(_url + path, _headers(extra_headers), method, body)
 
 func get_rows(table: String, query: String = "") -> void:
 	var path = "/rest/v1/%s" % table
 	if query != "":
 		path += "?" + query
-	_http.request(_url + path, _headers(), HTTPClient.METHOD_GET)
+	_fire(HTTPClient.METHOD_GET, path)
 
 func insert_row(table: String, body: Dictionary) -> void:
-	_http.request(_url + "/rest/v1/" + table,
-		_headers(["Content-Type: application/json", "Prefer: return=representation"]),
-		HTTPClient.METHOD_POST, JSON.stringify(body))
+	_fire(HTTPClient.METHOD_POST, "/rest/v1/" + table,
+		["Content-Type: application/json", "Prefer: return=representation"],
+		JSON.stringify(body))
 
 func patch_row(table: String, query: String, body: Dictionary) -> void:
-	_http.request(_url + "/rest/v1/%s?%s" % [table, query],
-		_headers(["Content-Type: application/json", "Prefer: return=representation"]),
-		HTTPClient.METHOD_PATCH, JSON.stringify(body))
+	_fire(HTTPClient.METHOD_PATCH, "/rest/v1/%s?%s" % [table, query],
+		["Content-Type: application/json", "Prefer: return=representation"],
+		JSON.stringify(body))
 
 func _headers(extra: Array = []) -> PackedStringArray:
 	var h = PackedStringArray()
@@ -49,12 +58,6 @@ func _headers(extra: Array = []) -> PackedStringArray:
 	for e in extra:
 		h.append(e)
 	return h
-
-func _on_http_done(_result: int, code: int, _hdrs: PackedStringArray, body: PackedByteArray) -> void:
-	var parsed: Variant = null
-	if body.size() > 0:
-		parsed = JSON.parse_string(body.get_string_from_utf8())
-	rest_completed.emit(code, parsed)
 
 func connect_realtime(channel_name: String) -> void:
 	_pending_channels.append(channel_name)
@@ -92,6 +95,7 @@ func _process(_delta: float) -> void:
 			_drain_ws()
 		WebSocketPeer.STATE_CLOSED:
 			_ws_ready = false
+			_ws = null
 
 func _join_channel(channel_name: String) -> void:
 	_ws_ref += 1

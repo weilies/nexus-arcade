@@ -56,3 +56,6 @@ func win() -> void:
 
 func lose() -> void:
 	_play(_make_sequence([392.0, 349.23, 293.66, 261.63], 0.13, 0.32))
+
+func tick() -> void:
+	_play(_make_tone(440.0, 0.04, 0.15))

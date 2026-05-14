@@ -77,7 +77,7 @@ func _ready() -> void:
 				_ai = UltimateAI.new()
 			_setup_ultimate_board()
 			$VBoxContainer/Grid.visible = false
-		"ephemerate":
+		"ephemeral":
 			_ephemeral_state = EphemeralGameState.new()
 			_state = _ephemeral_state
 			if _mode == Mode.VS_AI:
@@ -192,7 +192,7 @@ func _on_cell_input(event: InputEvent, cell_index: int) -> void:
 
 func _do_place(cell_index: int) -> void:
 	# Ephemeral: redirect to handle eviction animation before placing
-	if Globals.current_game_mode == "ephemerate" and _ephemeral_state != null:
+	if Globals.current_game_mode == "ephemeral" and _ephemeral_state != null:
 		_do_place_ephemeral(cell_index)
 		return
 
@@ -256,7 +256,7 @@ func _do_place_ephemeral(cell_index: int) -> void:
 func _ai_take_turn() -> void:
 	_turn_timer.stop()  # pause timer during AI think
 	var move_cell: int
-	if Globals.current_game_mode == "ephemerate":
+	if Globals.current_game_mode == "ephemeral":
 		var eph_ai := _ai as EphemeralAI
 		move_cell = eph_ai.get_move(_ephemeral_state, Globals.ai_difficulty)
 	elif Globals.current_game_mode == "ultimate":
@@ -395,7 +395,7 @@ func reset_for_replay() -> void:
 			_ultimate_state = UltimateGameState.new()
 			_state = _ultimate_state
 			_refresh_ultimate_ui()
-		"ephemerate":
+		"ephemeral":
 			_ephemeral_state = EphemeralGameState.new()
 			_state = _ephemeral_state
 		_:
@@ -443,18 +443,18 @@ func _refresh_ui() -> void:
 
 		var cell = $VBoxContainer/Grid.get_child(i)
 		var mark_label: Label = cell.get_node("Mark")
-		var is_ephemerate := Globals.current_game_mode == "ephemerate" and _ephemeral_state != null
+		var is_ephemeral := Globals.current_game_mode == "ephemeral" and _ephemeral_state != null
 		match _state.board[i]:
 			GameState.Player.X:
 				mark_label.text = "X"
 				var cx := Color("#00d4ff")
-				if is_ephemerate:
+				if is_ephemeral:
 					cx.a = _ephemeral_state.get_cell_opacity(i)
 				mark_label.add_theme_color_override("font_color", cx)
 			GameState.Player.O:
 				mark_label.text = "O"
 				var co := Color("#a855f7")
-				if is_ephemerate:
+				if is_ephemeral:
 					co.a = _ephemeral_state.get_cell_opacity(i)
 				mark_label.add_theme_color_override("font_color", co)
 			_:
@@ -532,6 +532,8 @@ func _init_timer_rings() -> void:
 func _on_timer_tick(seconds_left: int) -> void:
 	if Globals.timer_seconds <= 0:
 		return
+	if seconds_left <= 5:
+		SFX.tick()
 	var p := float(seconds_left) / float(Globals.timer_seconds)
 	if _state.current_turn == GameState.Player.X and _ring_x:
 		_ring_x.set_progress(p)
@@ -558,7 +560,7 @@ func _setup_game_info_label() -> void:
 	lbl.text = " | ".join(parts)
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.add_theme_font_override("font", orbitron)
-	lbl.add_theme_font_size_override("font_size", 22)
+	lbl.add_theme_font_size_override("font_size", 28)
 	lbl.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 0.75))
 	var vbox := $VBoxContainer
 	vbox.add_child(lbl)

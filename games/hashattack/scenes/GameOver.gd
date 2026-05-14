@@ -58,7 +58,8 @@ func _shake() -> void:
 
 func _on_play_again() -> void:
 	SFX.click()
-	_board_ref.reset_for_replay()
+	if is_instance_valid(_board_ref):
+		_board_ref.reset_for_replay()
 	queue_free()
 
 func _on_menu() -> void:

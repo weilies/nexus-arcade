@@ -4,7 +4,7 @@ extends Node
 signal timed_out
 signal tick(seconds_left: int)
 
-var _duration: float = 30.0
+var _duration: float = 9.0  # overridden by set_duration() before start()
 const PULSE_THRESHOLD = 5
 
 var _timer: Timer

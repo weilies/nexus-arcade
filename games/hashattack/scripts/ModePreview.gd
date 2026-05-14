@@ -31,7 +31,7 @@ func _apply_mode() -> void:
 		"ultimate":
 			modulate.a = 0.7
 			rotation_degrees = 0.0
-		"ephemerate":
+		"ephemeral":
 			modulate.a = 1.0
 			rotation_degrees = 0.0
 			_init_flicker()
@@ -50,7 +50,7 @@ func _init_flicker() -> void:
 		})
 
 func _process(delta: float) -> void:
-	if _mode != "ephemerate" or _flicker.is_empty():
+	if _mode != "ephemeral" or _flicker.is_empty():
 		return
 	var dirty := false
 	for f in _flicker:
@@ -73,7 +73,7 @@ func _draw() -> void:
 	match _mode:
 		"classic": _draw_classic(sz)
 		"ultimate": _draw_ultimate(sz)
-		"ephemerate": _draw_ephemerate(sz)
+		"ephemeral": _draw_ephemeral(sz)
 
 func _draw_classic(sz: Vector2) -> void:
 	var margin := 40.0
@@ -130,7 +130,7 @@ func _draw_ultimate(sz: Vector2) -> void:
 		draw_line(Vector2(ox+big_cell*i, oy), Vector2(ox+big_cell*i, oy+grid_sz), GRID_COLOR, 3)
 		draw_line(Vector2(ox, oy+big_cell*i), Vector2(ox+grid_sz, oy+big_cell*i), GRID_COLOR, 3)
 
-func _draw_ephemerate(sz: Vector2) -> void:
+func _draw_ephemeral(sz: Vector2) -> void:
 	var margin := 40.0
 	var grid_sz := sz.x - margin * 2
 	var cell := grid_sz / 3.0
