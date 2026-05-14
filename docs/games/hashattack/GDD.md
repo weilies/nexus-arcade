@@ -75,7 +75,7 @@ Godot scenes inside the game (not the portal):
 
 ```
 ┌──────────────────────────────────────┐
-│  #HashAttack!                    [>] │  ← [>] = expand button (top-right)
+│  #HashAttack!                        │
 │                                      │
 │  ◄  ● GAME MODE: CLASSIC  ●  ►      │  ← ◄/► = mode carousel
 │       [ TIMER: [✓] 10s  ]           │  ← timer row (hidden in Ultimate)
@@ -95,16 +95,7 @@ Godot scenes inside the game (not the portal):
 
 Row2 left slot:
 - **Signed out:** "SIGN IN" button → triggers Google OAuth via portal
-- **Signed in:** Username + points display
-
-Expand panel slides in from right (reserved for future use):
-
-┌──────────────────────────────┐
-│  [<]                         │  ← [<] = collapse
-│                              │
-│  (future slots)              │
-└──────────────────────────────┘
-```
+- **Signed in:** Username + points display (tap to toggle sign-out)
 
 ### Game Modes (via carousel ◄ ►)
 
@@ -116,18 +107,6 @@ Expand panel slides in from right (reserved for future use):
 
 Each mode shows the same 3 action buttons: **1P (VS AI)** / **2P (LOCAL)** / **ONLINE**.
 
-### HUD Expand Panel
-
-Accessible from all game scenes via top-right `[>]` button. Slides in/out from right edge.
-
-**Signed out state:**
-- `>  SIGN IN` button → triggers Google OAuth via portal
-
-**Signed in state:**
-- Profile slot: FA6 user icon + username + `★ points`
-- `>  LEADERBOARD` button → opens LeaderboardScene
-- `MARKETPLACE` button → greyed out (Sprint 5)
-
 ### Screen Flow
 
 ```
@@ -136,8 +115,8 @@ MainMenu (mode + difficulty preset inline)
   ├─ 2P → GameBoard (local) → GameOver → MainMenu
   └─ Online → OnlineLobby → GameBoard (online) → GameOver → MainMenu
 
-[>] Expand Panel (overlay, any screen)
-  ├─ SIGN IN → portal login → back to game
+Row2 in-flow actions (no overlay):
+  ├─ SIGN IN → portal login → back to MainMenu
   └─ LEADERBOARD → LeaderboardScene → MainMenu
 ```
 

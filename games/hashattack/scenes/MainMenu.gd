@@ -144,7 +144,7 @@ func _on_mode_changed(_index: int, mode_id: String) -> void:
 	_refresh_timer_visibility()
 
 func _refresh_timer_visibility() -> void:
-	$CarouselContainer/TimerRow.visible = true
+	$CarouselContainer/TimerRow.visible = (_current_game_mode != "ultimate")
 
 func _on_timer_pressed() -> void:
 	_timer_index = (_timer_index + 1) % TIMER_MODES.size()

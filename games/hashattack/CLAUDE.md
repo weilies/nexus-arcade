@@ -28,7 +28,7 @@ Thread support DISABLED (`variant/thread_support=false` in export_presets.cfg). 
 
 ```
 GameBoard.tscn          — main gameplay scene
-MainMenu.tscn           — mode select (timer + difficulty inline) + HUD slide panel
+MainMenu.tscn           — mode select (timer + difficulty inline)
 OnlineLobby.tscn        — create/join room
 GameOver.tscn           — result overlay
 ```
@@ -93,9 +93,17 @@ SVG import scale MUST be `svg/scale=4.0` (not 1.0) for crisp rendering in web ex
 
 Nodes inside `CarouselContainer` must use `anchor_top=0.0` (not `1.0`). `anchor_top=1.0` positions top edge at parent's bottom edge, extending children BELOW parent into TileBar's Y range, blocking tile button clicks.
 
-## Layout — Z-order
+## Layout — Z-order and Input Blocking
 
-Nodes added last in scene tree receive input first. If new child added dynamically (e.g., BackgroundLayer), call `move_child($BtnExpand, get_child_count() - 1)` to keep overlay button on top.
+**Rule:** Nodes added last in scene tree receive input first (highest z-order). If a node is added dynamically (e.g., `BackgroundLayer`), call `move_child(target_node, get_child_count() - 1)` to push it behind interactive nodes.
+
+**Critical — overlapping Control nodes block input below them.** A `Control` with `mouse_filter = STOP` (default) swallows all clicks/taps in its rect, even if it is invisible or has no visible content. Any Control covering TileBar's area prevents tap on tile buttons beneath it.
+
+Rules to avoid tap-blocking:
+- Set `mouse_filter = PASS` or `IGNORE` on any non-interactive Control (layout containers, decorative nodes).
+- Dialogs/popups added as children of root must be dismissed (queue_freed or hidden) before returning input to game.
+- Never leave a full-screen Control on the tree when it is not visible — set `visible = false` OR free it.
+- Scenes containing `Bridge` must only be loaded via `change_scene_to_file`, NEVER added as child overlay — two Bridge instances = two JS `window.addEventListener` = duplicate postMessage handling.
 
 ## Web / HTTPS
 
@@ -132,6 +140,6 @@ vbox.offset_bottom = -16
 
 Without this, content sits flush against panel border.
 
-## HUD Slide Panel (MainMenu)
+## Auth + Nav Slots (MainMenu TileBar Row2)
 
-Right-edge drawer. `BtnExpand` toggles. `HUDPanel` slides in/out via `tween_property(offset_left)`. Contains: `SlotProfile` (signed in) OR `BtnSignIn` (signed out), `BtnLeaderboard`, `BtnMarketplace` (disabled). Add new slots here as features grow — don't clutter main HUD.
+Row2 is built programmatically in `_build_row2()`. Left slot: `BtnSignIn` (signed out) or `SlotProfile` (signed in). Right slots: `BtnLeaderboard`, `BtnStore` (disabled). All Row2 nodes are `Control` children of `TileBar/Row2` HBoxContainer — never overlapping, always in-flow.
