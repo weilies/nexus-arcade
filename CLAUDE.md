@@ -193,7 +193,7 @@ When writing new `docs/superpowers/plans/*.md`:
 | `docs/superpowers/specs/` | Active spec — sync when feature in flight, archive when done |
 | `docs/superpowers/plans/` | Historical once executed — don't rewrite slug renames into past plans |
 | `supabase/migrations/` | Historical — never edit, add new migration to fix |
-| `*.original.md` | Caveman compression backups — update when active version changes |
+| `*.original.md` | DO NOT create. Caveman backup files are banned — git history is the backup. |
 
 ### Rule 6 — Drift Audit Schedule
 
