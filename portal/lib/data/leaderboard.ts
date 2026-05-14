@@ -30,7 +30,7 @@ export async function getTopScores(
 
   return (data ?? []).map((row: any, i) => ({
     rank: i + 1,
-    username: row.users.username,
+    username: (row.users as { username: string } | null)?.username ?? 'Unknown',
     score: row.score,
     user_id: row.user_id,
   }))

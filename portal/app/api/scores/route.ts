@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/server-admin'
 
 export async function POST(req: NextRequest) {
   const supabase = createClient()
@@ -16,15 +16,13 @@ export async function POST(req: NextRequest) {
     typeof score !== 'number' ||
     score < 0 ||
     score > 1_000_000 ||
-    !['solo', 'local', 'online'].includes(mode)
+    !['solo', 'local', 'online'].includes(mode) ||
+    !['player', 'opponent', 'draw'].includes(winner)
   ) {
     return NextResponse.json({ error: 'Invalid score payload' }, { status: 400 })
   }
 
-  const admin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const admin = createAdminClient()
 
   const { data: game } = await admin
     .from('games')
