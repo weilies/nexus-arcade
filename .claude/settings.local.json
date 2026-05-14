@@ -26,7 +26,8 @@
       "Bash(git rev-list *)",
       "Bash(git cat-file *)",
       "Bash(awk '$2==\"blob\" && $1>1000000 {print $1/1024/1024 \"MB \" $3}')",
-      "Bash(git count-objects *)"
+      "Bash(git count-objects *)",
+      "Bash(awk -F= '{print $2}')"
     ]
   }
 }

@@ -49,6 +49,7 @@ Each message costs tokens: input (everything Claude reads) + output (Claude's re
 3. **Use DeepSeek for heavy drafts.** Long spec-writing or large refactors → swap to DeepSeek, bring output back to Claude for review.
 4. **Commit and close.** Each completed concern → commit → new session. Don't chain 5 fixes in one session.
 5. **Archive old plans.** `docs/superpowers/plans/` grows over time. Completed plans go into `docs/superpowers/archive/` so they don't bloat CLAUDE.md context.
+6. **Right model for the task.** Default: Sonnet (`/model sonnet[1m]`). Claude will prompt you to switch to Opus BEFORE starting AI algorithm design or architectural redesigns — do not start that work on Sonnet.
 
 ---
 
