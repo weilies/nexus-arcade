@@ -2,6 +2,7 @@ class_name PortalBridge
 extends Node
 
 signal auth_token_received(token: String)
+signal not_in_browser(message_type: String)  # fires when _post called in non-web env
 
 func _ready() -> void:
 	if OS.has_feature("web"):
@@ -83,3 +84,7 @@ func clear_auth() -> void:
 func _post(data: Dictionary) -> void:
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("window.parent.postMessage(%s, '*')" % JSON.stringify(data))
+	else:
+		var msg_type: String = data.get("type", "?")
+		print("[PortalBridge] Skipped postMessage in non-web env: ", msg_type)
+		not_in_browser.emit(msg_type)

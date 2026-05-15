@@ -90,9 +90,39 @@ func _ready() -> void:
 
 	$Bridge.send_game_ready()
 	$Bridge.auth_token_received.connect(func(_t): pass)
+	$Bridge.not_in_browser.connect(_on_not_in_browser)
 	if not Globals.auth_ready.is_connected(_refresh_auth_ui):
 		Globals.auth_ready.connect(_refresh_auth_ui)
 	_refresh_auth_ui()
+
+func _on_not_in_browser(msg_type: String) -> void:
+	var label_text := ""
+	match msg_type:
+		"sign_in_request":  label_text = "SIGN IN REQUIRES BROWSER BUILD"
+		"sign_out_request": label_text = "SIGN OUT REQUIRES BROWSER BUILD"
+		"auth_request":     return  # silent — auto-fired on game_ready
+		"game_ready":       return  # silent
+		_:                  label_text = "ACTION REQUIRES BROWSER BUILD"
+	_show_toast(label_text)
+
+func _show_toast(text: String) -> void:
+	var toast := Label.new()
+	toast.text = text
+	toast.add_theme_font_override("font", load("res://fonts/Orbitron.ttf"))
+	toast.add_theme_font_size_override("font_size", 22)
+	toast.add_theme_color_override("font_color", Color("#ff2d95"))
+	toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	toast.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	toast.offset_left = -240
+	toast.offset_right = 240
+	toast.offset_top = -120
+	toast.offset_bottom = -80
+	toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(toast)
+	var tw := create_tween()
+	tw.tween_interval(2.0)
+	tw.tween_property(toast, "modulate:a", 0.0, 0.5)
+	tw.tween_callback(toast.queue_free)
 
 func _build_row2() -> void:
 	var row2 := $TileBar/Row2
