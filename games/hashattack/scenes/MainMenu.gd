@@ -57,6 +57,9 @@ func _ready() -> void:
 	_btn_help.pressed.connect(_on_help)
 	_btn_leaderboard.pressed.connect(_on_leaderboard)
 	_btn_timer.pressed.connect(_on_timer_pressed)
+	# Hide store + leaderboard buttons — deferred to post-launch
+	_btn_leaderboard.visible = false
+	$TileBar/Row2/BtnStore.visible = false
 
 	_btn_left.flat = true
 	_btn_left.text = FA6.icon("chevron-left")
@@ -311,10 +314,11 @@ func _make_help_popup() -> Control:
 	hdr.add_child(close)
 	vbox.add_child(hdr)
 
-	# Scrollable content
+	# Scrollable content (tap-and-drag enabled)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.mouse_filter = Control.MOUSE_FILTER_STOP
 	vbox.add_child(scroll)
 
 	var content := Label.new()
@@ -324,7 +328,24 @@ func _make_help_popup() -> Control:
 	content.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.custom_minimum_size = Vector2(480, 0)
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.mouse_filter = Control.MOUSE_FILTER_PASS
 	scroll.add_child(content)
+
+	# Drag-to-scroll: handle on the ScrollContainer
+	var drag_state := { "active": false, "last_y": 0.0 }
+	scroll.gui_input.connect(func(e: InputEvent):
+		if e is InputEventMouseButton:
+			if e.button_index == MOUSE_BUTTON_LEFT:
+				drag_state["active"] = e.pressed
+				if e.pressed:
+					drag_state["last_y"] = e.position.y
+		elif e is InputEventMouseMotion and drag_state["active"]:
+			var dy: float = e.position.y - float(drag_state["last_y"])
+			scroll.scroll_vertical -= int(dy)
+			drag_state["last_y"] = e.position.y
+		elif e is InputEventScreenDrag:
+			scroll.scroll_vertical -= int(e.relative.y)
+	)
 
 	return popup
 

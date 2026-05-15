@@ -164,17 +164,6 @@ func _connect_cells() -> void:
 	for i in 9:
 		var cell = $VBoxContainer/Grid.get_child(i)
 		cell.gui_input.connect(_on_cell_input.bind(i))
-		cell.mouse_entered.connect(_on_cell_hover.bind(cell, true))
-		cell.mouse_exited.connect(_on_cell_hover.bind(cell, false))
-
-func _on_cell_hover(cell: Control, entering: bool) -> void:
-	var idx = $VBoxContainer/Grid.get_children().find(cell)
-	if idx < 0 or _state.board[idx] != GameState.Player.NONE:
-		return
-	var tween = create_tween()
-	var target_scale = Vector2(1.05, 1.05) if entering else Vector2.ONE
-	tween.tween_property(cell, "scale", target_scale, 0.1).set_trans(Tween.TRANS_QUAD)
-	cell.pivot_offset = cell.size / 2.0
 
 func _on_cell_input(event: InputEvent, cell_index: int) -> void:
 	if not event is InputEventMouseButton:
