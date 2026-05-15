@@ -23,7 +23,7 @@ func test_carousel_modes_have_required() -> void:
 		ids.append(m.id)
 	assert_true(ids.has("classic"), "should have classic mode")
 	assert_true(ids.has("ultimate"), "should have ultimate mode")
-	assert_true(ids.has("ephemerate"), "should have ephemerate mode")
+	assert_true(ids.has("ephemeral"), "should have ephemeral mode")
 
 func test_mode_tile_size_constant() -> void:
 	var ModeTile = load("res://scripts/ModeTile.gd")
