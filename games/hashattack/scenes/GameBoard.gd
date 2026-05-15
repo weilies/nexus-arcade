@@ -44,8 +44,8 @@ var _ephemeral_state: EphemeralGameState
 var _ultimate_state: UltimateGameState
 var _pending_ultimate_move: Dictionary = {}
 var _evicting_cell: int = -1
-var _ring_x: TimerRing = null
-var _ring_o: TimerRing = null
+var _ring_timer: TimerRing = null
+var _lbl_timer_text: RichTextLabel = null
 
 func setup_vs_ai(_ignored_difficulty: int = 0) -> void:
 	_mode = Mode.VS_AI
@@ -342,7 +342,7 @@ func _on_turn_timeout() -> void:
 	# VS_AI and LOCAL: skip turn, no forfeit
 	if _state.result != GameState.GameResult.ONGOING:
 		return
-	SFX.click()
+	SFX.lose()  # fail sfx on timeout
 	_show_times_up_banner()
 	_shake_screen()
 	_state.current_turn = GameState.Player.O if _state.current_turn == GameState.Player.X else GameState.Player.X
@@ -477,14 +477,7 @@ func _refresh_ui() -> void:
 
 	$VBoxContainer/ScoreRow/LblScoreX.text = "X: %d" % _score_x
 	$VBoxContainer/ScoreRow/LblScoreO.text = "O: %d" % _score_o
-	if _ring_x and _ring_o and Globals.timer_seconds > 0:
-		var x_active := _state.current_turn == GameState.Player.X
-		if _ring_x.visible != x_active:
-			_ring_x.visible = x_active
-			_ring_x.set_progress(1.0)
-		_ring_o.visible = not x_active
-		if not x_active and _ring_o.progress > 0.99:
-			_ring_o.set_progress(1.0)
+	# Shared timer ring is always visible while game ongoing — _process() updates it
 
 func _highlight_win_line() -> void:
 	var line = _state.get_winning_line()
@@ -499,38 +492,54 @@ func _highlight_win_line() -> void:
 func _init_timer_rings() -> void:
 	if Globals.timer_seconds <= 0:
 		return
-	var sz := Vector2(56.0, 56.0)
-	var lbl_x: Label = $VBoxContainer/ScoreRow/LblScoreX
-	var lbl_o: Label = $VBoxContainer/ScoreRow/LblScoreO
-	_ring_x = TimerRing.new()
-	_ring_x.custom_minimum_size = sz
-	_ring_x.size = sz
-	_ring_x.ring_color = Color("#00d4ff")
-	_ring_x.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var cx := lbl_x.get_global_rect().get_center() - global_position
-	_ring_x.position = cx - sz / 2.0
-	add_child(_ring_x)
-	_ring_o = TimerRing.new()
-	_ring_o.custom_minimum_size = sz
-	_ring_o.size = sz
-	_ring_o.ring_color = Color("#a855f7")
-	_ring_o.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var co := lbl_o.get_global_rect().get_center() - global_position
-	_ring_o.position = co - sz / 2.0
-	add_child(_ring_o)
-	_ring_x.visible = false
-	_ring_o.visible = false
+	# Single shared ring, neutral color, top-right beside LblStatus
+	var sz := Vector2(72.0, 72.0)
+	_ring_timer = TimerRing.new()
+	_ring_timer.custom_minimum_size = sz
+	_ring_timer.size = sz
+	_ring_timer.ring_color = Color("#e8e8f0")  # neutral primary text color
+	_ring_timer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Anchor top-right of viewport with padding
+	_ring_timer.set_anchors_preset(Control.PRESET_TOP_RIGHT, false)
+	_ring_timer.position = Vector2(size.x - sz.x - 16.0, 16.0)
+	add_child(_ring_timer)
+
+	# Sec.ms label centered inside ring (BBCode for size mix)
+	_lbl_timer_text = RichTextLabel.new()
+	_lbl_timer_text.bbcode_enabled = true
+	_lbl_timer_text.fit_content = true
+	_lbl_timer_text.scroll_active = false
+	_lbl_timer_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_lbl_timer_text.size = sz
+	_lbl_timer_text.position = Vector2.ZERO
+	_lbl_timer_text.add_theme_font_override("normal_font", load("res://fonts/Orbitron.ttf"))
+	_lbl_timer_text.add_theme_color_override("default_color", Color("#e8e8f0"))
+	_ring_timer.add_child(_lbl_timer_text)
+	_update_timer_label(Globals.timer_seconds, 0)
+
+func _process(_delta: float) -> void:
+	if _ring_timer and _turn_timer and _turn_timer.is_running():
+		var tl: float = _turn_timer.get_time_left()
+		var dur: float = float(Globals.timer_seconds)
+		if dur > 0.0:
+			_ring_timer.set_progress(tl / dur)
+		var secs := int(tl)
+		var ms := int((tl - float(secs)) * 100.0)
+		_update_timer_label(secs, ms)
+
+func _update_timer_label(secs: int, ms: int) -> void:
+	if not _lbl_timer_text:
+		return
+	# Big secs, smaller ms — center via BBCode
+	_lbl_timer_text.text = "[center][font_size=28]%d[/font_size][font_size=14].%02d[/font_size][/center]" % [secs, ms]
+	# Pin label vertically: small top padding so text sits within ring
+	_lbl_timer_text.position = Vector2(0, (_ring_timer.size.y - 36.0) / 2.0)
 
 func _on_timer_tick(seconds_left: int) -> void:
 	if Globals.timer_seconds <= 0:
 		return
-	if seconds_left <= 5:
+	if seconds_left <= 5 and seconds_left > 0:
 		SFX.tick()
-	var p := float(seconds_left) / float(Globals.timer_seconds)
-	if _state.current_turn == GameState.Player.X and _ring_x:
-		_ring_x.set_progress(p)
-	elif _ring_o:
-		_ring_o.set_progress(p)
 
 func _setup_game_info_label() -> void:
 	var parts: Array[String] = []
@@ -778,10 +787,8 @@ func _on_game_over() -> void:
 		return
 	_game_over_fired = true
 	_turn_timer.stop()
-	if _ring_x:
-		_ring_x.visible = false
-	if _ring_o:
-		_ring_o.visible = false
+	if _ring_timer:
+		_ring_timer.visible = false
 	match _state.result:
 		GameState.GameResult.X_WINS: _score_x += 1
 		GameState.GameResult.O_WINS: _score_o += 1

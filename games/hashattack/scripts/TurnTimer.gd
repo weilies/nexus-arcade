@@ -39,6 +39,15 @@ func stop() -> void:
 func set_duration(seconds: float) -> void:
 	_duration = seconds
 
+func get_duration() -> float:
+	return _duration
+
+func get_time_left() -> float:
+	return _timer.time_left if _timer and not _timer.is_stopped() else 0.0
+
+func is_running() -> bool:
+	return _timer != null and not _timer.is_stopped()
+
 func reset_and_start() -> void:
 	stop()
 	start()
