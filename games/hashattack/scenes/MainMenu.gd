@@ -72,6 +72,13 @@ func _ready() -> void:
 	_lbl_clock_icon.add_theme_font_override("font", FA6.font())
 
 	_carousel.mode_changed.connect(_on_mode_changed)
+	# Restore timer index from Globals (preserved across Home button)
+	for i in TIMER_MODES.size():
+		if TIMER_MODES[i]["seconds"] == Globals.timer_seconds:
+			_timer_index = i
+			break
+	# Restore difficulty index from Globals
+	_difficulty_index = int(Globals.ai_difficulty)
 	_refresh_timer_visibility()
 	_refresh_timer_label()
 

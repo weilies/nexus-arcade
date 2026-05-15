@@ -76,7 +76,10 @@ func _ready() -> void:
 			if _mode == Mode.VS_AI:
 				_ai = UltimateAI.new()
 			_setup_ultimate_board()
-			$VBoxContainer/Grid.visible = false
+			# Hide classic grid visually but keep layout slot so status/score/home
+			# remain in the same position as classic mode.
+			$VBoxContainer/Grid.modulate = Color(0, 0, 0, 0)
+			$VBoxContainer/Grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		"ephemeral":
 			_ephemeral_state = EphemeralGameState.new()
 			_state = _ephemeral_state
@@ -665,7 +668,8 @@ func _setup_ultimate_board() -> void:
 			btn.name = "Cell%d" % c
 			btn.custom_minimum_size = Vector2(66, 66)
 			btn.flat = false
-			btn.gui_input.connect(_on_ultimate_cell_input.bind(b, c))
+			btn.focus_mode = Control.FOCUS_NONE
+			btn.pressed.connect(_on_ultimate_cell_pressed.bind(b, c))
 			mini_grid.add_child(btn)
 
 		var won_label := Label.new()
@@ -685,12 +689,10 @@ func _setup_ultimate_board() -> void:
 	$VBoxContainer.mouse_filter = Control.MOUSE_FILTER_PASS
 	_refresh_ultimate_ui()
 
-func _on_ultimate_cell_input(event: InputEvent, board_idx: int, cell_idx: int) -> void:
-	if not event is InputEventMouseButton:
-		return
-	if not event.pressed or event.button_index != MOUSE_BUTTON_LEFT:
-		return
+func _on_ultimate_cell_pressed(board_idx: int, cell_idx: int) -> void:
 	if _ai_thinking:
+		return
+	if _mode == Mode.VS_AI and _ultimate_state.current_turn != _player_mark:
 		return
 	_do_ultimate_place(board_idx, cell_idx)
 

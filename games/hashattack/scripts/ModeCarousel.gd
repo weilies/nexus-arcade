@@ -21,7 +21,16 @@ var _dragging: bool = false
 func _ready() -> void:
 	_btn_left.pressed.connect(func(): _prev())
 	_btn_right.pressed.connect(func(): _next())
+	# Restore last-selected mode from Globals (preserved across Home button)
+	if Globals.current_game_mode != "":
+		for i in MODES.size():
+			if MODES[i]["id"] == Globals.current_game_mode:
+				_current_index = i
+				break
 	_refresh()
+
+func get_current_mode_id() -> String:
+	return MODES[_current_index]["id"]
 
 func _next() -> void:
 	_current_index = (_current_index + 1) % MODES.size()
