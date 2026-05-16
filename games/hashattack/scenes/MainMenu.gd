@@ -397,7 +397,10 @@ func _get_help_text() -> String:
 
 	lines.append("")
 	lines.append("--- TIMER ---")
-	lines.append("Tap TIMER to cycle: OFF > BLITZ (3s) > CASUAL (6s) > CHILL (9s).")
+	lines.append("- OFF (∞)")
+	lines.append("- BLITZ (3s)")
+	lines.append("- CASUAL (6s)")
+	lines.append("- CHILL (9s)")
 	lines.append("When on, place your mark before time runs out or you SKIP your turn.")
 
 	return "\n".join(lines)

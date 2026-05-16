@@ -47,6 +47,11 @@ var _evicting_cell: int = -1
 var _ring_timer: TimerRing = null
 var _lbl_timer_text: RichTextLabel = null
 
+# Cached refs (survive reparenting in Ultimate layout)
+var _lbl_status: Label = null
+var _lbl_score_x: Label = null
+var _lbl_score_o: Label = null
+
 func setup_vs_ai(_ignored_difficulty: int = 0) -> void:
 	_mode = Mode.VS_AI
 	# AI and difficulty read from Globals in _ready()
@@ -69,6 +74,12 @@ func _ready() -> void:
 	add_child(bg)
 	move_child(bg, 1)
 
+	# Cache labels FIRST (before any reparenting in Ultimate setup)
+	_lbl_status = $VBoxContainer/LblStatus
+	_lbl_score_x = $VBoxContainer/ScoreRow/LblScoreX
+	_lbl_score_o = $VBoxContainer/ScoreRow/LblScoreO
+	$VBoxContainer/BtnHome.pressed.connect(_on_home)
+
 	match Globals.current_game_mode:
 		"ultimate":
 			_ultimate_state = UltimateGameState.new()
@@ -76,10 +87,6 @@ func _ready() -> void:
 			if _mode == Mode.VS_AI:
 				_ai = UltimateAI.new()
 			_setup_ultimate_board()
-			# Hide classic grid visually but keep layout slot so status/score/home
-			# remain in the same position as classic mode.
-			$VBoxContainer/Grid.modulate = Color(0, 0, 0, 0)
-			$VBoxContainer/Grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		"ephemeral":
 			_ephemeral_state = EphemeralGameState.new()
 			_state = _ephemeral_state
@@ -114,7 +121,6 @@ func _ready() -> void:
 	_ai_dots_timer.timeout.connect(_ai_update_dots)
 	add_child(_ai_dots_timer)
 
-	$VBoxContainer/BtnHome.pressed.connect(_on_home)
 	_connect_cells()
 	# Classic grid borders - bright cyan, visible against dark bg
 	for i in 9:
@@ -293,7 +299,7 @@ func _ai_do_move() -> void:
 func _ai_update_dots() -> void:
 	_ai_dots_count = (_ai_dots_count + 1) % 5
 	var dots = ".".repeat(_ai_dots_count)
-	$VBoxContainer/LblStatus.text = "AI THINKING" + dots
+	_lbl_status.text = "AI THINKING" + dots
 
 func _do_place_online(cell_index: int) -> void:
 	if not _state.place(cell_index):
@@ -473,10 +479,10 @@ func _refresh_ui() -> void:
 				turn_text = "OPPONENT - O"
 		_:
 			turn_text = ""
-	$VBoxContainer/LblStatus.text = turn_text
+	_lbl_status.text = turn_text
 
-	$VBoxContainer/ScoreRow/LblScoreX.text = "X: %d" % _score_x
-	$VBoxContainer/ScoreRow/LblScoreO.text = "O: %d" % _score_o
+	_lbl_score_x.text = "X: %d" % _score_x
+	_lbl_score_o.text = "O: %d" % _score_o
 	# Shared timer ring is always visible while game ongoing — _process() updates it
 
 func _highlight_win_line() -> void:
@@ -492,22 +498,22 @@ func _highlight_win_line() -> void:
 func _init_timer_rings() -> void:
 	if Globals.timer_seconds <= 0:
 		return
-	# Single shared ring, neutral color, top-right beside LblStatus
+	# Single shared ring, neutral color, top-right corner of viewport
 	var sz := Vector2(72.0, 72.0)
+	var vp_size := get_viewport_rect().size
 	_ring_timer = TimerRing.new()
 	_ring_timer.custom_minimum_size = sz
 	_ring_timer.size = sz
 	_ring_timer.ring_color = Color("#e8e8f0")  # neutral primary text color
 	_ring_timer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Anchor top-right of viewport with padding
-	_ring_timer.set_anchors_preset(Control.PRESET_TOP_RIGHT, false)
-	_ring_timer.position = Vector2(size.x - sz.x - 16.0, 16.0)
+	# Plain position — no anchor preset (parent GameBoard root has no size set)
+	_ring_timer.position = Vector2(vp_size.x - sz.x - 16.0, 16.0)
 	add_child(_ring_timer)
 
 	# Sec.ms label centered inside ring (BBCode for size mix)
 	_lbl_timer_text = RichTextLabel.new()
 	_lbl_timer_text.bbcode_enabled = true
-	_lbl_timer_text.fit_content = true
+	_lbl_timer_text.fit_content = false
 	_lbl_timer_text.scroll_active = false
 	_lbl_timer_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_lbl_timer_text.size = sz
@@ -515,6 +521,8 @@ func _init_timer_rings() -> void:
 	_lbl_timer_text.add_theme_font_override("normal_font", load("res://fonts/Orbitron.ttf"))
 	_lbl_timer_text.add_theme_color_override("default_color", Color("#e8e8f0"))
 	_ring_timer.add_child(_lbl_timer_text)
+	# Keep ring on top of any later-added overlays
+	move_child(_ring_timer, get_child_count() - 1)
 	_update_timer_label(Globals.timer_seconds, 0)
 
 func _process(_delta: float) -> void:
@@ -532,8 +540,6 @@ func _update_timer_label(secs: int, ms: int) -> void:
 		return
 	# Big secs, smaller ms — center via BBCode
 	_lbl_timer_text.text = "[center][font_size=28]%d[/font_size][font_size=14].%02d[/font_size][/center]" % [secs, ms]
-	# Pin label vertically: small top padding so text sits within ring
-	_lbl_timer_text.position = Vector2(0, (_ring_timer.size.y - 36.0) / 2.0)
 
 func _on_timer_tick(seconds_left: int) -> void:
 	if Globals.timer_seconds <= 0:
@@ -563,20 +569,27 @@ func _setup_game_info_label() -> void:
 	lbl.add_theme_font_override("font", orbitron)
 	lbl.add_theme_font_size_override("font_size", 28)
 	lbl.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 0.75))
-	var vbox := $VBoxContainer
-	vbox.add_child(lbl)
-	var status_idx := $VBoxContainer/LblStatus.get_index()
-	vbox.move_child(lbl, status_idx + 1)
+
+	# In Ultimate mode, append to top strip (VBoxContainer is hidden).
+	# In classic/ephemeral, append to VBoxContainer next to LblStatus.
+	var parent_container: Node = _lbl_status.get_parent() if _lbl_status else $VBoxContainer
+	parent_container.add_child(lbl)
+	if _lbl_status:
+		parent_container.move_child(lbl, _lbl_status.get_index() + 1)
 
 func _update_streak_badge() -> void:
-	if not has_node("VBoxContainer/StreakBadge"):
+	# StreakBadge may have been reparented to UltimateTopStrip — use find_child
+	var badge: Node = find_child("StreakBadge", true, false)
+	if not badge:
 		return
 	if not Globals.is_signed_in():
-		$VBoxContainer/StreakBadge.visible = false
+		badge.visible = false
 		return
-	$VBoxContainer/StreakBadge.visible = true
+	badge.visible = true
 	var streak: int = Globals.current_streak.get(Globals.current_game_mode, 0)
-	$VBoxContainer/StreakBadge/LblStreakCount.text = str(streak)
+	var count_lbl: Label = badge.get_node("LblStreakCount") as Label
+	var icon_lbl: Label = badge.get_node("LblStreakIcon") as Label
+	count_lbl.text = str(streak)
 	var col: Color
 	if streak >= 20:
 		col = Color("#ff2d95")
@@ -586,8 +599,8 @@ func _update_streak_badge() -> void:
 		col = Color("#00d4ff")
 	else:
 		col = Color(0.55, 0.55, 0.55, 0.8)
-	$VBoxContainer/StreakBadge/LblStreakIcon.add_theme_color_override("font_color", col)
-	$VBoxContainer/StreakBadge/LblStreakCount.add_theme_color_override("font_color", col)
+	icon_lbl.add_theme_color_override("font_color", col)
+	count_lbl.add_theme_color_override("font_color", col)
 
 func _award_points_if_signed_in(source: String) -> void:
 	if not Globals.is_signed_in() or Globals.current_game_id.is_empty():
@@ -693,9 +706,54 @@ func _setup_ultimate_board() -> void:
 		grid.add_child(mini_panel)
 
 	add_child(_ultimate_board_node)
-	# Keep VBoxContainer (status, score, home button) above ultimate board
-	move_child($VBoxContainer, get_child_count() - 1)
-	$VBoxContainer.mouse_filter = Control.MOUSE_FILTER_PASS
+
+	# Reparent VBox items to top/bottom strips so they don't overlap the 660x660 grid.
+	# Ultimate grid spans y=150..810 on a 720x960 viewport. Top strip y<=140, bottom y>=820.
+	var vbox: VBoxContainer = $VBoxContainer
+
+	var top_strip := VBoxContainer.new()
+	top_strip.name = "UltimateTopStrip"
+	top_strip.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	top_strip.offset_left = 16
+	top_strip.offset_right = -100  # leave room for timer ring (top-right)
+	top_strip.offset_top = 16
+	top_strip.offset_bottom = 140
+	top_strip.add_theme_constant_override("separation", 4)
+	top_strip.alignment = BoxContainer.ALIGNMENT_CENTER
+	top_strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(top_strip)
+
+	# Move LblStatus / StreakBadge / ScoreRow into top strip
+	for child_name in ["LblStatus", "StreakBadge", "ScoreRow"]:
+		if vbox.has_node(child_name):
+			var node: Node = vbox.get_node(child_name)
+			node.reparent(top_strip)
+
+	# Bottom strip with smaller home button (font size unchanged)
+	var bottom_strip := Control.new()
+	bottom_strip.name = "UltimateBottomStrip"
+	bottom_strip.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	bottom_strip.offset_top = -80
+	bottom_strip.mouse_filter = Control.MOUSE_FILTER_PASS
+	add_child(bottom_strip)
+
+	if vbox.has_node("BtnHome"):
+		var home: Button = vbox.get_node("BtnHome")
+		home.reparent(bottom_strip)
+		home.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+		home.custom_minimum_size = Vector2(180, 56)
+		home.offset_left = -90
+		home.offset_right = 90
+		home.offset_top = -28
+		home.offset_bottom = 28
+
+	# Hide now-empty VBoxContainer (still holds invisible Grid placeholder)
+	vbox.visible = false
+
+	# Keep timer ring on top after layout changes
+	if _ring_timer:
+		move_child(_ring_timer, get_child_count() - 1)
+
 	_refresh_ultimate_ui()
 
 func _on_ultimate_cell_pressed(board_idx: int, cell_idx: int) -> void:
