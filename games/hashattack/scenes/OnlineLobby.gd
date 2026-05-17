@@ -15,6 +15,8 @@ var _portal_bridge: PortalBridge
 var _player_mark: GameState.Player = GameState.Player.X
 var _room_id: String = ""
 var _room_code: String = ""
+var _room_game_mode: String = "classic"
+var _room_timer_secs: int = 0
 
 # UI refs
 var _lbl_status: Label
@@ -321,17 +323,23 @@ func _do_create(room_name: String, is_private: bool, password: String) -> void:
 	_close_modal()
 	var rid := str(row.get("id", ""))
 	var rcode := str(row.get("room_code", ""))
-	_enter_as_host(rid, rcode)
-	await _refresh_rooms()
+	_room_game_mode = str(row.get("game_mode", "classic"))
+	_room_timer_secs = RoomManager.timer_seconds_from_label(str(row.get("timer_label", "OFF")))
+	_room_id = rid
+	_room_code = rcode
+	_player_mark = GameState.Player.X
+	Globals.supabase.connect_realtime("room:" + _room_id)
+	_launch_game()
 
 func _enter_as_host(room_id: String, room_code: String) -> void:
 	_room_id = room_id
 	_room_code = room_code
 	_player_mark = GameState.Player.X
-	_set_status("Room ready (%s). Waiting for opponent..." % room_code)
+	var fresh: Dictionary = await RoomManager.fetch_room_by_id_async(Globals.supabase, room_id)
+	_room_game_mode = str(fresh.get("game_mode", "classic"))
+	_room_timer_secs = RoomManager.timer_seconds_from_label(str(fresh.get("timer_label", "OFF")))
 	Globals.supabase.connect_realtime("room:" + _room_id)
-	if not Globals.supabase.realtime_message.is_connected(_on_realtime):
-		Globals.supabase.realtime_message.connect(_on_realtime)
+	_launch_game()
 
 # ── Join flow ─────────────────────────────────────────────────────────────────
 
@@ -383,12 +391,21 @@ func _do_join(room_id: String, room_code: String) -> void:
 	_room_id = room_id
 	_room_code = room_code
 	_player_mark = GameState.Player.O
+	# Pull authoritative mode/timer from row so both clients match
+	var fresh: Dictionary = await RoomManager.fetch_room_by_id_async(Globals.supabase, _room_id)
+	_room_game_mode = str(fresh.get("game_mode", "classic"))
+	_room_timer_secs = RoomManager.timer_seconds_from_label(str(fresh.get("timer_label", "OFF")))
 	var user_id := _get_user_id_from_jwt(Globals.jwt)
 	var ok: bool = await RoomManager.join_room_async(Globals.supabase, _room_id, user_id)
 	if not ok:
 		_set_status("Join failed (room may already be full).")
 		return
 	Globals.supabase.connect_realtime("room:" + _room_id)
+	# Wait until WS open + channel joined before broadcasting (otherwise host misses it).
+	var waited := 0.0
+	while not Globals.supabase._ws_ready and waited < 5.0:
+		await get_tree().create_timer(0.1).timeout
+		waited += 0.1
 	await get_tree().create_timer(0.6).timeout
 	Globals.supabase.broadcast("room:" + _room_id, "guest_joined", {})
 	_launch_game()
@@ -422,7 +439,9 @@ func _launch_game() -> void:
 	if Globals.supabase.realtime_message.is_connected(_on_realtime):
 		Globals.supabase.realtime_message.disconnect(_on_realtime)
 	var board = load("res://scenes/GameBoard.tscn").instantiate()
-	board.setup_online(_room_id, _player_mark, Globals.supabase)
+	var is_host := _player_mark == GameState.Player.X
+	board.setup_online(_room_id, _player_mark, Globals.supabase,
+		_room_code, _room_game_mode, _room_timer_secs, is_host)
 	get_tree().root.add_child(board)
 	get_tree().current_scene = board
 	queue_free()

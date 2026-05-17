@@ -27,8 +27,13 @@ var _mode: Mode
 var _score_x: int = 0
 var _score_o: int = 0
 var _room_id: String = ""
+var _room_code: String = ""
 var _player_mark: GameState.Player = GameState.Player.X
 var _supabase_ref: SupabaseClient
+var _is_host: bool = false
+var _online_waiting: bool = false
+var _waiting_overlay: Control = null
+var _concede_modal: Control = null
 var _turn_timer: TurnTimer
 var _bridge: PortalBridge
 var _game_over_fired: bool = false
@@ -64,11 +69,19 @@ func setup_vs_ai(_ignored_difficulty: int = 0) -> void:
 func setup_local() -> void:
 	_mode = Mode.LOCAL
 
-func setup_online(room_id: String, player_mark: GameState.Player, sb: SupabaseClient) -> void:
+func setup_online(room_id: String, player_mark: GameState.Player, sb: SupabaseClient,
+		room_code: String = "", game_mode: String = "", timer_secs: int = -1, is_host: bool = false) -> void:
 	_mode = Mode.ONLINE
 	_room_id = room_id
+	_room_code = room_code
 	_player_mark = player_mark
 	_supabase_ref = sb
+	_is_host = is_host
+	_online_waiting = is_host
+	if game_mode != "":
+		Globals.current_game_mode = game_mode
+	if timer_secs >= 0:
+		Globals.timer_seconds = timer_secs
 
 func _ready() -> void:
 	var bg = load("res://scripts/BackgroundLayer.gd").new()
@@ -155,11 +168,19 @@ func _ready() -> void:
 			tw.tween_callback(func(): announce.visible = false)
 
 	if _mode == Mode.ONLINE:
-		_supabase_ref.realtime_message.connect(_on_online_message)
-		if _player_mark == GameState.Player.X:
+		if not _supabase_ref.realtime_message.is_connected(_on_online_message):
+			_supabase_ref.realtime_message.connect(_on_online_message)
+		# Host enters in WAITING state — timer stays stopped until guest joins.
+		# Guest gets here only after broadcasting guest_joined, so safe to start.
+		if not _is_host and _player_mark == GameState.Player.X:
 			if Globals.timer_seconds > 0:
 				_turn_timer.set_duration(Globals.timer_seconds)
 				_turn_timer.start()
+		# Replace Home with Concede in online mode
+		if has_node("VBoxContainer/BtnHome"):
+			$VBoxContainer/BtnHome.text = "CONCEDE"
+		if _is_host:
+			_show_waiting_overlay()
 	elif Globals.timer_seconds > 0:
 		# VS_AI and LOCAL: start timer immediately (player moves first or AI goes first)
 		_turn_timer.set_duration(Globals.timer_seconds)
@@ -183,6 +204,8 @@ func _on_cell_input(event: InputEvent, cell_index: int) -> void:
 	if _ai_thinking:
 		return
 	if _mode == Mode.ONLINE:
+		if _online_waiting:
+			return
 		if _state.current_turn != _player_mark:
 			return
 		_do_place_online(cell_index)
@@ -321,6 +344,13 @@ func _on_online_message(channel: String, event: String, payload: Dictionary) -> 
 	if channel != "room:" + _room_id:
 		return
 	match event:
+		"guest_joined":
+			if _is_host and _online_waiting:
+				_online_waiting = false
+				_hide_waiting_overlay()
+				if Globals.timer_seconds > 0:
+					_turn_timer.set_duration(Globals.timer_seconds)
+					_turn_timer.start()
 		"move":
 			var cell: int = payload.get("cell", -1)
 			if cell < 0:
@@ -412,15 +442,206 @@ func reset_for_replay() -> void:
 		_ai_take_turn.call_deferred()
 
 func _on_home() -> void:
+	if _mode == Mode.ONLINE:
+		_show_concede_confirm()
+		return
 	_turn_timer.stop()
 	SFX.click()
-	if _mode == Mode.ONLINE and _supabase_ref:
+	var menu = load("res://scenes/MainMenu.tscn").instantiate()
+	get_tree().root.add_child(menu)
+	get_tree().current_scene = menu
+	queue_free()
+
+func _do_concede() -> void:
+	_turn_timer.stop()
+	SFX.click()
+	if _supabase_ref:
 		_supabase_ref.broadcast("room:" + _room_id, "forfeit",
 			{"player": GameState.player_to_str(_player_mark)})
 	var menu = load("res://scenes/MainMenu.tscn").instantiate()
 	get_tree().root.add_child(menu)
 	get_tree().current_scene = menu
 	queue_free()
+
+func _show_concede_confirm() -> void:
+	if _concede_modal:
+		return
+	var orbitron := load("res://fonts/Orbitron.ttf")
+	_concede_modal = Control.new()
+	_concede_modal.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_concede_modal.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_concede_modal)
+	move_child(_concede_modal, get_child_count() - 1)
+
+	var bg := ColorRect.new()
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.color = Color(0, 0, 0, 0.7)
+	_concede_modal.add_child(bg)
+
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_concede_modal.add_child(center)
+
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(380, 0)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color("#1e1e3a")
+	sb.corner_radius_top_left = 10
+	sb.corner_radius_top_right = 10
+	sb.corner_radius_bottom_left = 10
+	sb.corner_radius_bottom_right = 10
+	sb.content_margin_left = 20
+	sb.content_margin_right = 20
+	sb.content_margin_top = 18
+	sb.content_margin_bottom = 18
+	panel.add_theme_stylebox_override("panel", sb)
+	center.add_child(panel)
+
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 14)
+	panel.add_child(vb)
+
+	var title := Label.new()
+	title.text = "CONCEDE MATCH?"
+	title.add_theme_font_override("font", orbitron)
+	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_color_override("font_color", Color("#ff2d95"))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vb.add_child(title)
+
+	var body := Label.new()
+	body.text = "You will lose this match."
+	body.add_theme_font_override("font", orbitron)
+	body.add_theme_font_size_override("font_size", 14)
+	body.add_theme_color_override("font_color", Color("#e8e8f0"))
+	body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vb.add_child(body)
+
+	var btns := HBoxContainer.new()
+	btns.add_theme_constant_override("separation", 10)
+	btns.alignment = BoxContainer.ALIGNMENT_CENTER
+	vb.add_child(btns)
+
+	var btn_cancel := Button.new()
+	btn_cancel.text = "CANCEL"
+	btn_cancel.add_theme_font_override("font", orbitron)
+	btn_cancel.add_theme_font_size_override("font_size", 16)
+	btn_cancel.add_theme_color_override("font_color", Color("#94a3b8"))
+	btn_cancel.custom_minimum_size = Vector2(130, 44)
+	btn_cancel.pressed.connect(func():
+		_concede_modal.queue_free()
+		_concede_modal = null
+	)
+	btns.add_child(btn_cancel)
+
+	var btn_ok := Button.new()
+	btn_ok.text = "CONCEDE"
+	btn_ok.add_theme_font_override("font", orbitron)
+	btn_ok.add_theme_font_size_override("font_size", 16)
+	btn_ok.add_theme_color_override("font_color", Color("#ff2d95"))
+	btn_ok.custom_minimum_size = Vector2(130, 44)
+	btn_ok.pressed.connect(func():
+		_concede_modal.queue_free()
+		_concede_modal = null
+		_do_concede()
+	)
+	btns.add_child(btn_ok)
+
+func _show_waiting_overlay() -> void:
+	if _waiting_overlay:
+		return
+	var orbitron := load("res://fonts/Orbitron.ttf")
+	_waiting_overlay = Control.new()
+	_waiting_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_waiting_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_waiting_overlay)
+	move_child(_waiting_overlay, get_child_count() - 1)
+
+	var bg := ColorRect.new()
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.color = Color(0, 0, 0, 0.55)
+	_waiting_overlay.add_child(bg)
+
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_waiting_overlay.add_child(center)
+
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(380, 0)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color("#1e1e3a")
+	sb.corner_radius_top_left = 10
+	sb.corner_radius_top_right = 10
+	sb.corner_radius_bottom_left = 10
+	sb.corner_radius_bottom_right = 10
+	sb.content_margin_left = 22
+	sb.content_margin_right = 22
+	sb.content_margin_top = 20
+	sb.content_margin_bottom = 20
+	panel.add_theme_stylebox_override("panel", sb)
+	center.add_child(panel)
+
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 12)
+	panel.add_child(vb)
+
+	var title := Label.new()
+	title.text = "WAITING FOR OPPONENT"
+	title.add_theme_font_override("font", orbitron)
+	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_color_override("font_color", Color("#00d4ff"))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vb.add_child(title)
+
+	var code := Label.new()
+	code.text = "ROOM CODE:  %s" % _room_code
+	code.add_theme_font_override("font", orbitron)
+	code.add_theme_font_size_override("font_size", 18)
+	code.add_theme_color_override("font_color", Color("#e8e8f0"))
+	code.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vb.add_child(code)
+
+	var hint := Label.new()
+	hint.text = "Share the code to invite a player."
+	hint.add_theme_font_override("font", orbitron)
+	hint.add_theme_font_size_override("font_size", 12)
+	hint.add_theme_color_override("font_color", Color("#94a3b8"))
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vb.add_child(hint)
+
+	var btn_share := Button.new()
+	btn_share.text = "SHARE"
+	btn_share.add_theme_font_override("font", orbitron)
+	btn_share.add_theme_font_size_override("font_size", 16)
+	btn_share.add_theme_color_override("font_color", Color("#a78bfa"))
+	btn_share.custom_minimum_size = Vector2(160, 42)
+	btn_share.pressed.connect(_share_room)
+	vb.add_child(btn_share)
+
+func _hide_waiting_overlay() -> void:
+	if _waiting_overlay:
+		_waiting_overlay.queue_free()
+		_waiting_overlay = null
+
+func _share_room() -> void:
+	var url := RoomManager.get_share_url(_room_code)
+	var text := "Join my Hash Attack room! Code: %s\n%s" % [_room_code, url]
+	if OS.has_feature("web"):
+		var shared: bool = JavaScriptBridge.eval("""
+			(function() {
+				if (navigator.share) {
+					navigator.share({ title: 'Hash Attack Room', text: %s }).catch(() => {});
+					return true;
+				}
+				return false;
+			})()
+		""" % JSON.stringify(text))
+		if not shared:
+			JavaScriptBridge.eval("navigator.clipboard.writeText(%s).catch(() => {})" % JSON.stringify(text))
+	else:
+		DisplayServer.clipboard_set(text)
 
 func _exit_tree() -> void:
 	if _supabase_ref and _supabase_ref.realtime_message.is_connected(_on_online_message):

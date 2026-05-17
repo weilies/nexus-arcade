@@ -36,6 +36,13 @@ static func timer_label_from_seconds(secs: int) -> String:
 		9: return "CHILL"
 		_: return "OFF"
 
+static func timer_seconds_from_label(lbl: String) -> int:
+	match lbl:
+		"BLITZ": return 3
+		"CASUAL": return 6
+		"CHILL": return 9
+		_: return 0
+
 static func create_room_async(sb: SupabaseClient, host_id: String,
 		room_name: String, is_private: bool, password: String,
 		game_mode: String, timer_label: String) -> Dictionary:
