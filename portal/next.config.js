@@ -29,29 +29,9 @@ const nextConfig = {
         ],
       },
       {
-        // Pre-gzipped wasm: served when middleware rewrites .wasm → .wasm.gz
-        source: '/games/:path*/index.wasm.gz',
-        headers: [
-          { key: 'Content-Type', value: 'application/wasm' },
-          { key: 'Content-Encoding', value: 'gzip' },
-          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
-          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
-          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-        ],
-      },
-      {
         // pck and other game assets — allow same-site cross-origin loading
         source: '/games/:path*/index.pck',
         headers: [
-          { key: 'Cross-Origin-Resource-Policy', value: 'same-site' },
-          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-        ],
-      },
-      {
-        source: '/games/:path*/index.pck.gz',
-        headers: [
-          { key: 'Content-Type', value: 'application/octet-stream' },
-          { key: 'Content-Encoding', value: 'gzip' },
           { key: 'Cross-Origin-Resource-Policy', value: 'same-site' },
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
