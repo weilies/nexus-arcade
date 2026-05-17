@@ -9,11 +9,19 @@ export async function middleware(request: NextRequest) {
   const url = request.nextUrl
   const accepts = request.headers.get('accept-encoding') || ''
   if (accepts.includes('gzip')) {
-    const m = url.pathname.match(/^(\/games\/[^/]+\/index\.(?:wasm|pck))$/)
+    const m = url.pathname.match(/^(\/games\/[^/]+\/index\.(wasm|pck))$/)
     if (m) {
       const gzUrl = url.clone()
       gzUrl.pathname = m[1] + '.gz'
-      return NextResponse.rewrite(gzUrl)
+      const res = NextResponse.rewrite(gzUrl)
+      res.headers.set('Content-Encoding', 'gzip')
+      res.headers.set('Vary', 'Accept-Encoding')
+      res.headers.set('Cache-Control', 'public, max-age=31536000, immutable')
+      res.headers.set(
+        'Content-Type',
+        m[2] === 'wasm' ? 'application/wasm' : 'application/octet-stream'
+      )
+      return res
     }
   }
 
