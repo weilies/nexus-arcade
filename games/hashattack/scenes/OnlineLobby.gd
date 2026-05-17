@@ -290,7 +290,7 @@ func _open_create_dialog() -> void:
 		var b := _mk_button(m.to_upper(), 13, CYAN if m == mode_default else MUTED)
 		b.custom_minimum_size = Vector2(96, 34)
 		mode_btns[m] = b
-		var captured := m
+		var captured: String = m
 		b.pressed.connect(func():
 			mode_ref[0] = captured
 			for k in mode_btns:
@@ -313,7 +313,7 @@ func _open_create_dialog() -> void:
 		var b := _mk_button(t, 13, ACCENT if t == timer_default else MUTED)
 		b.custom_minimum_size = Vector2(74, 34)
 		timer_btns[t] = b
-		var captured := t
+		var captured: String = t
 		b.pressed.connect(func():
 			timer_ref[0] = captured
 			for k in timer_btns:
