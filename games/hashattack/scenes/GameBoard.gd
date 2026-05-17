@@ -35,6 +35,15 @@ var _online_waiting: bool = false
 var _waiting_overlay: Control = null
 var _concede_modal: Control = null
 var _opponent_name: String = ""
+var _ping_timer: Timer = null
+var _last_opp_ping_ms: int = 0
+var _disconnect_overlay: Control = null
+var _disconnect_label: Label = null
+var _disconnect_countdown: float = 10.0
+var _disconnect_active: bool = false
+const DISCONNECT_THRESHOLD_MS := 8000
+const DISCONNECT_TIMEOUT_S := 10.0
+const HEARTBEAT_S := 3.0
 var _turn_timer: TurnTimer
 var _bridge: PortalBridge
 var _game_over_fired: bool = false
@@ -196,10 +205,11 @@ func _ready() -> void:
 		if _is_host and _online_waiting:
 			_show_waiting_overlay()
 			_start_waiting_poll()
-		elif _state.current_turn == _player_mark and Globals.timer_seconds > 0:
-			# Fresh start as guest OR refresh-rejoin: start timer if it's our turn.
-			_turn_timer.set_duration(Globals.timer_seconds)
-			_turn_timer.start()
+		else:
+			if _state.current_turn == _player_mark and Globals.timer_seconds > 0:
+				_turn_timer.set_duration(Globals.timer_seconds)
+				_turn_timer.start()
+			_start_heartbeat()
 		_fetch_opponent_name()
 	elif Globals.timer_seconds > 0:
 		# VS_AI and LOCAL: start timer immediately (player moves first or AI goes first)
@@ -371,6 +381,12 @@ func _on_online_message(channel: String, event: String, payload: Dictionary) -> 
 				if Globals.timer_seconds > 0:
 					_turn_timer.set_duration(Globals.timer_seconds)
 					_turn_timer.start()
+				_start_heartbeat()
+		"ping":
+			if str(payload.get("player", "")) != GameState.player_to_str(_player_mark):
+				_last_opp_ping_ms = Time.get_ticks_msec()
+				if _disconnect_active:
+					_cancel_disconnect_overlay()
 		"move":
 			var cell: int = payload.get("cell", -1)
 			if cell < 0:
@@ -645,6 +661,88 @@ func _show_waiting_overlay() -> void:
 	btn_share.pressed.connect(_share_room)
 	vb.add_child(btn_share)
 
+func _start_heartbeat() -> void:
+	if _ping_timer or _game_over_fired:
+		return
+	_last_opp_ping_ms = Time.get_ticks_msec()
+	_ping_timer = Timer.new()
+	_ping_timer.wait_time = HEARTBEAT_S
+	_ping_timer.autostart = true
+	_ping_timer.timeout.connect(func():
+		if _supabase_ref and not _game_over_fired and _room_id != "":
+			_supabase_ref.broadcast("room:" + _room_id, "ping",
+				{"player": GameState.player_to_str(_player_mark)})
+	)
+	add_child(_ping_timer)
+
+func _start_disconnect_countdown() -> void:
+	if _disconnect_active or _game_over_fired:
+		return
+	_disconnect_active = true
+	_disconnect_countdown = DISCONNECT_TIMEOUT_S
+	_show_disconnect_overlay()
+
+func _cancel_disconnect_overlay() -> void:
+	_disconnect_active = false
+	if _disconnect_overlay:
+		_disconnect_overlay.queue_free()
+		_disconnect_overlay = null
+		_disconnect_label = null
+
+func _show_disconnect_overlay() -> void:
+	if _disconnect_overlay:
+		return
+	var orbitron := load("res://fonts/Orbitron.ttf")
+	_disconnect_overlay = Control.new()
+	_disconnect_overlay.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_disconnect_overlay.offset_top = 8
+	_disconnect_overlay.offset_left = 16
+	_disconnect_overlay.offset_right = -16
+	_disconnect_overlay.offset_bottom = 64
+	_disconnect_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_disconnect_overlay)
+	move_child(_disconnect_overlay, get_child_count() - 1)
+	var panel := PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color("#3a1a1e")
+	sb.corner_radius_top_left = 6
+	sb.corner_radius_top_right = 6
+	sb.corner_radius_bottom_left = 6
+	sb.corner_radius_bottom_right = 6
+	sb.content_margin_left = 12
+	sb.content_margin_right = 12
+	sb.content_margin_top = 8
+	sb.content_margin_bottom = 8
+	panel.add_theme_stylebox_override("panel", sb)
+	_disconnect_overlay.add_child(panel)
+	_disconnect_label = Label.new()
+	_disconnect_label.add_theme_font_override("font", orbitron)
+	_disconnect_label.add_theme_font_size_override("font_size", 14)
+	_disconnect_label.add_theme_color_override("font_color", Color("#ff2d95"))
+	_disconnect_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	panel.add_child(_disconnect_label)
+	_update_disconnect_label()
+
+func _update_disconnect_label() -> void:
+	if not _disconnect_label:
+		return
+	var who: String = _opponent_name if _opponent_name != "" else "Opponent"
+	_disconnect_label.text = "%s reconnecting... %ds" % [who, int(ceil(_disconnect_countdown))]
+
+func _opponent_timed_out() -> void:
+	_cancel_disconnect_overlay()
+	_turn_timer.stop()
+	if _ping_timer:
+		_ping_timer.stop()
+	# Declare self winner. Broadcast forfeit (in case opponent comes back).
+	if _supabase_ref and _room_id != "":
+		var opp_str: String = "O" if _player_mark == GameState.Player.X else "X"
+		_supabase_ref.broadcast("room:" + _room_id, "forfeit", {"player": opp_str})
+	_state.result = GameState.GameResult.X_WINS if _player_mark == GameState.Player.X \
+		else GameState.GameResult.O_WINS
+	_on_game_over()
+
 func _fetch_opponent_name() -> void:
 	# Poll room until both host_id + guest_id present, then resolve username.
 	while is_inside_tree() and _opponent_name == "":
@@ -814,6 +912,16 @@ func _init_timer_rings() -> void:
 	_update_timer_label(Globals.timer_seconds, 0)
 
 func _process(_delta: float) -> void:
+	# Disconnect monitor (online only, after game started, before game over)
+	if _mode == Mode.ONLINE and _ping_timer and not _game_over_fired and not _online_waiting:
+		var since: int = Time.get_ticks_msec() - _last_opp_ping_ms
+		if since > DISCONNECT_THRESHOLD_MS and not _disconnect_active:
+			_start_disconnect_countdown()
+		if _disconnect_active:
+			_disconnect_countdown -= _delta
+			_update_disconnect_label()
+			if _disconnect_countdown <= 0.0:
+				_opponent_timed_out()
 	if _ring_timer and _turn_timer:
 		var dur: float = float(Globals.timer_seconds)
 		if dur > 0.0:
