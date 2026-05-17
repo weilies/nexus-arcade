@@ -25,6 +25,18 @@ const nextConfig = {
           { key: 'Content-Type', value: 'application/wasm' },
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
           { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        // Pre-gzipped wasm: served when middleware rewrites .wasm → .wasm.gz
+        source: '/games/:path*/index.wasm.gz',
+        headers: [
+          { key: 'Content-Type', value: 'application/wasm' },
+          { key: 'Content-Encoding', value: 'gzip' },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
       {
@@ -32,6 +44,22 @@ const nextConfig = {
         source: '/games/:path*/index.pck',
         headers: [
           { key: 'Cross-Origin-Resource-Policy', value: 'same-site' },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source: '/games/:path*/index.pck.gz',
+        headers: [
+          { key: 'Content-Type', value: 'application/octet-stream' },
+          { key: 'Content-Encoding', value: 'gzip' },
+          { key: 'Cross-Origin-Resource-Policy', value: 'same-site' },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source: '/games/:path*/index.js',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
     ]

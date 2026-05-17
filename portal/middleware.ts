@@ -2,6 +2,21 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // Serve pre-gzipped Godot exports when client supports gzip.
+  // Static `public/` files can't auto-negotiate Content-Encoding, so we
+  // rewrite the URL to the .gz sibling and headers (set in next.config.js)
+  // tell the browser to decompress transparently.
+  const url = request.nextUrl
+  const accepts = request.headers.get('accept-encoding') || ''
+  if (accepts.includes('gzip')) {
+    const m = url.pathname.match(/^(\/games\/[^/]+\/index\.(?:wasm|pck))$/)
+    if (m) {
+      const gzUrl = url.clone()
+      gzUrl.pathname = m[1] + '.gz'
+      return NextResponse.rewrite(gzUrl)
+    }
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
