@@ -275,6 +275,52 @@ func _open_create_dialog() -> void:
 		pwd_input.visible = true
 	)
 
+	# ── Game mode picker ──
+	var mode_lbl := _mk_label("GAME MODE", 12, MUTED)
+	mode_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_modal_body.add_child(mode_lbl)
+	var mode_row := HBoxContainer.new()
+	mode_row.add_theme_constant_override("separation", 6)
+	mode_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_modal_body.add_child(mode_row)
+	var mode_default := Globals.current_game_mode if Globals.current_game_mode != "" else "classic"
+	var mode_ref := [mode_default]
+	var mode_btns := {}
+	for m in ["classic", "ultimate", "ephemeral"]:
+		var b := _mk_button(m.to_upper(), 13, CYAN if m == mode_default else MUTED)
+		b.custom_minimum_size = Vector2(96, 34)
+		mode_btns[m] = b
+		var captured := m
+		b.pressed.connect(func():
+			mode_ref[0] = captured
+			for k in mode_btns:
+				mode_btns[k].add_theme_color_override("font_color", CYAN if k == captured else MUTED)
+		)
+		mode_row.add_child(b)
+
+	# ── Timer picker ──
+	var timer_lbl_hdr := _mk_label("TURN TIMER", 12, MUTED)
+	timer_lbl_hdr.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_modal_body.add_child(timer_lbl_hdr)
+	var timer_row := HBoxContainer.new()
+	timer_row.add_theme_constant_override("separation", 6)
+	timer_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_modal_body.add_child(timer_row)
+	var timer_default := RoomManager.timer_label_from_seconds(Globals.timer_seconds)
+	var timer_ref := [timer_default]
+	var timer_btns := {}
+	for t in ["OFF", "BLITZ", "CASUAL", "CHILL"]:
+		var b := _mk_button(t, 13, ACCENT if t == timer_default else MUTED)
+		b.custom_minimum_size = Vector2(74, 34)
+		timer_btns[t] = b
+		var captured := t
+		b.pressed.connect(func():
+			timer_ref[0] = captured
+			for k in timer_btns:
+				timer_btns[k].add_theme_color_override("font_color", ACCENT if k == captured else MUTED)
+		)
+		timer_row.add_child(b)
+
 	var err_lbl := _mk_label("", 13, Color("#ef4444"))
 	err_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_modal_body.add_child(err_lbl)
@@ -304,16 +350,15 @@ func _open_create_dialog() -> void:
 			return
 		btn_go.disabled = true
 		err_lbl.text = ""
-		await _do_create(rn, priv, pwd)
+		await _do_create(rn, priv, pwd, str(mode_ref[0]), str(timer_ref[0]))
 		btn_go.disabled = false
 	)
 	btns.add_child(btn_go)
 
-func _do_create(room_name: String, is_private: bool, password: String) -> void:
+func _do_create(room_name: String, is_private: bool, password: String,
+		game_mode: String = "classic", timer_lbl: String = "OFF") -> void:
 	_set_status("Creating room...")
 	var user_id := _get_user_id_from_jwt(Globals.jwt)
-	var game_mode := Globals.current_game_mode if Globals.current_game_mode != "" else "classic"
-	var timer_lbl := RoomManager.timer_label_from_seconds(Globals.timer_seconds)
 	var row: Dictionary = await RoomManager.create_room_async(
 		Globals.supabase, user_id, room_name, is_private, password, game_mode, timer_lbl)
 	if row.is_empty():
