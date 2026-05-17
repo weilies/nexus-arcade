@@ -156,7 +156,7 @@ func _refresh_rooms() -> void:
 		_add_room_row(r, host_id == my_id)
 		shown += 1
 	if shown == 0:
-		var empty := _mk_label("No rooms waiting. Create one!", 14, MUTED)
+		var empty := _mk_label("No rooms waiting. Create one!", 16, MUTED)
 		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_vbox_rooms.add_child(empty)
 		_set_status("")
@@ -199,7 +199,11 @@ func _add_room_row(room: Dictionary, is_mine: bool) -> void:
 		PURPLE if is_private else CYAN)
 	name_line.add_child(tag_lbl)
 
-	var sub := _mk_label("Code: %s" % str(room.get("room_code", "?")), 13, MUTED)
+	var game_mode_raw := str(room.get("game_mode", "classic"))
+	var timer_lbl := str(room.get("timer_label", "OFF"))
+	var mode_display := game_mode_raw.to_upper()
+	var sub := _mk_label("%s | %s | %s" % [mode_display, timer_lbl, str(room.get("room_code", "?"))], 12, MUTED)
+	sub.autowrap_mode = TextServer.AUTOWRAP_OFF
 	info.add_child(sub)
 
 	var room_id := str(room.get("id", ""))
@@ -306,8 +310,10 @@ func _open_create_dialog() -> void:
 func _do_create(room_name: String, is_private: bool, password: String) -> void:
 	_set_status("Creating room...")
 	var user_id := _get_user_id_from_jwt(Globals.jwt)
+	var game_mode := Globals.current_game_mode if Globals.current_game_mode != "" else "classic"
+	var timer_lbl := RoomManager.timer_label_from_seconds(Globals.timer_seconds)
 	var row: Dictionary = await RoomManager.create_room_async(
-		Globals.supabase, user_id, room_name, is_private, password)
+		Globals.supabase, user_id, room_name, is_private, password, game_mode, timer_lbl)
 	if row.is_empty():
 		var err := RoomManager.last_error if RoomManager.last_error != "" else "unknown"
 		_set_status("Create failed: " + err)

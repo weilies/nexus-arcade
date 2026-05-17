@@ -72,6 +72,9 @@ func _ready() -> void:
 	_lbl_clock_icon.add_theme_font_override("font", FA6.font())
 
 	_carousel.mode_changed.connect(_on_mode_changed)
+	# Carousel _ready() fires before this signal connects, so init emit is missed.
+	# Sync manually to pick up carousel's restored position.
+	_current_game_mode = _carousel.get_current_mode_id()
 	# Restore timer index from Globals (preserved across Home button)
 	for i in TIMER_MODES.size():
 		if TIMER_MODES[i]["seconds"] == Globals.timer_seconds:
@@ -398,11 +401,10 @@ func _get_help_text() -> String:
 
 	lines.append("")
 	lines.append("--- TIMER ---")
-	lines.append("- OFF (∞)")
 	lines.append("- BLITZ (3s)")
 	lines.append("- CASUAL (6s)")
 	lines.append("- CHILL (9s)")
-	lines.append("When on, place your mark before time runs out or you SKIP your turn.")
+	lines.append("Place your mark before time runs out or you SKIP your turn.")
 
 	return "\n".join(lines)
 
@@ -432,5 +434,5 @@ func _help_ephemeral() -> Array[String]:
 		"",
 		"Like classic, but your marks have commitment issues.",
 		"",
-		"Place your 5th mark and your oldest mark vanishes. Marks fade as they age - brightest is newest, dimmest is next to go. No draws - someone always wins.",
+		"Place your 4th mark and your oldest mark vanishes. Marks fade as they age - brightest is newest, dimmest is next to go. No draws - someone always wins.",
 	]

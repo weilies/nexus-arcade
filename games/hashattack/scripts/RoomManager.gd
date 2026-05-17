@@ -29,14 +29,24 @@ static func get_room_code_from_url() -> String:
 # ── Async API (returns Dictionary / Array) ────────────────────────────────────
 
 # Returns the created row, or {} on failure.
+static func timer_label_from_seconds(secs: int) -> String:
+	match secs:
+		3: return "BLITZ"
+		6: return "CASUAL"
+		9: return "CHILL"
+		_: return "OFF"
+
 static func create_room_async(sb: SupabaseClient, host_id: String,
-		room_name: String, is_private: bool, password: String) -> Dictionary:
+		room_name: String, is_private: bool, password: String,
+		game_mode: String, timer_label: String) -> Dictionary:
 	var payload := {
 		"game_slug": GAME_SLUG,
 		"room_code": generate_room_code(),
 		"host_id": host_id,
 		"room_name": room_name,
 		"is_private": is_private,
+		"game_mode": game_mode,
+		"timer_label": timer_label,
 		"status": "waiting",
 		"state": {"board": ["","","","","","","","",""], "turn": "X", "winner": ""}
 	}
@@ -57,7 +67,7 @@ static func create_room_async(sb: SupabaseClient, host_id: String,
 
 # Returns array of waiting-room rows (newest first).
 static func list_waiting_rooms_async(sb: SupabaseClient) -> Array:
-	var path := "/rest/v1/game_rooms?game_slug=eq.%s&status=eq.waiting&select=id,room_code,room_name,is_private,host_id,created_at&order=created_at.desc" % GAME_SLUG
+	var path := "/rest/v1/game_rooms?game_slug=eq.%s&status=eq.waiting&select=id,room_code,room_name,is_private,host_id,game_mode,timer_label,created_at&order=created_at.desc" % GAME_SLUG
 	var raw: Array = await sb._async_get(path)
 	if raw[0] == 200 and raw[1] is Array:
 		return raw[1]
