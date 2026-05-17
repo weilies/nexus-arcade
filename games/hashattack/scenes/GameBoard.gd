@@ -34,6 +34,7 @@ var _is_host: bool = false
 var _online_waiting: bool = false
 var _waiting_overlay: Control = null
 var _concede_modal: Control = null
+var _opponent_name: String = ""
 var _turn_timer: TurnTimer
 var _bridge: PortalBridge
 var _game_over_fired: bool = false
@@ -182,6 +183,7 @@ func _ready() -> void:
 		if _is_host:
 			_show_waiting_overlay()
 			_start_waiting_poll()
+		_fetch_opponent_name()
 	elif Globals.timer_seconds > 0:
 		# VS_AI and LOCAL: start timer immediately (player moves first or AI goes first)
 		_turn_timer.set_duration(Globals.timer_seconds)
@@ -620,6 +622,20 @@ func _show_waiting_overlay() -> void:
 	btn_share.custom_minimum_size = Vector2(160, 42)
 	btn_share.pressed.connect(_share_room)
 	vb.add_child(btn_share)
+
+func _fetch_opponent_name() -> void:
+	# Poll room until both host_id + guest_id present, then resolve username.
+	while is_inside_tree() and _opponent_name == "":
+		var room: Dictionary = await RoomManager.fetch_room_by_id_async(_supabase_ref, _room_id)
+		if not room.is_empty():
+			var opp_id := str(room.get("guest_id", "")) if _is_host else str(room.get("host_id", ""))
+			if opp_id != "":
+				var raw: Array = await _supabase_ref._async_get(
+					"/rest/v1/users?id=eq.%s&select=username" % opp_id)
+				if raw[0] == 200 and raw[1] is Array and not raw[1].is_empty():
+					_opponent_name = str(raw[1][0].get("username", ""))
+					return
+		await get_tree().create_timer(2.0).timeout
 
 func _hide_waiting_overlay() -> void:
 	if _waiting_overlay:
@@ -1206,7 +1222,14 @@ func _on_game_over() -> void:
 				"p_game_mode": Globals.current_game_mode
 			})
 
+	# Online: mark room finished so it disappears from lobby + can't be rejoined.
+	if _mode == Mode.ONLINE and _supabase_ref and _room_id != "":
+		_supabase_ref.patch_row("game_rooms", "id=eq." + _room_id,
+			{"status": "finished"})
+
+	var my_mark := GameState.player_to_str(_player_mark)
 	var game_over = load("res://scenes/GameOver.tscn").instantiate()
 	game_over.setup(winner, _score_x, _score_o, _mode, self,
-		_pts_awarded, Globals.current_streak.get(Globals.current_game_mode, 0))
+		_pts_awarded, Globals.current_streak.get(Globals.current_game_mode, 0),
+		my_mark, _opponent_name)
 	get_tree().root.add_child(game_over)

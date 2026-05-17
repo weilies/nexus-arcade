@@ -17,6 +17,13 @@ var _room_id: String = ""
 var _room_code: String = ""
 var _room_game_mode: String = "classic"
 var _room_timer_secs: int = 0
+var _refresh_timer: Timer = null
+var _page: int = 0
+const PAGE_SIZE := 10
+var _btn_prev: Button = null
+var _btn_next: Button = null
+var _lbl_page: Label = null
+var _last_total: int = 0
 
 # UI refs
 var _lbl_status: Label
@@ -77,11 +84,6 @@ func _build_ui() -> void:
 	_btn_refresh.pressed.connect(_refresh_rooms)
 	actions.add_child(_btn_refresh)
 
-	# Section label
-	var section := _mk_label("AVAILABLE ROOMS", 16, MUTED)
-	section.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	root.add_child(section)
-
 	# Scrollable room list
 	_scroll = ScrollContainer.new()
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -92,6 +94,36 @@ func _build_ui() -> void:
 	_vbox_rooms.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_vbox_rooms.add_theme_constant_override("separation", 6)
 	_scroll.add_child(_vbox_rooms)
+
+	# Pagination row
+	var page_row := HBoxContainer.new()
+	page_row.add_theme_constant_override("separation", 8)
+	page_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	root.add_child(page_row)
+
+	_btn_prev = _mk_button("<", 18, MUTED)
+	_btn_prev.custom_minimum_size = Vector2(48, 36)
+	_btn_prev.pressed.connect(func():
+		if _page > 0:
+			_page -= 1
+			_refresh_rooms()
+	)
+	page_row.add_child(_btn_prev)
+
+	_lbl_page = _mk_label("1", 14, MUTED)
+	_lbl_page.custom_minimum_size = Vector2(80, 36)
+	_lbl_page.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_lbl_page.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	page_row.add_child(_lbl_page)
+
+	_btn_next = _mk_button(">", 18, MUTED)
+	_btn_next.custom_minimum_size = Vector2(48, 36)
+	_btn_next.pressed.connect(func():
+		if _last_total == PAGE_SIZE:
+			_page += 1
+			_refresh_rooms()
+	)
+	page_row.add_child(_btn_next)
 
 	# Join by code row
 	var code_row := HBoxContainer.new()
@@ -140,6 +172,20 @@ func _on_auth_token(token: String) -> void:
 		_auto_join_by_code(url_code)
 	else:
 		_refresh_rooms()
+		_start_auto_refresh()
+
+func _start_auto_refresh() -> void:
+	if _refresh_timer != null:
+		return
+	_refresh_timer = Timer.new()
+	_refresh_timer.wait_time = 10.0
+	_refresh_timer.autostart = true
+	_refresh_timer.timeout.connect(func():
+		# Skip while a modal is open to avoid interrupting user
+		if _modal == null:
+			_refresh_rooms()
+	)
+	add_child(_refresh_timer)
 
 # ── Room list ─────────────────────────────────────────────────────────────────
 
@@ -147,23 +193,34 @@ func _refresh_rooms() -> void:
 	_set_status("Loading rooms...")
 	for c in _vbox_rooms.get_children():
 		c.queue_free()
-	var rooms: Array = await RoomManager.list_waiting_rooms_async(Globals.supabase)
+	var rooms: Array = await RoomManager.list_waiting_rooms_async(
+		Globals.supabase, PAGE_SIZE, _page * PAGE_SIZE)
 	var my_id := _get_user_id_from_jwt(Globals.jwt)
 	var shown := 0
 	for r in rooms:
 		var host_id := str(r.get("host_id", ""))
-		# Skip rooms with no host (data anomaly) but show own rooms (for "rejoin").
 		if host_id.is_empty():
 			continue
 		_add_room_row(r, host_id == my_id)
 		shown += 1
+	_last_total = shown
 	if shown == 0:
-		var empty := _mk_label("No rooms waiting. Create one!", 16, MUTED)
+		var empty := _mk_label("No rooms waiting. Create one!", 18, MUTED)
 		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_vbox_rooms.add_child(empty)
 		_set_status("")
 	else:
 		_set_status("%d room(s)" % shown)
+	# Update page controls
+	if _lbl_page:
+		_lbl_page.text = "PAGE %d" % (_page + 1)
+	if _btn_prev:
+		_btn_prev.disabled = _page == 0
+		_btn_prev.add_theme_color_override("font_color", MUTED if _page == 0 else ACCENT)
+	if _btn_next:
+		var has_next := shown == PAGE_SIZE
+		_btn_next.disabled = not has_next
+		_btn_next.add_theme_color_override("font_color", ACCENT if has_next else MUTED)
 
 func _add_room_row(room: Dictionary, is_mine: bool) -> void:
 	var panel := PanelContainer.new()
@@ -193,34 +250,28 @@ func _add_room_row(room: Dictionary, is_mine: bool) -> void:
 	name_line.add_theme_constant_override("separation", 6)
 	info.add_child(name_line)
 
-	var name_lbl := _mk_label(str(room.get("room_name", "Room")), 18, TEXT)
+	var name_lbl := _mk_label(str(room.get("room_name", "Room")), 20, TEXT)
 	name_line.add_child(name_lbl)
 
 	var is_private: bool = bool(room.get("is_private", false))
-	var tag_lbl := _mk_label("[PRIVATE]" if is_private else "[PUBLIC]", 13,
+	var tag_lbl := _mk_label("[PRIVATE]" if is_private else "[PUBLIC]", 14,
 		PURPLE if is_private else CYAN)
 	name_line.add_child(tag_lbl)
 
 	var game_mode_raw := str(room.get("game_mode", "classic"))
 	var timer_lbl := str(room.get("timer_label", "OFF"))
 	var mode_display := game_mode_raw.to_upper()
-	var sub := _mk_label("%s | %s | %s" % [mode_display, timer_lbl, str(room.get("room_code", "?"))], 12, MUTED)
+	var sub := _mk_label("%s | %s" % [mode_display, timer_lbl], 14, MUTED)
 	sub.autowrap_mode = TextServer.AUTOWRAP_OFF
 	info.add_child(sub)
 
 	var room_id := str(room.get("id", ""))
 	var room_code := str(room.get("room_code", ""))
 
-	# SHARE button — copy code / native share
-	var btn_share := _mk_button("SHARE", 14, MUTED)
-	btn_share.custom_minimum_size = Vector2(72, 40)
-	btn_share.pressed.connect(func(): _share_room_code(room_code))
-	row.add_child(btn_share)
-
 	# Action button
 	var btn_text := "REJOIN" if is_mine else ("UNLOCK" if is_private else "JOIN")
-	var btn := _mk_button(btn_text, 16, ACCENT if not is_mine else CYAN)
-	btn.custom_minimum_size = Vector2(88, 40)
+	var btn := _mk_button(btn_text, 18, ACCENT if not is_mine else CYAN)
+	btn.custom_minimum_size = Vector2(96, 44)
 	if is_mine:
 		btn.pressed.connect(func(): _enter_as_host(room_id, room_code))
 	elif is_private:

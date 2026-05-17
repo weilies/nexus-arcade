@@ -6,25 +6,43 @@ var _mode: GameBoard.Mode
 var _board_ref: GameBoard
 
 func setup(winner: String, score_x: int, score_o: int, mode: GameBoard.Mode,
-		board: GameBoard, pts_awarded: int = 0, current_streak: int = 0) -> void:
+		board: GameBoard, pts_awarded: int = 0, current_streak: int = 0,
+		my_mark: String = "", opp_name: String = "") -> void:
 	_score_x = score_x
 	_score_o = score_o
 	_mode = mode
 	_board_ref = board
 
-	match winner:
-		"X":
-			$VBoxContainer/LblResult.text = "X WINS!"
-			$VBoxContainer/LblResult.add_theme_color_override("font_color", Color("#00d4ff"))
-			$VBoxContainer/LblSub.text = "X wins the match"
-		"O":
-			$VBoxContainer/LblResult.text = "O WINS!"
-			$VBoxContainer/LblResult.add_theme_color_override("font_color", Color("#a855f7"))
-			$VBoxContainer/LblSub.text = "O wins the match"
-		_:
+	# Online/VS_AI: render from viewer perspective.
+	# Local 2P: keep mark-based since both players share the screen.
+	if mode == GameBoard.Mode.ONLINE or mode == GameBoard.Mode.VS_AI:
+		if winner == "draw":
 			$VBoxContainer/LblResult.text = "DRAW"
 			$VBoxContainer/LblResult.add_theme_color_override("font_color", Color("#94a3b8"))
 			$VBoxContainer/LblSub.text = "No winner this time"
+		elif winner == my_mark:
+			$VBoxContainer/LblResult.text = "YOU WIN!"
+			$VBoxContainer/LblResult.add_theme_color_override("font_color", Color("#00d4ff"))
+			$VBoxContainer/LblSub.text = "Nice match"
+		else:
+			var who: String = opp_name if opp_name != "" else ("AI" if mode == GameBoard.Mode.VS_AI else "Opponent")
+			$VBoxContainer/LblResult.text = "%s WINS!" % who.to_upper()
+			$VBoxContainer/LblResult.add_theme_color_override("font_color", Color("#a855f7"))
+			$VBoxContainer/LblSub.text = "%s wins the match" % who
+	else:
+		match winner:
+			"X":
+				$VBoxContainer/LblResult.text = "X WINS!"
+				$VBoxContainer/LblResult.add_theme_color_override("font_color", Color("#00d4ff"))
+				$VBoxContainer/LblSub.text = "X wins the match"
+			"O":
+				$VBoxContainer/LblResult.text = "O WINS!"
+				$VBoxContainer/LblResult.add_theme_color_override("font_color", Color("#a855f7"))
+				$VBoxContainer/LblSub.text = "O wins the match"
+			_:
+				$VBoxContainer/LblResult.text = "DRAW"
+				$VBoxContainer/LblResult.add_theme_color_override("font_color", Color("#94a3b8"))
+				$VBoxContainer/LblSub.text = "No winner this time"
 
 	if Globals.is_signed_in() and pts_awarded > 0:
 		$VBoxContainer/LblPtsEarned.visible = true
