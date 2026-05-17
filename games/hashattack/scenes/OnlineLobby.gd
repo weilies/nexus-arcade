@@ -446,12 +446,7 @@ func _do_join(room_id: String, room_code: String) -> void:
 		_set_status("Join failed (room may already be full).")
 		return
 	Globals.supabase.connect_realtime("room:" + _room_id)
-	# Wait until WS open + channel joined before broadcasting (otherwise host misses it).
-	var waited := 0.0
-	while not Globals.supabase._ws_ready and waited < 5.0:
-		await get_tree().create_timer(0.1).timeout
-		waited += 0.1
-	await get_tree().create_timer(0.6).timeout
+	# broadcast() queues if WS/channel not ready yet — safe to call immediately.
 	Globals.supabase.broadcast("room:" + _room_id, "guest_joined", {})
 	_launch_game()
 

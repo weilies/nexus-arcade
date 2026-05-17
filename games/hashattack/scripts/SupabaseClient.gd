@@ -12,6 +12,9 @@ var _ws: WebSocketPeer = null
 var _ws_ready: bool = false
 var _ws_ref: int = 0
 var _pending_channels: Array = []
+var _joined_channels: Array = []
+var _pending_broadcasts: Array = []  # [{channel, event, payload}, ...]
+var _join_refs: Dictionary = {}  # ref_str -> channel_name (awaiting phx_reply ok)
 
 func init(supabase_url: String, anon_key: String) -> void:
 	_url = supabase_url.trim_suffix("/")
@@ -61,6 +64,11 @@ func _headers(extra: Array = []) -> PackedStringArray:
 	return h
 
 func connect_realtime(channel_name: String) -> void:
+	if channel_name in _joined_channels or channel_name in _pending_channels:
+		return
+	if _ws_ready:
+		_join_channel(channel_name)
+		return
 	_pending_channels.append(channel_name)
 	if _ws != null:
 		return
@@ -70,9 +78,13 @@ func connect_realtime(channel_name: String) -> void:
 	_ws.connect_to_url(ws_url)
 
 func broadcast(channel_name: String, event: String, payload: Dictionary) -> void:
-	if not _ws_ready:
-		push_warning("SupabaseClient: not connected, cannot broadcast")
+	if not _ws_ready or not (channel_name in _joined_channels):
+		# Queue and flush once WS is ready and channel joined.
+		_pending_broadcasts.append({"channel": channel_name, "event": event, "payload": payload})
 		return
+	_send_broadcast(channel_name, event, payload)
+
+func _send_broadcast(channel_name: String, event: String, payload: Dictionary) -> void:
 	_ws_ref += 1
 	var msg = {
 		"topic": "realtime:" + channel_name,
@@ -81,6 +93,17 @@ func broadcast(channel_name: String, event: String, payload: Dictionary) -> void
 		"ref": str(_ws_ref)
 	}
 	_ws.send_text(JSON.stringify(msg))
+
+func _flush_pending_broadcasts() -> void:
+	if _pending_broadcasts.is_empty():
+		return
+	var still_pending: Array = []
+	for b in _pending_broadcasts:
+		if b["channel"] in _joined_channels and _ws_ready:
+			_send_broadcast(b["channel"], b["event"], b["payload"])
+		else:
+			still_pending.append(b)
+	_pending_broadcasts = still_pending
 
 func _process(_delta: float) -> void:
 	if _ws == null:
@@ -97,9 +120,11 @@ func _process(_delta: float) -> void:
 		WebSocketPeer.STATE_CLOSED:
 			_ws_ready = false
 			_ws = null
+			_joined_channels.clear()
 
 func _join_channel(channel_name: String) -> void:
 	_ws_ref += 1
+	var ref_str := str(_ws_ref)
 	var payload: Dictionary = {
 		"config": {
 			"broadcast": {"ack": false, "self": false},
@@ -112,8 +137,9 @@ func _join_channel(channel_name: String) -> void:
 		"topic": "realtime:" + channel_name,
 		"event": "phx_join",
 		"payload": payload,
-		"ref": str(_ws_ref)
+		"ref": ref_str
 	}
+	_join_refs[ref_str] = channel_name
 	_ws.send_text(JSON.stringify(msg))
 
 func _drain_ws() -> void:
@@ -127,6 +153,19 @@ func _drain_ws() -> void:
 			var topic = parsed.get("topic", "").replace("realtime:", "")
 			var inner: Dictionary = parsed.get("payload", {})
 			realtime_message.emit(topic, inner.get("event", ""), inner.get("payload", {}))
+		elif event == "phx_reply":
+			var ref_str: String = str(parsed.get("ref", ""))
+			if _join_refs.has(ref_str):
+				var inner: Dictionary = parsed.get("payload", {})
+				var status: String = str(inner.get("status", ""))
+				var ch: String = _join_refs[ref_str]
+				_join_refs.erase(ref_str)
+				if status == "ok":
+					if not (ch in _joined_channels):
+						_joined_channels.append(ch)
+					_flush_pending_broadcasts()
+				else:
+					push_warning("SupabaseClient: phx_join failed for %s: %s" % [ch, str(inner)])
 
 # ── Async helpers ─────────────────────────────────────────────────────────────
 # Each spawns a disposable HTTPRequest, awaits request_completed, frees itself.
