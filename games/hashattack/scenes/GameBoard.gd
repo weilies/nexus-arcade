@@ -378,10 +378,19 @@ func _on_online_message(channel: String, event: String, payload: Dictionary) -> 
 			if _is_host and _online_waiting:
 				_online_waiting = false
 				_hide_waiting_overlay()
-				if Globals.timer_seconds > 0:
+				_host_pick_first_turn()
+				_start_heartbeat()
+		"set_first_turn":
+			if not _is_host:
+				var who := str(payload.get("player", "X"))
+				_state.current_turn = GameState.Player.X if who == "X" \
+					else GameState.Player.O
+				_refresh_ui()
+				if _state.current_turn == _player_mark and Globals.timer_seconds > 0:
 					_turn_timer.set_duration(Globals.timer_seconds)
 					_turn_timer.start()
-				_start_heartbeat()
+				else:
+					_turn_timer.stop()
 		"ping":
 			if str(payload.get("player", "")) != GameState.player_to_str(_player_mark):
 				_last_opp_ping_ms = Time.get_ticks_msec()
@@ -777,10 +786,25 @@ func _start_waiting_poll() -> void:
 			if _online_waiting:
 				_online_waiting = false
 				_hide_waiting_overlay()
-				if Globals.timer_seconds > 0:
-					_turn_timer.set_duration(Globals.timer_seconds)
-					_turn_timer.start()
+				_host_pick_first_turn()
+				_start_heartbeat()
 			return
+
+func _host_pick_first_turn() -> void:
+	# Host rolls randomly after guest joins, then broadcasts the choice.
+	# Both sides apply set_first_turn so _state.current_turn agrees.
+	if not _is_host:
+		return
+	var first_str := "X" if randf() < 0.5 else "O"
+	_state.current_turn = GameState.Player.X if first_str == "X" else GameState.Player.O
+	if _supabase_ref:
+		_supabase_ref.broadcast("room:" + _room_id, "set_first_turn", {"player": first_str})
+	_refresh_ui()
+	if _state.current_turn == _player_mark and Globals.timer_seconds > 0:
+		_turn_timer.set_duration(Globals.timer_seconds)
+		_turn_timer.start()
+	else:
+		_turn_timer.stop()
 
 func _share_room() -> void:
 	var url := RoomManager.get_share_url(_room_code)
