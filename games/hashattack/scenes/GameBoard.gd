@@ -91,9 +91,8 @@ func setup_online(room_id: String, player_mark: GameState.Player, sb: SupabaseCl
 	_supabase_ref = sb
 	_is_host = is_host
 	# If we have an in-progress board state (refresh-rejoin), skip waiting overlay.
-	var has_state := not state_dict.is_empty() and state_dict.get("board", []) is Array \
-		and not state_dict.get("board", []).is_empty() \
-		and _has_any_mark(state_dict.get("board", []))
+	var board_arr: Array = state_dict.get("board", []) if not state_dict.is_empty() else []
+	var has_state: bool = not board_arr.is_empty() and _has_any_mark(board_arr)
 	_online_waiting = is_host and not has_state
 	_initial_state_dict = state_dict
 	if game_mode != "":
