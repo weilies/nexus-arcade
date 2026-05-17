@@ -72,9 +72,9 @@ static func create_room_async(sb: SupabaseClient, host_id: String,
 		return raw[1]
 	return {}
 
-# Returns array of waiting-room rows (newest first).
+# Returns array of joinable rooms (status=waiting AND no guest yet, newest first).
 static func list_waiting_rooms_async(sb: SupabaseClient) -> Array:
-	var path := "/rest/v1/game_rooms?game_slug=eq.%s&status=eq.waiting&select=id,room_code,room_name,is_private,host_id,game_mode,timer_label,created_at&order=created_at.desc" % GAME_SLUG
+	var path := "/rest/v1/game_rooms?game_slug=eq.%s&status=eq.waiting&guest_id=is.null&select=id,room_code,room_name,is_private,host_id,game_mode,timer_label,created_at&order=created_at.desc" % GAME_SLUG
 	var raw: Array = await sb._async_get(path)
 	if raw[0] == 200 and raw[1] is Array:
 		return raw[1]

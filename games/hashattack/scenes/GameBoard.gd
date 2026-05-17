@@ -181,6 +181,7 @@ func _ready() -> void:
 			$VBoxContainer/BtnHome.text = "CONCEDE"
 		if _is_host:
 			_show_waiting_overlay()
+			_start_waiting_poll()
 	elif Globals.timer_seconds > 0:
 		# VS_AI and LOCAL: start timer immediately (player moves first or AI goes first)
 		_turn_timer.set_duration(Globals.timer_seconds)
@@ -625,6 +626,26 @@ func _hide_waiting_overlay() -> void:
 		_waiting_overlay.queue_free()
 		_waiting_overlay = null
 
+func _start_waiting_poll() -> void:
+	# Fallback in case broadcast missed — poll DB every 2s, dismiss when guest_id present.
+	while _online_waiting and is_inside_tree():
+		await get_tree().create_timer(2.0).timeout
+		if not _online_waiting:
+			return
+		var fresh: Dictionary = await RoomManager.fetch_room_by_id_async(_supabase_ref, _room_id)
+		if fresh.is_empty():
+			continue
+		var gid := str(fresh.get("guest_id", ""))
+		var st := str(fresh.get("status", ""))
+		if gid != "" or st == "active":
+			if _online_waiting:
+				_online_waiting = false
+				_hide_waiting_overlay()
+				if Globals.timer_seconds > 0:
+					_turn_timer.set_duration(Globals.timer_seconds)
+					_turn_timer.start()
+			return
+
 func _share_room() -> void:
 	var url := RoomManager.get_share_url(_room_code)
 	var text := "Join my Hash Attack room! Code: %s\n%s" % [_room_code, url]
@@ -689,6 +710,8 @@ func _refresh_ui() -> void:
 				turn_text = "AI THINKING..."
 			elif _mode == Mode.VS_AI:
 				turn_text = "YOUR TURN - X"
+			elif _mode == Mode.ONLINE:
+				turn_text = "YOUR TURN - X" if _player_mark == GameState.Player.X else "OPPONENT'S TURN - X"
 			else:
 				turn_text = "PLAYER 1 - X"
 		GameState.Player.O:
@@ -698,6 +721,8 @@ func _refresh_ui() -> void:
 				turn_text = "YOUR TURN - O"
 			elif _mode == Mode.LOCAL:
 				turn_text = "PLAYER 2 - O"
+			elif _mode == Mode.ONLINE:
+				turn_text = "YOUR TURN - O" if _player_mark == GameState.Player.O else "OPPONENT'S TURN - O"
 			else:
 				turn_text = "OPPONENT - O"
 		_:
