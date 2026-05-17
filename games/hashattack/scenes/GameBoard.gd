@@ -70,19 +70,35 @@ func setup_vs_ai(_ignored_difficulty: int = 0) -> void:
 func setup_local() -> void:
 	_mode = Mode.LOCAL
 
+var _initial_state_dict: Dictionary = {}
+
 func setup_online(room_id: String, player_mark: GameState.Player, sb: SupabaseClient,
-		room_code: String = "", game_mode: String = "", timer_secs: int = -1, is_host: bool = false) -> void:
+		room_code: String = "", game_mode: String = "", timer_secs: int = -1,
+		is_host: bool = false, state_dict: Dictionary = {}) -> void:
 	_mode = Mode.ONLINE
 	_room_id = room_id
 	_room_code = room_code
 	_player_mark = player_mark
 	_supabase_ref = sb
 	_is_host = is_host
-	_online_waiting = is_host
+	# If we have an in-progress board state (refresh-rejoin), skip waiting overlay.
+	var has_state := not state_dict.is_empty() and state_dict.get("board", []) is Array \
+		and not state_dict.get("board", []).is_empty() \
+		and _has_any_mark(state_dict.get("board", []))
+	_online_waiting = is_host and not has_state
+	_initial_state_dict = state_dict
 	if game_mode != "":
 		Globals.current_game_mode = game_mode
 	if timer_secs >= 0:
 		Globals.timer_seconds = timer_secs
+	if room_code != "":
+		RoomManager.save_active_room(room_code)
+
+func _has_any_mark(board: Array) -> bool:
+	for c in board:
+		if str(c) == "X" or str(c) == "O":
+			return true
+	return false
 
 func _ready() -> void:
 	var bg = load("res://scripts/BackgroundLayer.gd").new()
@@ -111,6 +127,10 @@ func _ready() -> void:
 			_state = GameState.new()
 			if _mode == Mode.VS_AI:
 				_ai = TicTacToeAI.new()
+
+	# Restore in-progress online state (refresh-rejoin)
+	if _mode == Mode.ONLINE and not _initial_state_dict.is_empty():
+		_state.from_dict(_initial_state_dict)
 	_bridge = $Bridge if has_node("Bridge") else null
 	if _bridge:
 		_bridge.send_game_ready()
@@ -171,18 +191,15 @@ func _ready() -> void:
 	if _mode == Mode.ONLINE:
 		if not _supabase_ref.realtime_message.is_connected(_on_online_message):
 			_supabase_ref.realtime_message.connect(_on_online_message)
-		# Host enters in WAITING state — timer stays stopped until guest joins.
-		# Guest gets here only after broadcasting guest_joined, so safe to start.
-		if not _is_host and _player_mark == GameState.Player.X:
-			if Globals.timer_seconds > 0:
-				_turn_timer.set_duration(Globals.timer_seconds)
-				_turn_timer.start()
-		# Replace Home with Concede in online mode
 		if has_node("VBoxContainer/BtnHome"):
 			$VBoxContainer/BtnHome.text = "CONCEDE"
-		if _is_host:
+		if _is_host and _online_waiting:
 			_show_waiting_overlay()
 			_start_waiting_poll()
+		elif _state.current_turn == _player_mark and Globals.timer_seconds > 0:
+			# Fresh start as guest OR refresh-rejoin: start timer if it's our turn.
+			_turn_timer.set_duration(Globals.timer_seconds)
+			_turn_timer.start()
 		_fetch_opponent_name()
 	elif Globals.timer_seconds > 0:
 		# VS_AI and LOCAL: start timer immediately (player moves first or AI goes first)
@@ -458,9 +475,14 @@ func _on_home() -> void:
 func _do_concede() -> void:
 	_turn_timer.stop()
 	SFX.click()
+	RoomManager.clear_active_room()
 	if _supabase_ref:
 		_supabase_ref.broadcast("room:" + _room_id, "forfeit",
 			{"player": GameState.player_to_str(_player_mark)})
+		# Mark finished so opponent's lobby drops it too
+		if _room_id != "":
+			_supabase_ref.patch_row("game_rooms", "id=eq." + _room_id,
+				{"status": "finished"})
 	var menu = load("res://scenes/MainMenu.tscn").instantiate()
 	get_tree().root.add_child(menu)
 	get_tree().current_scene = menu
@@ -1226,6 +1248,7 @@ func _on_game_over() -> void:
 	if _mode == Mode.ONLINE and _supabase_ref and _room_id != "":
 		_supabase_ref.patch_row("game_rooms", "id=eq." + _room_id,
 			{"status": "finished"})
+		RoomManager.clear_active_room()
 
 	var my_mark := GameState.player_to_str(_player_mark)
 	var game_over = load("res://scenes/GameOver.tscn").instantiate()

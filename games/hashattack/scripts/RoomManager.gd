@@ -43,6 +43,22 @@ static func timer_seconds_from_label(lbl: String) -> int:
 		"CHILL": return 9
 		_: return 0
 
+const LS_ACTIVE_ROOM := "hashattack_active_room"
+
+static func save_active_room(room_code: String) -> void:
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("localStorage.setItem('%s', '%s')" % [LS_ACTIVE_ROOM, room_code])
+
+static func clear_active_room() -> void:
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("localStorage.removeItem('%s')" % LS_ACTIVE_ROOM)
+
+static func load_active_room() -> String:
+	if OS.has_feature("web"):
+		var v: Variant = JavaScriptBridge.eval("localStorage.getItem('%s') || ''" % LS_ACTIVE_ROOM)
+		return str(v) if v != null else ""
+	return ""
+
 static func create_room_async(sb: SupabaseClient, host_id: String,
 		room_name: String, is_private: bool, password: String,
 		game_mode: String, timer_label: String) -> Dictionary:

@@ -166,6 +166,12 @@ func _on_auth_token(token: String) -> void:
 		return
 	Globals.supabase.set_jwt(token)
 	_set_status("Signed in.")
+	# Auto-rejoin in-progress room (browser refresh recovery) takes precedence.
+	var saved_code := RoomManager.load_active_room()
+	if saved_code != "":
+		var resumed: bool = await _try_resume_active_room(saved_code)
+		if resumed:
+			return
 	# Auto-join from URL if present.
 	var url_code := RoomManager.get_room_code_from_url()
 	if url_code != "":
@@ -173,6 +179,43 @@ func _on_auth_token(token: String) -> void:
 	else:
 		_refresh_rooms()
 		_start_auto_refresh()
+
+func _try_resume_active_room(code: String) -> bool:
+	var room: Dictionary = await RoomManager.fetch_room_by_code_async(Globals.supabase, code)
+	if room.is_empty():
+		RoomManager.clear_active_room()
+		return false
+	var status := str(room.get("status", ""))
+	if status == "finished":
+		RoomManager.clear_active_room()
+		return false
+	var my_id := _get_user_id_from_jwt(Globals.jwt)
+	var host_id := str(room.get("host_id", ""))
+	var guest_id := str(room.get("guest_id", ""))
+	if my_id != host_id and my_id != guest_id:
+		RoomManager.clear_active_room()
+		return false
+	# Restore in-game context
+	_room_id = str(room.get("id", ""))
+	_room_code = str(room.get("room_code", ""))
+	_room_game_mode = str(room.get("game_mode", "classic"))
+	_room_timer_secs = RoomManager.timer_seconds_from_label(str(room.get("timer_label", "OFF")))
+	_player_mark = GameState.Player.X if my_id == host_id else GameState.Player.O
+	Globals.supabase.connect_realtime("room:" + _room_id)
+	var state_dict: Dictionary = room.get("state", {})
+	_launch_game_with_state(state_dict)
+	return true
+
+func _launch_game_with_state(state_dict: Dictionary) -> void:
+	if Globals.supabase.realtime_message.is_connected(_on_realtime):
+		Globals.supabase.realtime_message.disconnect(_on_realtime)
+	var board = load("res://scenes/GameBoard.tscn").instantiate()
+	var is_host := _player_mark == GameState.Player.X
+	board.setup_online(_room_id, _player_mark, Globals.supabase,
+		_room_code, _room_game_mode, _room_timer_secs, is_host, state_dict)
+	get_tree().root.add_child(board)
+	get_tree().current_scene = board
+	queue_free()
 
 func _start_auto_refresh() -> void:
 	if _refresh_timer != null:
