@@ -209,6 +209,8 @@ func _ready() -> void:
 				_turn_timer.set_duration(Globals.timer_seconds)
 				_turn_timer.start()
 			_start_heartbeat()
+			if not _is_host and not has_state_already():
+				_guest_poll_first_turn()
 		_fetch_opponent_name()
 	elif Globals.timer_seconds > 0:
 		# VS_AI and LOCAL: start timer immediately (player moves first or AI goes first)
@@ -790,20 +792,64 @@ func _start_waiting_poll() -> void:
 			return
 
 func _host_pick_first_turn() -> void:
-	# Host rolls randomly after guest joins, then broadcasts the choice.
+	# Host rolls randomly after guest joins, then broadcasts + persists choice.
 	# Both sides apply set_first_turn so _state.current_turn agrees.
+	# DB persist is fallback for guests whose channel isn't subscribed in time.
 	if not _is_host:
 		return
 	var first_str := "X" if randf() < 0.5 else "O"
 	_state.current_turn = GameState.Player.X if first_str == "X" else GameState.Player.O
 	if _supabase_ref:
 		_supabase_ref.broadcast("room:" + _room_id, "set_first_turn", {"player": first_str})
+		_supabase_ref.patch_row("game_rooms", "id=eq." + _room_id, {"state": _state.to_dict()})
 	_refresh_ui()
 	if _state.current_turn == _player_mark and Globals.timer_seconds > 0:
 		_turn_timer.set_duration(Globals.timer_seconds)
 		_turn_timer.start()
 	else:
 		_turn_timer.stop()
+
+func has_state_already() -> bool:
+	for p in _state.board:
+		if p != GameState.Player.NONE:
+			return true
+	return false
+
+func _guest_poll_first_turn() -> void:
+	# Guest fallback: poll room.state.turn for up to ~10s in case set_first_turn
+	# broadcast missed (channel subscribe race).
+	if _is_host or _supabase_ref == null:
+		return
+	var attempts := 0
+	while attempts < 7 and is_inside_tree() and not _game_over_fired:
+		await get_tree().create_timer(1.5).timeout
+		attempts += 1
+		var room: Dictionary = await RoomManager.fetch_room_by_id_async(_supabase_ref, _room_id)
+		if room.is_empty():
+			continue
+		var sd: Dictionary = room.get("state", {})
+		var t: String = str(sd.get("turn", ""))
+		if t != "X" and t != "O":
+			continue
+		var want: GameState.Player = GameState.Player.X if t == "X" else GameState.Player.O
+		# Only apply if board still empty (first turn) and differs from current
+		var any_placed := false
+		for p in _state.board:
+			if p != GameState.Player.NONE:
+				any_placed = true
+				break
+		if any_placed:
+			return
+		if _state.current_turn == want:
+			return
+		_state.current_turn = want
+		_refresh_ui()
+		if _state.current_turn == _player_mark and Globals.timer_seconds > 0:
+			_turn_timer.set_duration(Globals.timer_seconds)
+			_turn_timer.start()
+		else:
+			_turn_timer.stop()
+		return
 
 func _share_room() -> void:
 	var url := RoomManager.get_share_url(_room_code)

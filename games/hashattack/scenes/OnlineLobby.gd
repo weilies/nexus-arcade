@@ -334,24 +334,28 @@ func _open_create_dialog() -> void:
 
 	var name_input := _mk_line_edit("Room name (e.g. Friday Night)")
 	name_input.max_length = 24
+	name_input.add_theme_font_size_override("font_size", 28)
+	name_input.custom_minimum_size = Vector2(0, 56)
 	_modal_body.add_child(name_input)
 
 	# Public/Private toggle row
 	var toggle_row := HBoxContainer.new()
-	toggle_row.add_theme_constant_override("separation", 8)
+	toggle_row.add_theme_constant_override("separation", 12)
 	toggle_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_modal_body.add_child(toggle_row)
 
-	var btn_pub := _mk_button("PUBLIC", 16, CYAN)
-	var btn_priv := _mk_button("PRIVATE", 16, MUTED)
-	btn_pub.custom_minimum_size = Vector2(110, 38)
-	btn_priv.custom_minimum_size = Vector2(110, 38)
+	var btn_pub := _mk_button("PUBLIC", 32, CYAN)
+	var btn_priv := _mk_button("PRIVATE", 32, MUTED)
+	btn_pub.custom_minimum_size = Vector2(220, 64)
+	btn_priv.custom_minimum_size = Vector2(220, 64)
 	toggle_row.add_child(btn_pub)
 	toggle_row.add_child(btn_priv)
 
 	var pwd_input := _mk_line_edit("Password (min 4 chars)")
 	pwd_input.secret = true
 	pwd_input.max_length = 32
+	pwd_input.add_theme_font_size_override("font_size", 28)
+	pwd_input.custom_minimum_size = Vector2(0, 56)
 	pwd_input.visible = false
 	_modal_body.add_child(pwd_input)
 
@@ -369,69 +373,64 @@ func _open_create_dialog() -> void:
 		pwd_input.visible = true
 	)
 
-	# ── Game mode picker ──
-	var mode_lbl := _mk_label("GAME MODE", 12, MUTED)
-	mode_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_modal_body.add_child(mode_lbl)
+	# ── Game mode picker (label + cycle toggle on same row) ──
+	var mode_options := ["classic", "ultimate", "ephemeral"]
+	var mode_default := Globals.current_game_mode if Globals.current_game_mode in mode_options else "classic"
+	var mode_ref := [mode_default]
 	var mode_row := HBoxContainer.new()
-	mode_row.add_theme_constant_override("separation", 6)
+	mode_row.add_theme_constant_override("separation", 16)
 	mode_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_modal_body.add_child(mode_row)
-	var mode_default := Globals.current_game_mode if Globals.current_game_mode != "" else "classic"
-	var mode_ref := [mode_default]
-	var mode_btns := {}
-	for m in ["classic", "ultimate", "ephemeral"]:
-		var b := _mk_button(m.to_upper(), 13, CYAN if m == mode_default else MUTED)
-		b.custom_minimum_size = Vector2(96, 34)
-		mode_btns[m] = b
-		var captured: String = m
-		b.pressed.connect(func():
-			mode_ref[0] = captured
-			for k in mode_btns:
-				mode_btns[k].add_theme_color_override("font_color", CYAN if k == captured else MUTED)
-		)
-		mode_row.add_child(b)
+	var mode_lbl := _mk_label("GAME MODE", 24, MUTED)
+	mode_row.add_child(mode_lbl)
+	var mode_btn := _mk_button(mode_default.to_upper(), 26, CYAN)
+	mode_btn.custom_minimum_size = Vector2(220, 56)
+	mode_row.add_child(mode_btn)
+	mode_btn.pressed.connect(func():
+		var idx: int = mode_options.find(mode_ref[0])
+		idx = (idx + 1) % mode_options.size()
+		mode_ref[0] = mode_options[idx]
+		mode_btn.text = mode_ref[0].to_upper()
+	)
 
-	# ── Timer picker ──
-	var timer_lbl_hdr := _mk_label("TURN TIMER", 12, MUTED)
-	timer_lbl_hdr.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_modal_body.add_child(timer_lbl_hdr)
+	# ── Timer picker (label + cycle toggle on same row) ──
+	var timer_options := ["OFF", "BLITZ", "CASUAL", "CHILL"]
+	var current_timer_lbl := RoomManager.timer_label_from_seconds(Globals.timer_seconds)
+	var timer_default: String = current_timer_lbl if current_timer_lbl in timer_options else "OFF"
+	var timer_ref := [timer_default]
 	var timer_row := HBoxContainer.new()
-	timer_row.add_theme_constant_override("separation", 6)
+	timer_row.add_theme_constant_override("separation", 16)
 	timer_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_modal_body.add_child(timer_row)
-	var timer_default := RoomManager.timer_label_from_seconds(Globals.timer_seconds)
-	var timer_ref := [timer_default]
-	var timer_btns := {}
-	for t in ["OFF", "BLITZ", "CASUAL", "CHILL"]:
-		var b := _mk_button(t, 13, ACCENT if t == timer_default else MUTED)
-		b.custom_minimum_size = Vector2(74, 34)
-		timer_btns[t] = b
-		var captured: String = t
-		b.pressed.connect(func():
-			timer_ref[0] = captured
-			for k in timer_btns:
-				timer_btns[k].add_theme_color_override("font_color", ACCENT if k == captured else MUTED)
-		)
-		timer_row.add_child(b)
+	var timer_lbl_hdr := _mk_label("TIMER", 24, MUTED)
+	timer_row.add_child(timer_lbl_hdr)
+	var timer_btn := _mk_button(timer_default, 26, ACCENT)
+	timer_btn.custom_minimum_size = Vector2(220, 56)
+	timer_row.add_child(timer_btn)
+	timer_btn.pressed.connect(func():
+		var idx: int = timer_options.find(timer_ref[0])
+		idx = (idx + 1) % timer_options.size()
+		timer_ref[0] = timer_options[idx]
+		timer_btn.text = timer_ref[0]
+	)
 
-	var err_lbl := _mk_label("", 13, Color("#ef4444"))
+	var err_lbl := _mk_label("", 24, Color("#ef4444"))
 	err_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_modal_body.add_child(err_lbl)
 
 	# Buttons
 	var btns := HBoxContainer.new()
-	btns.add_theme_constant_override("separation", 8)
+	btns.add_theme_constant_override("separation", 16)
 	btns.alignment = BoxContainer.ALIGNMENT_CENTER
 	_modal_body.add_child(btns)
 
-	var btn_cancel := _mk_button("CANCEL", 16, MUTED)
-	btn_cancel.custom_minimum_size = Vector2(120, 42)
+	var btn_cancel := _mk_button("CANCEL", 32, MUTED)
+	btn_cancel.custom_minimum_size = Vector2(220, 68)
 	btn_cancel.pressed.connect(_close_modal)
 	btns.add_child(btn_cancel)
 
-	var btn_go := _mk_button("CREATE", 16, ACCENT)
-	btn_go.custom_minimum_size = Vector2(120, 42)
+	var btn_go := _mk_button("CREATE", 32, ACCENT)
+	btn_go.custom_minimum_size = Vector2(220, 68)
 	btn_go.pressed.connect(func():
 		var rn := name_input.text.strip_edges()
 		if rn.is_empty():
@@ -600,7 +599,7 @@ func _open_modal(title_text: String) -> void:
 	_modal.add_child(center)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(380, 0)
+	panel.custom_minimum_size = Vector2(560, 0)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = PANEL
 	sb.corner_radius_top_left = 10
@@ -618,7 +617,7 @@ func _open_modal(title_text: String) -> void:
 	_modal_body.add_theme_constant_override("separation", 12)
 	panel.add_child(_modal_body)
 
-	var title := _mk_label(title_text, 20, CYAN)
+	var title := _mk_label(title_text, 40, CYAN)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_modal_body.add_child(title)
 
