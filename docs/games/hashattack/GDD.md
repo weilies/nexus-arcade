@@ -49,15 +49,38 @@
 ### Local 2P (same screen)
 - Alternating turns on same device.
 - Player 1 = X, Player 2 = O.
-- No turn timer.
+- Turn timer applies per turn (both seats are human — see Turn Timer subsection).
 
 ### Online 2P
-- Host creates room → Supabase inserts `game_rooms` row with `game_slug = "hashattack"` → `room_code` is a 6-char random alphanumeric string → shareable URL format: `https://<portal>/games/hashattack?room=XXXXXX`.
-- Guest opens URL → Godot reads `room` query param → joins room → both connect to Supabase Realtime channel `room:{id}`.
+- Host creates room via `OnlineLobby` → enters room name, picks **PUBLIC** or **PRIVATE** (private requires 4+ char password) → `game_rooms` row inserted (`game_slug = "hashattack"`, `room_code` 6-char random, `room_name`, `is_private`, `password` (plaintext, null if public)).
+- Guests see all waiting public/private rooms listed in `OnlineLobby` (manual REFRESH button + initial load). Tap **JOIN** on public; tap **UNLOCK** on private → password dialog → server re-fetch + plaintext compare → join on match.
+- Legacy deep link still supported: opening `?room=XXXXXX` auto-fetches that room and presents JOIN / UNLOCK as appropriate.
+- Both players connect to Supabase Realtime channel `room:{id}`.
 - Moves broadcast as Realtime channel messages; game state stored in `game_rooms.state` (jsonb).
-- **Turn timer:** Configurable via `Globals.timer_seconds` — values `0` (off), `3` (blitz), `6` (casual), `9` (chill). Default off. Timeout = auto-forfeit.
+- Turn timer applies only on your own turn; timeout = auto-forfeit (broadcast to opponent).
 - **Disconnect behavior:** 10-second grace period. If no reconnect, opponent wins.
 - **Auth required:** Google sign-in (via Supabase Auth) gated at Online mode entry. VS AI and 2P Local are guest-friendly.
+
+### Turn Timer (common to all modes + game variants)
+
+Configurable via `Globals.timer_seconds`, set on MainMenu (cycle button):
+
+| Option | Seconds |
+|--------|---------|
+| OFF    | 0 (no time limit) |
+| BLITZ  | 3 |
+| CASUAL | 6 |
+| CHILL  | 9 |
+
+**Rules:**
+- Timer applies to **human turns only**. AI turns never count down (AI has its own 1–3 s think delay).
+- Timer **starts** when a human player's turn begins (game start if human goes first, or right after the previous turn ends).
+- Timer **resets to the full chosen duration** every time control passes to a human player. Per-game duration does not change mid-match.
+- Tick SFX plays only in the **last 3 seconds** (4 → silent, 3/2/1 → tick).
+- Timeout:
+  - VS_AI / LOCAL → skip turn, fail SFX + screen shake, pass to next player.
+  - ONLINE → auto-forfeit, opponent wins.
+- Timer selector shown for all game-mode carousel options (Classic / Ultimate / Ephemeral).
 
 ---
 
@@ -78,7 +101,7 @@ Godot scenes inside the game (not the portal):
 │  #HashAttack!                        │
 │                                      │
 │  ◄  ● GAME MODE: CLASSIC  ●  ►      │  ← ◄/► = mode carousel
-│       [ TIMER: [✓] 10s  ]           │  ← timer row (hidden in Ultimate)
+│       [ TIMER: CASUAL  ]            │  ← timer row (always shown)
 │                                      │
 │  ┌──────────────────────────────┐    │
 │  │    1P        2P      ONLINE  │    │  ← Row1: game mode buttons
@@ -103,7 +126,7 @@ Row2 left slot:
 |------|-------------|-------|--------|
 | **Classic** | Standard 3×3 Tic Tac Toe | Optional (0/3/6/9s) | Live |
 | **Ultimate** | 3×3 grid of 3×3 mini-boards. Win mini-board to claim that cell in meta-board. | Optional (0/3/6/9s) | Live |
-| **Ephemeral** | Each player keeps last 4 marks; 5th placement evicts their oldest. No draws — always a winner. | Optional (0/3/6/9s) | Live |
+| **Ephemeral** | Each player keeps last 3 marks; 4th placement evicts their oldest. Oldest renders sharply faded (alpha 0.2) for tension. No draws — always a winner. | Optional (0/3/6/9s) | Live |
 
 Each mode shows the same 3 action buttons: **1P (VS AI)** / **2P (LOCAL)** / **ONLINE**.
 
@@ -196,6 +219,9 @@ create table game_rooms (
   id          uuid primary key default gen_random_uuid(),
   game_slug   text not null,              -- 'hashattack'
   room_code   text unique not null,       -- short shareable code
+  room_name   text not null default 'Room',
+  is_private  boolean not null default false,
+  password    text,                       -- plaintext, null iff is_private=false, 4+ chars otherwise
   host_id     uuid references auth.users,
   guest_id    uuid references auth.users,
   status      text default 'waiting',    -- 'waiting' | 'active' | 'finished'
@@ -293,6 +319,7 @@ Not in scope for v1. See Out of Scope.
 
 | Date | Author | Summary |
 |------|--------|---------|
+| 2026-05-17 | User feature + Opus 4.7 | Online lobby redesign: list waiting rooms in `OnlineLobby` (PUBLIC/PRIVATE tag, JOIN/UNLOCK button), create dialog with room name + public/private + password (4+ chars). Schema adds `room_name`, `is_private`, `password` (migration 011). Plaintext password (POC). Removed 6-char-code text input. Legacy `?room=` deep link preserved. |
 | 2026-05-13 | Claude (doc alignment review) | Rebrand title to Hash Attack; §3 AI: 3 difficulty levels + player-color rule; remove AIDifficultySelect; §3 timer 0/3/6/9s; §4 carousel: Ephemeral eviction rule fixed, Ultimate/Ephemeral status Live; §5 bridge: add `score` to match_end, add `sign_in_request`/`sign_out_request`, drop dead `season_info` |
 | 2026-05-02 | @weilies | Added AI thinking delay (1–3s random) with animated dots |
 | 2026-05-01 | @weilies | Initial draft — POC spec |

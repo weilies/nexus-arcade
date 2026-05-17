@@ -25,6 +25,7 @@ func _ready() -> void:
 
 func _fire(method: int, path: String, extra_headers: Array = [], body: String = "") -> void:
 	var h := HTTPRequest.new()
+	h.accept_gzip = false
 	add_child(h)
 	h.request_completed.connect(func(_r: int, code: int, _hdrs: PackedStringArray, raw: PackedByteArray):
 		var parsed: Variant = null
@@ -133,6 +134,7 @@ func _drain_ws() -> void:
 
 func _async_get(path: String, bearer_override: String = "") -> Array:
 	var http := HTTPRequest.new()
+	http.accept_gzip = false
 	add_child(http)
 	var hdrs: PackedStringArray
 	if bearer_override != "":
@@ -150,9 +152,26 @@ func _async_get(path: String, bearer_override: String = "") -> Array:
 
 func _async_post(path: String, payload: Dictionary) -> Array:
 	var http := HTTPRequest.new()
+	http.accept_gzip = false
 	add_child(http)
 	http.request(_url + path,
 		_headers(["Content-Type: application/json"]),
+		HTTPClient.METHOD_POST, JSON.stringify(payload))
+	var raw: Array = await http.request_completed
+	http.queue_free()
+	var body: Variant = null
+	var bytes := raw[3] as PackedByteArray
+	if bytes.size() > 0:
+		body = JSON.parse_string(bytes.get_string_from_utf8())
+	return [raw[1], body]
+
+# POST that returns the inserted row (Prefer: return=representation).
+func _async_post_pref(path: String, payload: Dictionary) -> Array:
+	var http := HTTPRequest.new()
+	http.accept_gzip = false
+	add_child(http)
+	http.request(_url + path,
+		_headers(["Content-Type: application/json", "Prefer: return=representation"]),
 		HTTPClient.METHOD_POST, JSON.stringify(payload))
 	var raw: Array = await http.request_completed
 	http.queue_free()

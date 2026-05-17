@@ -3,6 +3,9 @@ extends RefCounted
 
 const GAME_SLUG = "hashattack"
 const ROOM_CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const MIN_PASSWORD_LEN = 4
+
+static var last_error: String = ""
 
 static func generate_room_code() -> String:
 	var code = ""
@@ -23,20 +26,67 @@ static func get_room_code_from_url() -> String:
 		)
 	return ""
 
-static func create_room(sb: SupabaseClient, host_id: String) -> void:
-	var code = generate_room_code()
-	sb.insert_row("game_rooms", {
+# ── Async API (returns Dictionary / Array) ────────────────────────────────────
+
+# Returns the created row, or {} on failure.
+static func create_room_async(sb: SupabaseClient, host_id: String,
+		room_name: String, is_private: bool, password: String) -> Dictionary:
+	var payload := {
 		"game_slug": GAME_SLUG,
-		"room_code": code,
+		"room_code": generate_room_code(),
 		"host_id": host_id,
+		"room_name": room_name,
+		"is_private": is_private,
 		"status": "waiting",
 		"state": {"board": ["","","","","","","","",""], "turn": "X", "winner": ""}
-	})
+	}
+	if is_private:
+		payload["password"] = password
+	last_error = ""
+	var raw: Array = await sb._async_post_pref("/rest/v1/game_rooms?select=*", payload)
+	if raw[0] < 200 or raw[0] >= 300:
+		last_error = "HTTP %d: %s" % [raw[0], str(raw[1])]
+		push_warning("[RoomManager] create_room failed " + last_error)
+		print("[RoomManager] create_room failed ", last_error)
+		return {}
+	if raw[1] is Array and not raw[1].is_empty():
+		return raw[1][0]
+	if raw[1] is Dictionary:
+		return raw[1]
+	return {}
 
-static func fetch_room(sb: SupabaseClient, room_code: String) -> void:
-	sb.get_rows("game_rooms",
-		"room_code=eq.%s&game_slug=eq.%s&select=*" % [room_code, GAME_SLUG])
+# Returns array of waiting-room rows (newest first).
+static func list_waiting_rooms_async(sb: SupabaseClient) -> Array:
+	var path := "/rest/v1/game_rooms?game_slug=eq.%s&status=eq.waiting&select=id,room_code,room_name,is_private,host_id,created_at&order=created_at.desc" % GAME_SLUG
+	var raw: Array = await sb._async_get(path)
+	if raw[0] == 200 and raw[1] is Array:
+		return raw[1]
+	return []
 
-static func join_room(sb: SupabaseClient, room_id: String, guest_id: String) -> void:
-	sb.patch_row("game_rooms", "id=eq." + room_id,
-		{"guest_id": guest_id, "status": "active"})
+# Fetch a single room (for password check + join). Returns {} if not found.
+static func fetch_room_by_id_async(sb: SupabaseClient, room_id: String) -> Dictionary:
+	var raw: Array = await sb._async_get(
+		"/rest/v1/game_rooms?id=eq.%s&select=*" % room_id)
+	if raw[0] == 200 and raw[1] is Array and not raw[1].is_empty():
+		return raw[1][0]
+	return {}
+
+static func fetch_room_by_code_async(sb: SupabaseClient, room_code: String) -> Dictionary:
+	var raw: Array = await sb._async_get(
+		"/rest/v1/game_rooms?room_code=eq.%s&game_slug=eq.%s&select=*" % [room_code, GAME_SLUG])
+	if raw[0] == 200 and raw[1] is Array and not raw[1].is_empty():
+		return raw[1][0]
+	return {}
+
+# Returns true on successful join (200..299).
+static func join_room_async(sb: SupabaseClient, room_id: String, guest_id: String) -> bool:
+	var http := HTTPRequest.new()
+	http.accept_gzip = false
+	sb.add_child(http)
+	var hdrs: PackedStringArray = sb._headers(["Content-Type: application/json", "Prefer: return=representation"])
+	var body := JSON.stringify({"guest_id": guest_id, "status": "active"})
+	http.request(sb._url + "/rest/v1/game_rooms?id=eq." + room_id,
+		hdrs, HTTPClient.METHOD_PATCH, body)
+	var raw: Array = await http.request_completed
+	http.queue_free()
+	return raw[1] >= 200 and raw[1] < 300

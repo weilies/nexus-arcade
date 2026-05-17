@@ -5,7 +5,7 @@ signal timed_out
 signal tick(seconds_left: int)
 
 var _duration: float = 9.0  # overridden by set_duration() before start()
-const PULSE_THRESHOLD = 5
+const PULSE_THRESHOLD = 3
 
 var _timer: Timer
 var _label: Label
@@ -44,6 +44,12 @@ func get_duration() -> float:
 
 func get_time_left() -> float:
 	return _timer.time_left if _timer and not _timer.is_stopped() else 0.0
+
+# Total remaining seconds including the current sub-second interval
+func get_total_time_left() -> float:
+	if not is_running():
+		return 0.0
+	return float(_seconds_left - 1) + _timer.time_left
 
 func is_running() -> bool:
 	return _timer != null and not _timer.is_stopped()

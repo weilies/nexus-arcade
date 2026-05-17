@@ -61,7 +61,7 @@ func _cell_score(state: EphemeralGameState, cell: int, ai_player: GameState.Play
 
 	# Eviction safety: if placing here means next-turn eviction breaks our line
 	var queue := state.x_moves if ai_player == GameState.Player.X else state.o_moves
-	if queue.size() == 4:
+	if queue.size() == EphemeralGameState.MAX_MARKS:
 		var will_evict := queue[0]
 		# If evicting will_evict breaks any 2-in-a-row we're building, penalize
 		for line in GameState.WIN_LINES:

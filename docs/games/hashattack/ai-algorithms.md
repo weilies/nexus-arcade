@@ -67,17 +67,19 @@ Pick the cell with the highest minimax score on root call. 3×3 is solved → re
 ```
 EphemeralState {
   board: [9] of Player.NONE/X/O
-  x_moves: ordered queue of cells, max 4
-  o_moves: ordered queue of cells, max 4
+  x_moves: ordered queue of cells, max 3 (MAX_MARKS)
+  o_moves: ordered queue of cells, max 3 (MAX_MARKS)
 }
 ```
 
 `place(cell)`:
-1. If `current.moves.size() == 4` → evict `moves[0]`, clear `board[moves[0]]`
+1. If `current.moves.size() == MAX_MARKS` (3) → evict `moves[0]`, clear `board[moves[0]]`
 2. Append `cell` to `current.moves`
 3. Set `board[cell] = current_player`
 4. Win check
 5. Switch turn (if not won)
+
+Render rule: oldest mark renders at alpha 0.20 (`OPACITY_MAP[0]`), middle 0.55, newest 1.00.
 
 ### EASY
 ```
@@ -188,3 +190,4 @@ Why this beats minimax for Ultimate: branching factor up to 81 at start, full se
 | Date | Author | Summary |
 |------|--------|---------|
 | 2026-05-10 | GM brainstorm + Opus 4.7 reeval | Locked algos: Classic (rule-heuristic Hard, full minimax Unbeatable), Ephemeral (eviction-aware heuristic, full ephemeral minimax with iterative deepening), Ultimate (heuristic with meta weights, MCTS 500 sims Unbeatable) |
+| 2026-05-17 | User feature request + Opus 4.7 | Ephemeral MAX_MARKS reduced 4 → 3 (faster fade/tension). Opacity map = [0.20, 0.55, 1.00]. Eviction now triggers on 4th placement (was 5th). EphemeralAI eviction-safety check uses `MAX_MARKS` constant. |

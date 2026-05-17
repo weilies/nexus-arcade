@@ -1,13 +1,14 @@
 class_name EphemeralGameState
 extends GameState
 
-# Move history per player — ordered oldest (index 0) → newest (index -1). Max 4 each.
+# Move history per player — ordered oldest (index 0) → newest (index -1). Max 3 each.
 var x_moves: Array[int] = []
 var o_moves: Array[int] = []
 
-# Opacity per age slot. Index 0 = oldest mark, index 3 = newest.
-# Player has 1 mark: [1.0]. 2 marks: [0.75, 1.0]. 3: [0.5, 0.75, 1.0]. 4: [0.25, 0.5, 0.75, 1.0].
-const OPACITY_MAP: Array = [0.25, 0.50, 0.75, 1.00]
+const MAX_MARKS: int = 3
+# Opacity per age slot. Index 0 = oldest mark, index MAX_MARKS-1 = newest.
+# Sharp drop on oldest (fast visual fade): 1 mark [1.0]; 2 [0.55, 1.0]; 3 [0.20, 0.55, 1.0].
+const OPACITY_MAP: Array = [0.20, 0.55, 1.00]
 
 func place(cell: int) -> bool:
 	if cell < 0 or cell > 8:
@@ -19,8 +20,8 @@ func place(cell: int) -> bool:
 
 	var queue := x_moves if current_turn == GameState.Player.X else o_moves
 
-	# Evict oldest if at capacity (5th placement triggers removal of 1st)
-	if queue.size() == 4:
+	# Evict oldest if at capacity (4th placement triggers removal of 1st)
+	if queue.size() == MAX_MARKS:
 		var evicted: int = queue[0]
 		queue.pop_front()
 		board[evicted] = GameState.Player.NONE
@@ -47,10 +48,9 @@ func get_cell_opacity(cell: int) -> float:
 	var idx := queue.find(cell)
 	if idx < 0:
 		return 1.0
-	# Map queue position to opacity: 0=oldest. OPACITY_MAP has 4 slots.
-	# If queue has fewer than 4 marks, shift index to align newest=1.0.
-	var slot := idx + (4 - queue.size())
-	return OPACITY_MAP[clamp(slot, 0, 3)]
+	# Map queue position to opacity. Shift so newest aligns with last OPACITY_MAP slot.
+	var slot := idx + (MAX_MARKS - queue.size())
+	return OPACITY_MAP[clamp(slot, 0, MAX_MARKS - 1)]
 
 # EphemeralGameState cannot draw — override _check_result to never return DRAW.
 func _check_result() -> GameState.GameResult:

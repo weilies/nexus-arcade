@@ -184,7 +184,8 @@ func _on_mode_changed(_index: int, mode_id: String) -> void:
 	_refresh_timer_visibility()
 
 func _refresh_timer_visibility() -> void:
-	$CarouselContainer/TimerRow.visible = (_current_game_mode != "ultimate")
+	# Timer applies to all modes (per-human-turn). Always show selector.
+	$CarouselContainer/TimerRow.visible = true
 
 func _on_timer_pressed() -> void:
 	_timer_index = (_timer_index + 1) % TIMER_MODES.size()
@@ -423,8 +424,6 @@ func _help_ultimate() -> Array[String]:
 		"Tic Tac Toe on steroids. A 3x3 grid OF 3x3 grids.",
 		"",
 		"Win a mini-board to claim that square on the mega-board. Twist: your move picks which mini-board your opponent plays next. Send them to an already-won board? They play anywhere. Evil grin optional.",
-		"",
-		"TIMER always on (CASUAL). Place fast.",
 	]
 
 func _help_ephemeral() -> Array[String]:
@@ -434,6 +433,4 @@ func _help_ephemeral() -> Array[String]:
 		"Like classic, but your marks have commitment issues.",
 		"",
 		"Place your 5th mark and your oldest mark vanishes. Marks fade as they age - brightest is newest, dimmest is next to go. No draws - someone always wins.",
-		"",
-		"TIMER always on (CASUAL). Keep up.",
 	]

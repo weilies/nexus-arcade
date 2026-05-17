@@ -45,7 +45,8 @@ var _ultimate_state: UltimateGameState
 var _pending_ultimate_move: Dictionary = {}
 var _evicting_cell: int = -1
 var _ring_timer: TimerRing = null
-var _lbl_timer_text: RichTextLabel = null
+var _lbl_timer_sec: Label = null
+var _lbl_timer_ms: Label = null
 
 # Cached refs (survive reparenting in Ultimate layout)
 var _lbl_status: Label = null
@@ -210,7 +211,7 @@ func _do_place(cell_index: int) -> void:
 func _do_place_ephemeral(cell_index: int) -> void:
 	var queue := _ephemeral_state.x_moves if _ephemeral_state.current_turn == GameState.Player.X \
 		else _ephemeral_state.o_moves
-	var evicted_cell := queue[0] if queue.size() == 4 else -1
+	var evicted_cell := queue[0] if queue.size() == EphemeralGameState.MAX_MARKS else -1
 
 	# Capture evicted mark appearance BEFORE place() wipes board[evicted]
 	var evicted_text := ""
@@ -231,7 +232,7 @@ func _do_place_ephemeral(cell_index: int) -> void:
 		var evicted_mark: Label = evicted_node.get_node("Mark")
 		evicted_mark.text = evicted_text
 		evicted_mark.add_theme_color_override("font_color", evicted_color)
-		evicted_mark.modulate.a = 0.25  # was oldest = 0.25 before vanish
+		evicted_mark.modulate.a = EphemeralGameState.OPACITY_MAP[0]  # oldest opacity before vanish
 		var tw := create_tween()
 		tw.tween_property(evicted_mark, "modulate:a", 0.0, 0.25)
 		tw.tween_callback(func():
@@ -271,6 +272,7 @@ func _ai_take_turn() -> void:
 	_ai_think_timer.start(randf_range(1.0, 3.0))
 
 func _ai_take_turn_ultimate() -> void:
+	_turn_timer.stop()  # pause timer while AI thinks (human-only timer rule)
 	var ultimate_ai := _ai as UltimateAI
 	var move: Dictionary = ultimate_ai.get_move(_ultimate_state, Globals.ai_difficulty)
 	if move.is_empty():
@@ -510,41 +512,48 @@ func _init_timer_rings() -> void:
 	_ring_timer.position = Vector2(vp_size.x - sz.x - 16.0, 16.0)
 	add_child(_ring_timer)
 
-	# Sec.ms label centered inside ring (BBCode for size mix)
-	_lbl_timer_text = RichTextLabel.new()
-	_lbl_timer_text.bbcode_enabled = true
-	_lbl_timer_text.fit_content = false
-	_lbl_timer_text.scroll_active = false
-	_lbl_timer_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_lbl_timer_text.size = sz
-	_lbl_timer_text.position = Vector2.ZERO
-	_lbl_timer_text.add_theme_font_override("normal_font", load("res://fonts/Orbitron.ttf"))
-	_lbl_timer_text.add_theme_color_override("default_color", Color("#e8e8f0"))
-	_ring_timer.add_child(_lbl_timer_text)
+	# Single centered Label "S.ms" (HBox in non-Container parent had layout issues)
+	var orbitron := load("res://fonts/Orbitron.ttf")
+	_lbl_timer_sec = Label.new()
+	_lbl_timer_sec.add_theme_font_override("font", orbitron)
+	_lbl_timer_sec.add_theme_font_size_override("font_size", 24)
+	_lbl_timer_sec.add_theme_color_override("font_color", Color("#e8e8f0"))
+	_lbl_timer_sec.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_lbl_timer_sec.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_lbl_timer_sec.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_lbl_timer_sec.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ring_timer.add_child(_lbl_timer_sec)
+	_lbl_timer_ms = null  # combined display in _lbl_timer_sec
+
 	# Keep ring on top of any later-added overlays
 	move_child(_ring_timer, get_child_count() - 1)
 	_update_timer_label(Globals.timer_seconds, 0)
 
 func _process(_delta: float) -> void:
-	if _ring_timer and _turn_timer and _turn_timer.is_running():
-		var tl: float = _turn_timer.get_time_left()
+	if _ring_timer and _turn_timer:
 		var dur: float = float(Globals.timer_seconds)
 		if dur > 0.0:
-			_ring_timer.set_progress(tl / dur)
-		var secs := int(tl)
-		var ms := int((tl - float(secs)) * 100.0)
-		_update_timer_label(secs, ms)
+			if _turn_timer.is_running():
+				var tl: float = _turn_timer.get_total_time_left()
+				_ring_timer.set_progress(tl / dur)
+				var secs := int(tl)
+				var ms := int((tl - float(secs)) * 100.0)
+				_update_timer_label(secs, ms)
+			else:
+				# Timer idle (between turns or before first move) — show full duration
+				_ring_timer.set_progress(1.0)
+				_update_timer_label(int(dur), 0)
 
 func _update_timer_label(secs: int, ms: int) -> void:
-	if not _lbl_timer_text:
+	if not _lbl_timer_sec:
 		return
-	# Big secs, smaller ms — center via BBCode
-	_lbl_timer_text.text = "[center][font_size=28]%d[/font_size][font_size=14].%02d[/font_size][/center]" % [secs, ms]
+	_lbl_timer_sec.text = "%d.%02d" % [secs, ms]
 
 func _on_timer_tick(seconds_left: int) -> void:
 	if Globals.timer_seconds <= 0:
 		return
-	if seconds_left <= 5 and seconds_left > 0:
+	# Tick SFX only in last 3 seconds (4→silent, 3/2/1→tick).
+	if seconds_left <= 3 and seconds_left > 0:
 		SFX.tick()
 
 func _setup_game_info_label() -> void:
@@ -570,8 +579,16 @@ func _setup_game_info_label() -> void:
 	lbl.add_theme_font_size_override("font_size", 28)
 	lbl.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 0.75))
 
-	# In Ultimate mode, append to top strip (VBoxContainer is hidden).
-	# In classic/ephemeral, append to VBoxContainer next to LblStatus.
+	# Ultimate: difficulty goes in top strip after LblStatus (mirrors classic layout).
+	# Classic/ephemeral: append in VBox next to LblStatus.
+	if Globals.current_game_mode == "ultimate":
+		var ts: Node = find_child("UltimateTopStrip", false, false)
+		if ts:
+			ts.add_child(lbl)
+			# StreakBadge=0, LblStatus=1; place difficulty after LblStatus
+			if _lbl_status and _lbl_status.get_parent() == ts:
+				ts.move_child(lbl, _lbl_status.get_index() + 1)
+			return
 	var parent_container: Node = _lbl_status.get_parent() if _lbl_status else $VBoxContainer
 	parent_container.add_child(lbl)
 	if _lbl_status:
@@ -645,7 +662,11 @@ func _do_ultimate_place(board_idx: int, cell_idx: int) -> void:
 		_on_game_over()
 		return
 	if _mode == Mode.VS_AI and _ultimate_state.current_turn != _player_mark:
+		_turn_timer.stop()  # AI turn next — pause human-only timer
 		_ai_take_turn_ultimate.call_deferred()
+	elif _mode != Mode.ONLINE and Globals.timer_seconds > 0:
+		# LOCAL 2P (and VS_AI player's own next turn fallback): reset for next human
+		_turn_timer.start()
 
 func _setup_ultimate_board() -> void:
 	var arcade_theme := load("res://theme/ArcadeTheme.tres") as Theme
@@ -723,34 +744,40 @@ func _setup_ultimate_board() -> void:
 	top_strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(top_strip)
 
-	# Move LblStatus / StreakBadge / ScoreRow into top strip
-	for child_name in ["LblStatus", "StreakBadge", "ScoreRow"]:
+	# Top strip: StreakBadge → LblStatus (match classic VBox order; LblGameInfo added later via deferred)
+	for child_name in ["StreakBadge", "LblStatus"]:
 		if vbox.has_node(child_name):
-			var node: Node = vbox.get_node(child_name)
-			node.reparent(top_strip)
+			vbox.get_node(child_name).reparent(top_strip)
 
-	# Bottom strip with smaller home button (font size unchanged)
-	var bottom_strip := Control.new()
+	# Bottom strip VBox: ScoreRow (win tracker) + BtnHome only
+	var bottom_strip := VBoxContainer.new()
 	bottom_strip.name = "UltimateBottomStrip"
 	bottom_strip.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_strip.offset_top = -80
+	bottom_strip.offset_top = -110
+	bottom_strip.offset_left = 16
+	bottom_strip.offset_right = -16
+	bottom_strip.add_theme_constant_override("separation", 6)
+	bottom_strip.alignment = BoxContainer.ALIGNMENT_CENTER
 	bottom_strip.mouse_filter = Control.MOUSE_FILTER_PASS
 	add_child(bottom_strip)
+
+	if vbox.has_node("ScoreRow"):
+		vbox.get_node("ScoreRow").reparent(bottom_strip)
 
 	if vbox.has_node("BtnHome"):
 		var home: Button = vbox.get_node("BtnHome")
 		home.reparent(bottom_strip)
-		home.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 		home.custom_minimum_size = Vector2(180, 56)
-		home.offset_left = -90
-		home.offset_right = 90
-		home.offset_top = -28
-		home.offset_bottom = 28
+		home.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 	# Hide now-empty VBoxContainer (still holds invisible Grid placeholder)
 	vbox.visible = false
 
-	# Keep timer ring on top after layout changes
+	# TurnAnnounce overlay must render above _ultimate_board_node — push to end of tree
+	if has_node("TurnAnnounce"):
+		move_child($TurnAnnounce, get_child_count() - 1)
+
+	# Keep timer ring on top after layout changes (ring stays above announce)
 	if _ring_timer:
 		move_child(_ring_timer, get_child_count() - 1)
 
