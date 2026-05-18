@@ -47,6 +47,7 @@ export default function HomePage() {
             className="object-contain max-h-[480px] w-auto"
             style={{ filter: 'drop-shadow(0 0 24px rgba(0,229,255,0.35))' }}
             priority
+            unoptimized
           />
         </div>
 
