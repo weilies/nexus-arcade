@@ -3,10 +3,10 @@ import cabinetImg from '@/app/assets/arcade-cabinet.png'
 export default function HomePage() {
   return (
     <div className="flex-1 flex items-center justify-center px-4 py-6 bg-retro-glow">
-      <div className="flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-3xl">
+      <div className="flex flex-col md:flex-row items-center justify-center gap-6 w-full max-w-4xl">
 
         {/* Left: text card */}
-        <div className="card-panel w-full max-w-sm text-center">
+        <div className="card-panel flex-1 min-w-0 max-w-sm text-center">
           <div className="flex items-center justify-center gap-3 mb-3">
             <span className="text-5xl" style={{ textShadow: '0 0 20px rgba(255,45,149,0.6)' }}>👾</span>
             <h1 className="font-pixel text-2xl font-bold text-[#e8e8f0]">
@@ -43,9 +43,9 @@ export default function HomePage() {
           <img
             src={cabinetImg.src}
             alt="Nexus Arcade cabinet"
-            width={320}
-            height={480}
-            className="object-contain max-h-[480px] w-auto"
+            width={256}
+            height={384}
+            className="object-contain max-h-[384px] w-auto"
             style={{ filter: 'drop-shadow(0 0 24px rgba(0,229,255,0.35))' }}
           />
         </div>
