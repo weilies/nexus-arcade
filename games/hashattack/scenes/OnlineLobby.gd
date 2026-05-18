@@ -350,7 +350,6 @@ func _open_create_dialog() -> void:
 	toggle_row.add_child(btn_priv)
 
 	var pwd_input := _mk_line_edit("Password (min 4 chars)")
-	pwd_input.secret = true
 	pwd_input.max_length = 32
 	pwd_input.visible = false
 	_modal_body.add_child(pwd_input)
@@ -482,7 +481,6 @@ func _open_password_dialog(room_id: String, room_code: String, room: Dictionary)
 	_modal_body.add_child(_mk_label(str(room.get("room_name", "Room")), 24, TEXT))
 
 	var pwd_input := _mk_line_edit("Password")
-	pwd_input.secret = true
 	pwd_input.max_length = 32
 	_modal_body.add_child(pwd_input)
 

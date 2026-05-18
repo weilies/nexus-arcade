@@ -47,6 +47,7 @@ const HEARTBEAT_S := 3.0
 var _turn_timer: TurnTimer
 var _bridge: PortalBridge
 var _game_over_fired: bool = false
+var _game_started: bool = false  # true only after set_first_turn applied on both sides
 var _ai_thinking: bool = false
 var _ai_move_cell: int = -1
 var _ai_think_timer: Timer
@@ -205,10 +206,8 @@ func _ready() -> void:
 			_show_waiting_overlay()
 			_start_waiting_poll()
 		else:
-			if _state.current_turn == _player_mark and Globals.timer_seconds > 0:
-				_turn_timer.set_duration(Globals.timer_seconds)
-				_turn_timer.start()
-			_start_heartbeat()
+			# Guest side: don't start heartbeat yet — wait for set_first_turn
+			# which confirms both players are in-game before disconnect monitor runs.
 			if not _is_host and not has_state_already():
 				_guest_poll_first_turn()
 		_fetch_opponent_name()
@@ -386,6 +385,9 @@ func _on_online_message(channel: String, event: String, payload: Dictionary) -> 
 				var who := str(payload.get("player", "X"))
 				_state.current_turn = GameState.Player.X if who == "X" \
 					else GameState.Player.O
+				_game_started = true
+				_last_opp_ping_ms = Time.get_ticks_msec()
+				_start_heartbeat()
 				_refresh_ui()
 				if _state.current_turn == _player_mark and Globals.timer_seconds > 0:
 					_turn_timer.set_duration(Globals.timer_seconds)
@@ -799,6 +801,8 @@ func _host_pick_first_turn() -> void:
 		return
 	var first_str := "X" if randf() < 0.5 else "O"
 	_state.current_turn = GameState.Player.X if first_str == "X" else GameState.Player.O
+	_game_started = true
+	_last_opp_ping_ms = Time.get_ticks_msec()
 	if _supabase_ref:
 		_supabase_ref.broadcast("room:" + _room_id, "set_first_turn", {"player": first_str})
 		_supabase_ref.patch_row("game_rooms", "id=eq." + _room_id, {"state": _state.to_dict()})
@@ -843,6 +847,9 @@ func _guest_poll_first_turn() -> void:
 		if _state.current_turn == want:
 			return
 		_state.current_turn = want
+		_game_started = true
+		_last_opp_ping_ms = Time.get_ticks_msec()
+		_start_heartbeat()
 		_refresh_ui()
 		if _state.current_turn == _player_mark and Globals.timer_seconds > 0:
 			_turn_timer.set_duration(Globals.timer_seconds)
@@ -982,7 +989,7 @@ func _init_timer_rings() -> void:
 
 func _process(_delta: float) -> void:
 	# Disconnect monitor (online only, after game started, before game over)
-	if _mode == Mode.ONLINE and _ping_timer and not _game_over_fired and not _online_waiting:
+	if _mode == Mode.ONLINE and _ping_timer and _game_started and not _game_over_fired and not _online_waiting:
 		var since: int = Time.get_ticks_msec() - _last_opp_ping_ms
 		if since > DISCONNECT_THRESHOLD_MS and not _disconnect_active:
 			_start_disconnect_countdown()
