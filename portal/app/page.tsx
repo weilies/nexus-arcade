@@ -1,3 +1,4 @@
+import cabinetImg from '@/public/images/arcade-cabinet.png'
 
 export default function HomePage() {
   return (
@@ -40,7 +41,7 @@ export default function HomePage() {
         <div className="flex-shrink-0 flex items-center justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/images/arcade-cabinet.png"
+            src={cabinetImg.src}
             alt="Nexus Arcade cabinet"
             width={320}
             height={480}
