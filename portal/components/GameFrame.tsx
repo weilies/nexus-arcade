@@ -80,7 +80,9 @@ export function GameFrame({ slug, gameName, matchId }: GameFrameProps) {
       if (session?.access_token) {
         bufferToken(session.access_token)
       } else {
+        // Signed out — send empty token so Godot clears its auth state
         pendingToken = null
+        sendAuth('')
       }
     })
 

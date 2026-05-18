@@ -64,7 +64,7 @@ func _build_ui() -> void:
 	add_child(root)
 
 	# Title
-	var title := _mk_label("ONLINE PLAY", 29, CYAN)
+	var title := _mk_label("ONLINE PLAY", 28, CYAN)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	root.add_child(title)
 
@@ -74,12 +74,12 @@ func _build_ui() -> void:
 	actions.alignment = BoxContainer.ALIGNMENT_CENTER
 	root.add_child(actions)
 
-	_btn_create = _mk_button("+ CREATE ROOM", 20, ACCENT)
+	_btn_create = _mk_button("+ CREATE ROOM", 24, ACCENT)
 	_btn_create.custom_minimum_size = Vector2(200, 44)
 	_btn_create.pressed.connect(_open_create_dialog)
 	actions.add_child(_btn_create)
 
-	_btn_refresh = _mk_button("REFRESH", 20, MUTED)
+	_btn_refresh = _mk_button("REFRESH", 24, MUTED)
 	_btn_refresh.custom_minimum_size = Vector2(120, 44)
 	_btn_refresh.pressed.connect(_refresh_rooms)
 	actions.add_child(_btn_refresh)
@@ -101,7 +101,7 @@ func _build_ui() -> void:
 	page_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	root.add_child(page_row)
 
-	_btn_prev = _mk_button("<", 18, MUTED)
+	_btn_prev = _mk_button("<", 24, MUTED)
 	_btn_prev.custom_minimum_size = Vector2(48, 36)
 	_btn_prev.pressed.connect(func():
 		if _page > 0:
@@ -110,13 +110,13 @@ func _build_ui() -> void:
 	)
 	page_row.add_child(_btn_prev)
 
-	_lbl_page = _mk_label("1", 14, MUTED)
+	_lbl_page = _mk_label("1", 20, MUTED)
 	_lbl_page.custom_minimum_size = Vector2(80, 36)
 	_lbl_page.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_lbl_page.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	page_row.add_child(_lbl_page)
 
-	_btn_next = _mk_button(">", 18, MUTED)
+	_btn_next = _mk_button(">", 24, MUTED)
 	_btn_next.custom_minimum_size = Vector2(48, 36)
 	_btn_next.pressed.connect(func():
 		if _last_total == PAGE_SIZE:
@@ -136,7 +136,7 @@ func _build_ui() -> void:
 	code_input.custom_minimum_size = Vector2(180, 40)
 	code_row.add_child(code_input)
 
-	var btn_code_join := _mk_button("JOIN", 18, ACCENT)
+	var btn_code_join := _mk_button("JOIN", 24, ACCENT)
 	btn_code_join.custom_minimum_size = Vector2(80, 40)
 	btn_code_join.pressed.connect(func():
 		var code := code_input.text.strip_edges().to_upper()
@@ -148,13 +148,13 @@ func _build_ui() -> void:
 	code_row.add_child(btn_code_join)
 
 	# Status line
-	_lbl_status = _mk_label("", 16, MUTED)
+	_lbl_status = _mk_label("", 20, MUTED)
 	_lbl_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_lbl_status.autowrap_mode = TextServer.AUTOWRAP_WORD
 	root.add_child(_lbl_status)
 
 	# Back
-	var back := _mk_button("BACK", 22, MUTED)
+	var back := _mk_button("BACK", 24, MUTED)
 	back.custom_minimum_size = Vector2(0, 48)
 	back.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/MainMenu.tscn"))
 	root.add_child(back)
@@ -248,7 +248,7 @@ func _refresh_rooms() -> void:
 		shown += 1
 	_last_total = shown
 	if shown == 0:
-		var empty := _mk_label("No rooms waiting. Create one!", 18, MUTED)
+		var empty := _mk_label("No rooms waiting. Create one!", 24, MUTED)
 		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_vbox_rooms.add_child(empty)
 		_set_status("")
@@ -293,18 +293,18 @@ func _add_room_row(room: Dictionary, is_mine: bool) -> void:
 	name_line.add_theme_constant_override("separation", 6)
 	info.add_child(name_line)
 
-	var name_lbl := _mk_label(str(room.get("room_name", "Room")), 20, TEXT)
+	var name_lbl := _mk_label(str(room.get("room_name", "Room")), 24, TEXT)
 	name_line.add_child(name_lbl)
 
 	var is_private: bool = bool(room.get("is_private", false))
-	var tag_lbl := _mk_label("[PRIVATE]" if is_private else "[PUBLIC]", 14,
+	var tag_lbl := _mk_label("[PRIVATE]" if is_private else "[PUBLIC]", 20,
 		PURPLE if is_private else CYAN)
 	name_line.add_child(tag_lbl)
 
 	var game_mode_raw := str(room.get("game_mode", "classic"))
 	var timer_lbl := str(room.get("timer_label", "OFF"))
 	var mode_display := game_mode_raw.to_upper()
-	var sub := _mk_label("%s | %s" % [mode_display, timer_lbl], 14, MUTED)
+	var sub := _mk_label("%s | %s" % [mode_display, timer_lbl], 20, MUTED)
 	sub.autowrap_mode = TextServer.AUTOWRAP_OFF
 	info.add_child(sub)
 
@@ -313,7 +313,7 @@ func _add_room_row(room: Dictionary, is_mine: bool) -> void:
 
 	# Action button
 	var btn_text := "REJOIN" if is_mine else ("UNLOCK" if is_private else "JOIN")
-	var btn := _mk_button(btn_text, 18, ACCENT if not is_mine else CYAN)
+	var btn := _mk_button(btn_text, 24, ACCENT if not is_mine else CYAN)
 	btn.custom_minimum_size = Vector2(96, 44)
 	if is_mine:
 		btn.pressed.connect(func(): _enter_as_host(room_id, room_code))
@@ -334,28 +334,24 @@ func _open_create_dialog() -> void:
 
 	var name_input := _mk_line_edit("Room name (e.g. Friday Night)")
 	name_input.max_length = 24
-	name_input.add_theme_font_size_override("font_size", 28)
-	name_input.custom_minimum_size = Vector2(0, 56)
 	_modal_body.add_child(name_input)
 
 	# Public/Private toggle row
 	var toggle_row := HBoxContainer.new()
-	toggle_row.add_theme_constant_override("separation", 12)
+	toggle_row.add_theme_constant_override("separation", 10)
 	toggle_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_modal_body.add_child(toggle_row)
 
-	var btn_pub := _mk_button("PUBLIC", 32, CYAN)
-	var btn_priv := _mk_button("PRIVATE", 32, MUTED)
-	btn_pub.custom_minimum_size = Vector2(220, 64)
-	btn_priv.custom_minimum_size = Vector2(220, 64)
+	var btn_pub := _mk_button("PUBLIC", 24, CYAN)
+	var btn_priv := _mk_button("PRIVATE", 24, MUTED)
+	btn_pub.custom_minimum_size = Vector2(140, 44)
+	btn_priv.custom_minimum_size = Vector2(140, 44)
 	toggle_row.add_child(btn_pub)
 	toggle_row.add_child(btn_priv)
 
 	var pwd_input := _mk_line_edit("Password (min 4 chars)")
 	pwd_input.secret = true
 	pwd_input.max_length = 32
-	pwd_input.add_theme_font_size_override("font_size", 28)
-	pwd_input.custom_minimum_size = Vector2(0, 56)
 	pwd_input.visible = false
 	_modal_body.add_child(pwd_input)
 
@@ -383,8 +379,8 @@ func _open_create_dialog() -> void:
 	_modal_body.add_child(mode_row)
 	var mode_lbl := _mk_label("GAME MODE", 24, MUTED)
 	mode_row.add_child(mode_lbl)
-	var mode_btn := _mk_button(mode_default.to_upper(), 26, CYAN)
-	mode_btn.custom_minimum_size = Vector2(220, 56)
+	var mode_btn := _mk_button(mode_default.to_upper(), 24, CYAN)
+	mode_btn.custom_minimum_size = Vector2(160, 44)
 	mode_row.add_child(mode_btn)
 	mode_btn.pressed.connect(func():
 		var idx: int = mode_options.find(mode_ref[0])
@@ -404,8 +400,8 @@ func _open_create_dialog() -> void:
 	_modal_body.add_child(timer_row)
 	var timer_lbl_hdr := _mk_label("TIMER", 24, MUTED)
 	timer_row.add_child(timer_lbl_hdr)
-	var timer_btn := _mk_button(timer_default, 26, ACCENT)
-	timer_btn.custom_minimum_size = Vector2(220, 56)
+	var timer_btn := _mk_button(timer_default, 24, ACCENT)
+	timer_btn.custom_minimum_size = Vector2(160, 44)
 	timer_row.add_child(timer_btn)
 	timer_btn.pressed.connect(func():
 		var idx: int = timer_options.find(timer_ref[0])
@@ -424,13 +420,13 @@ func _open_create_dialog() -> void:
 	btns.alignment = BoxContainer.ALIGNMENT_CENTER
 	_modal_body.add_child(btns)
 
-	var btn_cancel := _mk_button("CANCEL", 32, MUTED)
-	btn_cancel.custom_minimum_size = Vector2(220, 68)
+	var btn_cancel := _mk_button("CANCEL", 24, MUTED)
+	btn_cancel.custom_minimum_size = Vector2(140, 44)
 	btn_cancel.pressed.connect(_close_modal)
 	btns.add_child(btn_cancel)
 
-	var btn_go := _mk_button("CREATE", 32, ACCENT)
-	btn_go.custom_minimum_size = Vector2(220, 68)
+	var btn_go := _mk_button("CREATE", 24, ACCENT)
+	btn_go.custom_minimum_size = Vector2(140, 44)
 	btn_go.pressed.connect(func():
 		var rn := name_input.text.strip_edges()
 		if rn.is_empty():
@@ -483,14 +479,14 @@ func _enter_as_host(room_id: String, room_code: String) -> void:
 
 func _open_password_dialog(room_id: String, room_code: String, room: Dictionary) -> void:
 	_open_modal("Enter Password")
-	_modal_body.add_child(_mk_label(str(room.get("room_name", "Room")), 16, TEXT))
+	_modal_body.add_child(_mk_label(str(room.get("room_name", "Room")), 24, TEXT))
 
 	var pwd_input := _mk_line_edit("Password")
 	pwd_input.secret = true
 	pwd_input.max_length = 32
 	_modal_body.add_child(pwd_input)
 
-	var err_lbl := _mk_label("", 13, Color("#ef4444"))
+	var err_lbl := _mk_label("", 20, Color("#ef4444"))
 	err_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_modal_body.add_child(err_lbl)
 
@@ -499,13 +495,13 @@ func _open_password_dialog(room_id: String, room_code: String, room: Dictionary)
 	btns.alignment = BoxContainer.ALIGNMENT_CENTER
 	_modal_body.add_child(btns)
 
-	var btn_cancel := _mk_button("CANCEL", 16, MUTED)
-	btn_cancel.custom_minimum_size = Vector2(120, 42)
+	var btn_cancel := _mk_button("CANCEL", 24, MUTED)
+	btn_cancel.custom_minimum_size = Vector2(140, 44)
 	btn_cancel.pressed.connect(_close_modal)
 	btns.add_child(btn_cancel)
 
-	var btn_go := _mk_button("JOIN", 16, ACCENT)
-	btn_go.custom_minimum_size = Vector2(120, 42)
+	var btn_go := _mk_button("JOIN", 24, ACCENT)
+	btn_go.custom_minimum_size = Vector2(140, 44)
 	btn_go.pressed.connect(func():
 		btn_go.disabled = true
 		err_lbl.text = ""
@@ -599,7 +595,7 @@ func _open_modal(title_text: String) -> void:
 	_modal.add_child(center)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(560, 0)
+	panel.custom_minimum_size = Vector2(420, 0)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = PANEL
 	sb.corner_radius_top_left = 10
@@ -617,7 +613,7 @@ func _open_modal(title_text: String) -> void:
 	_modal_body.add_theme_constant_override("separation", 12)
 	panel.add_child(_modal_body)
 
-	var title := _mk_label(title_text, 40, CYAN)
+	var title := _mk_label(title_text, 28, CYAN)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_modal_body.add_child(title)
 
@@ -649,7 +645,7 @@ func _mk_line_edit(placeholder: String) -> LineEdit:
 	var le := LineEdit.new()
 	le.placeholder_text = placeholder
 	le.add_theme_font_override("font", _orbitron)
-	le.add_theme_font_size_override("font_size", 14)
+	le.add_theme_font_size_override("font_size", 24)
 	return le
 
 func _share_room_code(room_code: String) -> void:

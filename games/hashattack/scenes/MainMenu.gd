@@ -9,7 +9,6 @@ const TIMER_MODES: Array[Dictionary] = [
 	{ "label": "CASUAL", "seconds": 6 },
 	{ "label": "CHILL", "seconds": 9 },
 ]
-var _show_sign_out: bool = false
 var _help_popup: Control = null
 var _difficulty_index: int = 0
 const DIFFICULTY_MODES: Array[Dictionary] = [
@@ -33,11 +32,8 @@ const DIFFICULTY_MODES: Array[Dictionary] = [
 @onready var _lbl_clock_icon: Label = $CarouselContainer/TimerRow/BtnTimer/HBoxTimer/LblClockIcon
 @onready var _lbl_mode_name: Label = $CarouselContainer/LblModeName
 
-# Row2 nodes (built programmatically)
-var _auth_slot: Control = null
-var _btn_sign_in: Button = null
-var _btn_sign_out: Button = null
-var _slot_profile: VBoxContainer = null
+# Auth overlay (bottom-right corner, built programmatically)
+var _btn_auth: Button = null       # toggles SIGN IN / SIGN OUT text
 var _lbl_username: Label = null
 var _lbl_points: Label = null
 
@@ -86,10 +82,9 @@ func _ready() -> void:
 	_refresh_timer_label()
 
 	_build_row2()
+	_build_auth_overlay()
 	_btn_difficulty.pressed.connect(_on_difficulty_pressed)
 	_refresh_difficulty_label()
-
-	_slot_profile.gui_input.connect(_on_profile_clicked)
 
 	$Bridge.send_game_ready()
 	$Bridge.auth_token_received.connect(func(_t): pass)
@@ -128,59 +123,55 @@ func _show_toast(text: String) -> void:
 	tw.tween_callback(toast.queue_free)
 
 func _build_row2() -> void:
-	var row2 := $TileBar/Row2
+	pass  # Auth removed from Row2 — see _build_auth_overlay()
 
-	# --- Auth slot (SIGN IN button / Profile + SIGN OUT toggle) ---
-	_auth_slot = VBoxContainer.new()
-	_auth_slot.custom_minimum_size = Vector2(96, 96)
-	_auth_slot.alignment = BoxContainer.ALIGNMENT_CENTER
-	_auth_slot.mouse_filter = Control.MOUSE_FILTER_STOP
+func _build_auth_overlay() -> void:
+	# Bottom-right corner overlay: username + pts (signed-in) + sign-in/out button.
+	# No user icon per UI spec.
+	var orbitron := load("res://fonts/Orbitron.ttf")
 
-	_btn_sign_in = Button.new()
-	_btn_sign_in.custom_minimum_size = Vector2(96, 96)
-	_btn_sign_in.icon = preload("res://images/icon-user.svg")
-	_btn_sign_in.expand_icon = true
-	_btn_sign_in.add_theme_constant_override("icon_max_width", 48)
-	_btn_sign_in.add_theme_color_override("font_color", Color("#00d4ff"))
-	_btn_sign_in.text = "SIGN IN"
-	_btn_sign_in.pressed.connect(_on_sign_in)
-	_auth_slot.add_child(_btn_sign_in)
-
-	_slot_profile = VBoxContainer.new()
-	_slot_profile.visible = false
-	_slot_profile.custom_minimum_size = Vector2(96, 96)
-	_slot_profile.alignment = BoxContainer.ALIGNMENT_CENTER
-	_slot_profile.mouse_filter = Control.MOUSE_FILTER_STOP
-
-	var prof_icon := TextureRect.new()
-	prof_icon.texture = preload("res://images/icon-user.svg")
-	prof_icon.custom_minimum_size = Vector2(36, 36)
-	prof_icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-	prof_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_slot_profile.add_child(prof_icon)
+	var container := VBoxContainer.new()
+	container.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	container.offset_left  = -200
+	container.offset_top   = -90
+	container.offset_right = -8
+	container.offset_bottom = -8
+	container.alignment = BoxContainer.ALIGNMENT_END
+	container.add_theme_constant_override("separation", 2)
+	container.mouse_filter = Control.MOUSE_FILTER_PASS
+	add_child(container)
 
 	_lbl_username = Label.new()
-	_lbl_username.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_lbl_username.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_lbl_username.add_theme_font_override("font", orbitron)
+	_lbl_username.add_theme_font_size_override("font_size", 18)
 	_lbl_username.add_theme_color_override("font_color", Color("#00d4ff"))
-	_slot_profile.add_child(_lbl_username)
+	_lbl_username.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_lbl_username.visible = false
+	container.add_child(_lbl_username)
 
 	_lbl_points = Label.new()
-	_lbl_points.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_lbl_points.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_lbl_points.add_theme_font_override("font", orbitron)
+	_lbl_points.add_theme_font_size_override("font_size", 16)
 	_lbl_points.add_theme_color_override("font_color", Color(0.55, 0.6, 0.75, 1))
-	_slot_profile.add_child(_lbl_points)
+	_lbl_points.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_lbl_points.visible = false
+	container.add_child(_lbl_points)
 
-	_btn_sign_out = Button.new()
-	_btn_sign_out.visible = false
-	_btn_sign_out.flat = true
-	_btn_sign_out.text = "SIGN OUT"
-	_btn_sign_out.custom_minimum_size = Vector2(96, 32)
-	_btn_sign_out.add_theme_color_override("font_color", Color("#ef4444"))
-	_btn_sign_out.pressed.connect(_on_sign_out)
-
-	_auth_slot.add_child(_slot_profile)
-	_auth_slot.add_child(_btn_sign_out)
-	row2.add_child(_auth_slot)
-	row2.move_child(_auth_slot, 0)
+	_btn_auth = Button.new()
+	_btn_auth.add_theme_font_override("font", orbitron)
+	_btn_auth.add_theme_font_size_override("font_size", 18)
+	_btn_auth.custom_minimum_size = Vector2(140, 40)
+	_btn_auth.add_theme_color_override("font_color", Color("#00d4ff"))
+	_btn_auth.text = "SIGN IN"
+	_btn_auth.pressed.connect(func():
+		if Globals.is_signed_in():
+			_on_sign_out()
+		else:
+			_on_sign_in()
+	)
+	container.add_child(_btn_auth)
 
 func _on_mode_changed(_index: int, mode_id: String) -> void:
 	_current_game_mode = mode_id
@@ -266,24 +257,22 @@ func _on_help() -> void:
 	_help_popup = _make_help_popup()
 	add_child(_help_popup)
 
-func _on_profile_clicked(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed:
-		_show_sign_out = not _show_sign_out
-		_refresh_auth_ui()
-
 func _refresh_auth_ui() -> void:
+	if not is_instance_valid(_btn_auth):
+		return
 	var signed_in := Globals.is_signed_in()
 	if signed_in:
 		_lbl_username.text = Globals.current_user.get("username", "")
-		_lbl_points.text = "pts %d pts" % Globals.current_user.get("points", 0)
-		_btn_sign_in.visible = false
-		_slot_profile.visible = true
-		_btn_sign_out.visible = _show_sign_out
+		_lbl_username.visible = true
+		_lbl_points.text = "%d pts" % Globals.current_user.get("points", 0)
+		_lbl_points.visible = true
+		_btn_auth.text = "SIGN OUT"
+		_btn_auth.add_theme_color_override("font_color", Color("#ef4444"))
 	else:
-		_btn_sign_in.visible = true
-		_slot_profile.visible = false
-		_btn_sign_out.visible = false
-		_show_sign_out = false
+		_lbl_username.visible = false
+		_lbl_points.visible = false
+		_btn_auth.text = "SIGN IN"
+		_btn_auth.add_theme_color_override("font_color", Color("#00d4ff"))
 
 func _make_help_popup() -> Control:
 	var popup := Control.new()
