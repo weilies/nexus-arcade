@@ -1,4 +1,3 @@
-import Image from 'next/image'
 
 export default function HomePage() {
   return (
@@ -39,15 +38,14 @@ export default function HomePage() {
 
         {/* Right: arcade cabinet */}
         <div className="flex-shrink-0 flex items-center justify-center">
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/images/arcade-cabinet.png"
             alt="Nexus Arcade cabinet"
             width={320}
             height={480}
             className="object-contain max-h-[480px] w-auto"
             style={{ filter: 'drop-shadow(0 0 24px rgba(0,229,255,0.35))' }}
-            priority
-            unoptimized
           />
         </div>
 
