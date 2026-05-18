@@ -1,4 +1,4 @@
-import cabinetImg from '@/public/images/arcade-cabinet.png'
+import cabinetImg from '@/app/assets/arcade-cabinet.png'
 
 export default function HomePage() {
   return (
